@@ -1461,7 +1461,7 @@ AppSwitcher.prototype = {
             this._iconSize = iconSizes[i];
             height = this._iconSize + iconSpacing;
             let w = 0;
-            if (!this._altTabPopup._zoomedOut) {
+            if (this._altTabPopup._numPrimaryItems != this.icons.length) {
                 w = height * this._altTabPopup._numPrimaryItems + totalSpacing;
             }
             else {
@@ -1470,7 +1470,7 @@ AppSwitcher.prototype = {
                     w += this.icons[ii].calculateSlotSize(this._iconSize) + iconSpacing;
                 }
             }
-            if (w <= availWidth) {
+            if (w < availWidth) {
                     break;
             }
         }   
