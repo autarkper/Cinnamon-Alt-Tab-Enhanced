@@ -1387,7 +1387,7 @@ AppIcon.prototype = {
             this.icon = this._createApplicationIcon(size);
         }
         // Make some room for the window title.
-        this._label_bin.set_size(Math.floor(size * 1.2), Math.floor(size/2));
+        this._label_bin.set_size(Math.floor(size * 1.2), Math.max(50, Math.floor(size/2)));
         if (this.ignored) {
             this.icon.opacity = 170;
         }
