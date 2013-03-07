@@ -129,6 +129,7 @@ const HELP_TEXT = [
     _("Ctrl+w: Close selected window. Use with care!"),
     _("+ (Plus): Show windows from all workspaces"),
     _("- (Minus): Show windows from current workspace only"),
+    _("z: Zoom to see all windows at once without scrolling (toggle)"),
     _("F1: Show this quick-help screen"),
     "",
 ];
