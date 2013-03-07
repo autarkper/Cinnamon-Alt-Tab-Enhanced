@@ -353,10 +353,20 @@ AltTabPopup.prototype = {
 
         let windows = [];
         let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
+        let registry = {};
 
         let activeWsIndex = global.screen.get_active_workspace_index();
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
-            let wlist = Main.getTabList(global.screen.get_workspace_by_index(i));
+            let wlist = Main.getTabList(global.screen.get_workspace_by_index(i)).filter(function(window) {
+                // Main.getTabList will sometimes return duplicates. Happens with Skype chat windows marked urgent.
+                let seqno = window.get_stable_sequence();
+                if (registry[seqno]) {
+                    return false;
+                }
+                registry[seqno] = true;
+                return true;
+            }, this);
+
             if (i != activeWsIndex) {
                 wlist = wlist.filter(function(window) {
                     // We don't want duplicates. Ignored windows from other workspaces are not welcome.
