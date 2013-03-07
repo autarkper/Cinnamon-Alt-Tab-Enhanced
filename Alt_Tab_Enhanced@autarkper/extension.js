@@ -595,7 +595,7 @@ AltTabPopup.prototype = {
                 this.destroy();
                 if (this._currentApp >= 0) {
                     let window = this._appIcons[this._currentApp].window;
-                    Main.activateWindow(window);
+                    this._activateWindow(window);
                 }
                 Mainloop.idle_add(function() {
                     Main.getRunDialog().open();
@@ -603,7 +603,7 @@ AltTabPopup.prototype = {
             } else if (action == Meta.KeyBindingAction.WORKSPACE_DOWN || action == Meta.KeyBindingAction.WORKSPACE_UP) {
                 if (this._currentApp >= 0) {
                     let window = this._appIcons[this._currentApp].window;
-                    Main.activateWindow(window);
+                    this._activateWindow(window);
                 }
                 this.destroy();
                 Mainloop.idle_add(function() {
@@ -736,7 +736,11 @@ AltTabPopup.prototype = {
     },
 
     _activateWindow : function(window) {
+        let wsNow = global.screen.get_active_workspace();
         Main.activateWindow(window);
+        if (window.get_workspace() != wsNow) {
+            Main.wm.showWorkspaceOSD();
+        }
     },
 
     _appActivated : function(appSwitcher, n) {
