@@ -1444,10 +1444,11 @@ AppSwitcher.prototype = {
         let modelIndex = (this._curApp + this._items.length + 2) % this._items.length;
 
         let themeNode = this._items[modelIndex].get_theme_node();
-        let iconPadding = themeNode.get_horizontal_padding();
+        let iconPadding = themeNode.get_horizontal_padding() * 2;
+        let iconVPadding = themeNode.get_vertical_padding() * 2;
         let iconBorder = themeNode.get_border_width(St.Side.LEFT) + themeNode.get_border_width(St.Side.RIGHT);
         let [iconMinHeight, iconNaturalHeight] = this.icons[modelIndex].label.get_preferred_height(-1);
-        let iconSpacing = iconNaturalHeight + iconPadding + iconBorder;
+        let iconSpacing = iconPadding + iconBorder;
         let totalSpacing = this._list.spacing * (this._items.length - 1);
         if (this._separators.length)
            totalSpacing += Math.max(1, this._separators.length - 1) * (this._separators[0].width + this._list.spacing);
@@ -1455,15 +1456,16 @@ AppSwitcher.prototype = {
         // We just assume the whole screen here due to weirdness happing with the passed width
         let primary = Main.layoutManager.primaryMonitor;
         let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
-        let availWidth = primary.width - parentPadding - this.actor.get_theme_node().get_horizontal_padding();
+        let availWidth = primary.width - parentPadding - this.actor.get_theme_node().get_horizontal_padding() * 2;
         let height = 0;
 
         for(let i =  0; i < iconSizes.length; i++) {
             this._iconSize = iconSizes[i];
-            height = this._iconSize + iconSpacing;
+            height = this._iconSize + iconNaturalHeight + iconVPadding;
+            let width = this._iconSize + iconSpacing;
             let w = 0;
             if (this._altTabPopup._numPrimaryItems != this.icons.length) {
-                w = height * this._altTabPopup._numPrimaryItems + totalSpacing;
+                w = width * this._altTabPopup._numPrimaryItems + totalSpacing;
             }
             else {
                 w = totalSpacing;
@@ -1478,7 +1480,7 @@ AppSwitcher.prototype = {
 
         if (this._items.length == 1) {
             this._iconSize = iconSizes[0];
-            height = iconSizes[0] + iconSpacing;
+            height = iconSizes[0] + iconNaturalHeight + iconVPadding;
         }
 
         for(let i = 0; i < this.icons.length; i++) {
