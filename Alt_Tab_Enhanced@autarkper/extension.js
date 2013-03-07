@@ -129,6 +129,7 @@ const HELP_TEXT = [
     _("Ctrl+w: Close selected window. Use with care!"),
     _("+ (Plus): Show windows from all workspaces"),
     _("- (Minus): Show windows from current workspace only"),
+    _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("z: Zoom to see all windows at once without scrolling (toggle)"),
     _("F1: Show this quick-help screen"),
     "",
@@ -161,6 +162,17 @@ var g_enableThumbnailBehindIcon = true;
 
 var g_allWsMode = false;
 var g_windowsToIgnore = [];
+var g_windowsOrdered = [];
+
+var g_globalFocusOrder = false;
+
+let wFocusId = connect(global.display, 'notify::focus-window', function(display) {
+    g_windowsOrdered = g_windowsOrdered.filter(function(window) {
+        return window && window != display.focus_window && window.get_workspace();
+    }, this);
+    g_windowsOrdered.unshift(display.focus_window);
+});
+
 
 function AltTabPopup() {
     this._init();
@@ -386,11 +398,30 @@ AltTabPopup.prototype = {
             }
         }
 
+        if (g_globalFocusOrder) {
+            windows = windows.sort(function(a, b) {
+                let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
+                if (minimizedDiff) {
+                    return minimizedDiff;
+                }
+                let inGlobalListDiff = (g_windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (g_windowsOrdered.indexOf(b) < 0 ? 1 : 0);
+                if (inGlobalListDiff) {
+                    return inGlobalListDiff;
+                }
+                let globalDiff = g_windowsOrdered.indexOf(a) - g_windowsOrdered.indexOf(b);
+                return globalDiff || windows.indexOf(a) - windows.indexOf(b);
+            }, this);
+            currentWindow = windows[0];
+            forwardWindow = windows[1];
+            backwardWindow = windows[windows.length - 1];
+        }
+
+        currentIndex = windows.indexOf(currentWindow);
         if (forwardWindow) {forwardIndex = windows.indexOf(forwardWindow)};
         if (backwardWindow) {backwardIndex = windows.indexOf(backwardWindow)};
 
         // Size the icon bar primarily to fit the windows of the current workspace.
-        this._numPrimaryItems_Orig = Math.max(2, wsWindows.length);
+        this._numPrimaryItems_Orig = g_globalFocusOrder ? windows.length : Math.max(2, wsWindows.length);
         this._numPrimaryItems = this._numPrimaryItems_Orig;
         this._zoomedOut = false;
 
@@ -412,7 +443,7 @@ AltTabPopup.prototype = {
         }
         let haveSelection = this._selectedWindow != null; // this._selectedWindow is modified by _select
 
-        if (g_allWsMode && !this._thumbnailsEnabled) { // restricted feature
+        if (g_allWsMode && !this._thumbnailsEnabled && !g_globalFocusOrder) { // restricted feature
             this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
         }
 
@@ -654,6 +685,14 @@ AltTabPopup.prototype = {
                 else {
                     this._hiding = true;
                     this._appSwitcher.actor.opacity = 25;
+                }
+            } else if (keysym == Clutter.g && ctrlDown) {
+                if (global.screen.n_workspaces > 1) {
+                    g_globalFocusOrder = !g_globalFocusOrder;
+                    if (g_globalFocusOrder) {
+                        g_allWsMode = true; // enable together, but disable separately
+                    }
+                    this.refresh();
                 }
             } else if (keysym == Clutter.w && ctrlDown) {
                 if (this._currentApp >= 0) {
@@ -1081,9 +1120,11 @@ SwitcherList.prototype = {
     },
 
     addSeparator: function () {
-        let box = new St.Bin({ style_class: 'separator' });
-        this._separators.push(box);
-        this._list.add_actor(box);
+        if (!g_globalFocusOrder) {
+            let box = new St.Bin({ style_class: 'separator' });
+            this._separators.push(box);
+            this._list.add_actor(box);
+        }
     },
 
     highlight: function(index, justOutline) {
@@ -1312,15 +1353,23 @@ AppIcon.prototype = {
             }
         }));
         this.icon = null;
-        this._iconBin = new St.Bin();
 
+        this._iconBin = new St.Bin();
         this.actor.add(this._iconBin, { x_fill: false, y_fill: false, y_align: St.Align.END } );
+
         this.label = new St.Label();
         this.label.clutter_text.line_wrap = true;
-        this.updateLabel();
         this._label_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
         this._label_bin.add_actor(this.label);
         this.actor.add(this._label_bin);
+
+        this.wsLabel = new St.Label();
+        this.wsLabel.clutter_text.line_wrap = true;
+        this._wsLabel_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
+        this._wsLabel_bin.add_actor(this.wsLabel);
+        this.actor.add(this._wsLabel_bin);
+
+        this.updateLabel();
     },
 
     _checkAttention: function() {
@@ -1344,6 +1393,9 @@ AppIcon.prototype = {
     },
 
     updateLabel: function() {
+        let ws = this.window.get_workspace().index();
+        this.wsLabel.set_text("(" + (ws + 1) + ")");
+
         let title = this.window.get_title();
         title = typeof(title) != 'undefined' ? title : (this.app ? this.app.get_name() : "");
         this.label.set_text(title.length && this.window.minimized ? "[" + title + "]" : title);
@@ -1392,7 +1444,14 @@ AppIcon.prototype = {
             this.icon.opacity = 170;
         }
         this._iconBin.child = this.icon;
-        this._iconBin.set_size(size, size);
+        this._iconBin.set_size(Math.floor(size * 1.2), sizeIn);
+        if (g_globalFocusOrder) {
+            this.wsLabel.show();
+        }
+        else {
+            this.wsLabel.hide();
+            this.wsLabel.height = 0;
+        }
     }
 };
 
