@@ -4,3 +4,11 @@ features for the advanced user while working almost exactly like the built-in
 version for the normal user. One of the features is a quick-help screen, accessed
 by pressing F1 with Alt-Tab open. To enable multi-workspace support for the current
 session, press the Plus key within Alt-Tab, and press Minus to disable it.
+
+One-time installation:
+Copy the directory Alt_Tab_Enhanced@autarkper to ~/.local/share/cinnamon/extensions/
+
+Flexible installation:
+Make a soft link from Alt_Tab_Enhanced@autarkper in your git clone
+to ~/.local/share/cinnamon/extensions/
+You will then have the latest version every time you update your local git branch.
