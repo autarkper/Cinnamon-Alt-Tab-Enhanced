@@ -383,7 +383,7 @@ AltTabPopup.prototype = {
             if (i != activeWsIndex) {
                 wlist = wlist.filter(function(window) {
                     // We don't want duplicates. Ignored windows from other workspaces are not welcome.
-                    return !window.is_on_all_workspaces() && g_windowsToIgnore.indexOf(window) < 0;
+                    return !window.is_on_all_workspaces() && (!g_globalFocusOrder || g_windowsToIgnore.indexOf(window) < 0);
                 }, this);
             }
             if (g_allWsMode || i == activeWsIndex) {
@@ -403,6 +403,10 @@ AltTabPopup.prototype = {
                 let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
                 if (minimizedDiff) {
                     return minimizedDiff;
+                }
+                let ignoredDiff = (g_windowsToIgnore.indexOf(a) < 0 ? 0 : 1) - (g_windowsToIgnore.indexOf(b) < 0 ? 0 : 1);
+                if (ignoredDiff) {
+                    return ignoredDiff;
                 }
                 let inGlobalListDiff = (g_windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (g_windowsOrdered.indexOf(b) < 0 ? 1 : 0);
                 if (inGlobalListDiff) {
