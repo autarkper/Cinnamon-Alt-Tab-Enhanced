@@ -12,3 +12,6 @@ Flexible installation:
 Make a soft link from Alt_Tab_Enhanced@autarkper in your git clone
 to ~/.local/share/cinnamon/extensions/
 You will then have the latest version every time you update your local git branch.
+
+After installation, you will need to enable the extension in Cinnamon Settings,
+the Extensions tab.
