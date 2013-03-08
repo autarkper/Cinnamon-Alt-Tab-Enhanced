@@ -421,7 +421,7 @@ AltTabPopup.prototype = {
         if (backwardWindow) {backwardIndex = windows.indexOf(backwardWindow)};
 
         // Size the icon bar primarily to fit the windows of the current workspace.
-        this._numPrimaryItems_Orig = g_globalFocusOrder ? windows.length : Math.max(2, wsWindows.length);
+        this._numPrimaryItems_Orig = Math.max(2, wsWindows.length);
         this._numPrimaryItems = this._numPrimaryItems_Orig;
         this._zoomedOut = false;
 
