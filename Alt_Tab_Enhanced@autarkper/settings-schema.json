@@ -8,5 +8,15 @@
     "type" : "checkbox",
     "default" : false,
     "description" : "Whether to display windows from all workspaces, or just windows from the active workspace"
+ },
+ "vertical-alignment": {
+    "type" : "radiogroup",
+    "default" : "center",
+    "options" : {
+    "Top" : "top",
+    "Center" : "center",
+    "Bottom" : "bottom"
+    },
+    "description" : "Where to display the window switcher"
  }
 }
