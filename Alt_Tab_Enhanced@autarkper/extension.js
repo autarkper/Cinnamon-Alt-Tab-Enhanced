@@ -586,7 +586,7 @@ AltTabPopup.prototype = {
             let wsCurIx = this._appIcons[this._currentApp].window.get_workspace().index();
             if (direction > 0) {
                 for (let [i, iLen] = [this._currentApp + 1, this._appIcons.length]; i < iLen; ++i) {
-                    if (i == iLen - 1 || this._appIcons[i].window.get_workspace().index() > wsCurIx) {
+                    if (i == iLen - 1 || this._appIcons[i].window.get_workspace().index() != wsCurIx) {
                         this._select(i);
                         return true;
                     }
