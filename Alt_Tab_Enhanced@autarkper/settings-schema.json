@@ -1,0 +1,12 @@
+{
+ "thumbnails-behind-identical-icons": {
+    "type" : "checkbox",
+    "default" : true,
+    "description" : "Whether to display a thumbnail behind different windows having the same icon"
+ },
+ "all-workspaces-mode": {
+    "type" : "checkbox",
+    "default" : false,
+    "description" : "Whether to display windows from all workspaces, or just windows from the active workspace"
+ }
+}

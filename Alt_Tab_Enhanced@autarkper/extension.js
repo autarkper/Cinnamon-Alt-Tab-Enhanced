@@ -15,6 +15,12 @@ const Tweener = imports.ui.tweener;
 const Util = imports.misc.util;
 const WindowUtils = imports.misc.windowUtils;
 
+var Settings = null;
+try {
+    Settings = imports.ui.settings; // requires Cinnamon 1.7.2 or later
+}
+catch (e) {}
+
 /* usage:
  * "let connection = connect(someObject, 'some-signal', someFunction [, ...])
  *  ///...
@@ -156,11 +162,10 @@ function primaryModifier(mask) {
     return primary;
 }
 
-// Controls whether to show a thumbnail behind the icon if there
-// are more than one window having the same icon.
-var g_enableThumbnailBehindIcon = true;
+// this object will be populated with our settings, if settings support is available
+var g_settings = {
+};
 
-var g_allWsMode = false;
 var g_windowsToIgnore = [];
 var g_windowsOrdered = [];
 
@@ -386,7 +391,7 @@ AltTabPopup.prototype = {
                     return !window.is_on_all_workspaces() && (!g_globalFocusOrder || g_windowsToIgnore.indexOf(window) < 0);
                 }, this);
             }
-            if (g_allWsMode || i == activeWsIndex) {
+            if (g_settings.allWorkspacesMode || i == activeWsIndex) {
                 windows = windows.concat(wlist);
             }
             if (i == activeWsIndex) {
@@ -447,7 +452,7 @@ AltTabPopup.prototype = {
         }
         let haveSelection = this._selectedWindow != null; // this._selectedWindow is modified by _select
 
-        if (g_allWsMode && !this._thumbnailsEnabled && !g_globalFocusOrder) { // restricted feature
+        if (g_settings.allWorkspacesMode && !this._thumbnailsEnabled && !g_globalFocusOrder) { // restricted feature
             this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
         }
 
@@ -513,7 +518,7 @@ AltTabPopup.prototype = {
         this._haveModal = true;
         this._modifierMask = primaryModifier(mask);
         if (binding && binding.search(/group/) >= 0) {
-            g_allWsMode = false;
+            g_settings.allWorkspacesMode = false;
         }
         if (!this.refresh(binding, backward)) {
             this._finish();
@@ -677,8 +682,8 @@ AltTabPopup.prototype = {
                 this._toggleZoom();
             } else if (keysym == Clutter.plus || keysym == Clutter.minus) {
                 let newMode = keysym == Clutter.plus;
-                if (g_allWsMode != newMode) {
-                    g_allWsMode = newMode;
+                if (g_settings.allWorkspacesMode != newMode) {
+                    g_settings.allWorkspacesMode = newMode;
                     this.refresh();
                 }
             } else if (keysym == Clutter.h) { // toggle hide
@@ -694,7 +699,7 @@ AltTabPopup.prototype = {
                 if (global.screen.n_workspaces > 1) {
                     g_globalFocusOrder = !g_globalFocusOrder;
                     if (g_globalFocusOrder) {
-                        g_allWsMode = true; // enable together, but disable separately
+                        g_settings.allWorkspacesMode = true; // enable together, but disable separately
                     }
                     this.refresh();
                 }
@@ -1422,7 +1427,7 @@ AppIcon.prototype = {
     set_size: function(sizeIn, focused) {
         let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
-        if (!this.showIcons || (this.showThumbnail && g_enableThumbnailBehindIcon && this.app && this.app.get_windows().length > 1)) {
+        if (!this.showIcons || (this.showThumbnail && g_settings.thumbnailsBehindIdenticalIcons && this.app && this.app.get_windows().length > 1)) {
             this.icon = new St.Group();
             let clones = WindowUtils.createWindowClone(this.window, size, true, true);
             for (i in clones) {
@@ -1484,7 +1489,7 @@ AppSwitcher.prototype = {
         let lastWsIndex = 0;
         workspaceIcons.forEach(function(icon) {
             let wsIndex = icon.window.get_workspace().index();
-            for (let i = wsIndex - lastWsIndex; g_allWsMode && i > 0; --i) {
+            for (let i = wsIndex - lastWsIndex; g_settings.allWorkspacesMode && i > 0; --i) {
                 this.addSeparator();
                 lastWsIndex = wsIndex;
             }
@@ -1737,7 +1742,27 @@ function _drawArrow(area, side) {
     cr.fill();
 }
 
-function init() {
+function init(metadata) {
+    if (Settings) {
+        // yes, we have local settings support!
+        let settings = new Settings.ExtensionSettings(g_settings, metadata['uuid']);
+
+        settings.bindProperty(Settings.BindingDirection.IN,
+            "thumbnails-behind-identical-icons",
+            "thumbnailsBehindIdenticalIcons",
+            function() {},
+            null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "all-workspaces-mode",
+            "allWorkspacesMode",
+            function() {},
+            null);
+    }
+    else {
+        // if we don't have local settings support, we must hard-code our preferences
+        g_settings.thumbnailsBehindIdenticalIcons = true;
+        g_settings.allWorkspacesMode = false;
+    }
 }
 
 function enable() {
