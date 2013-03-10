@@ -136,6 +136,7 @@ const HELP_TEXT = [
     _("- (Minus): Show windows from current workspace only"),
     _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("z: Zoom to see all windows at once without scrolling (toggle)"),
+    _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
     _("F1: Show this quick-help screen"),
     "",
 ];
@@ -167,6 +168,7 @@ var g_settings = {
 
 var g_windowsToIgnore = [];
 var g_globalFocusOrder = false;
+var g_aligmentTypes = ["top", "center", "bottom"];
 
 if (!("_alttab_wFocusId" in Main)) {
 // there are some things we want to live on, even when we are disabled,
@@ -737,6 +739,11 @@ AltTabPopup.prototype = {
                     (window.minimized ? window.unminimize : window.minimize).call(window, global.get_current_time());
                     this._select(this._currentApp); // refresh
                 }
+            } else if (keysym == Clutter.F6) {
+                let alignmentTypeIndex = g_aligmentTypes.indexOf(g_settings.vAlign);
+                let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
+                g_settings.vAlign = g_aligmentTypes[newIndex];
+                this.refresh();
             }
             return true;
         }
