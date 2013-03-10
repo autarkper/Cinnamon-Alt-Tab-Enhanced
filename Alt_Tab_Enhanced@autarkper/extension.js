@@ -185,6 +185,7 @@ function AltTabPopup() {
 
 AltTabPopup.prototype = {
     _init : function() {
+        this._loadTs = (new Date()).getTime();
         this.actor = new Cinnamon.GenericContainer({ name: 'altTabPopup',
                                                   reactive: true,
                                                   visible: false });
@@ -488,7 +489,8 @@ AltTabPopup.prototype = {
         if (this._appIcons.length > 0) {
             // We delay showing the popup so that fast Alt+Tab users aren't
             // disturbed by the popup briefly flashing.
-            this._initialDelayTimeoutId = Mainloop.timeout_add(haveSelection ? 0 : POPUP_DELAY_TIMEOUT,
+            let timeout = Math.max(0, POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs));
+            this._initialDelayTimeoutId = Mainloop.timeout_add(timeout,
                 Lang.bind(this, function () {
                     this._appSwitcher.actor.opacity = 255;
                     this._initialDelayTimeoutId = 0;
