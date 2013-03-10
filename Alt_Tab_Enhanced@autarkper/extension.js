@@ -166,16 +166,19 @@ var g_settings = {
 };
 
 var g_windowsToIgnore = [];
-var g_windowsOrdered = [];
-
 var g_globalFocusOrder = false;
 
-let wFocusId = connect(global.display, 'notify::focus-window', function(display) {
-    g_windowsOrdered = g_windowsOrdered.filter(function(window) {
-        return window && window != display.focus_window && window.get_workspace();
-    }, this);
-    g_windowsOrdered.unshift(display.focus_window);
-});
+if (!("_alttab_wFocusId" in Main)) {
+// there are some things we want to live on, even when we are disabled,
+// so that we don't have to start from scratch if we are enabled again
+    Main._alttab_g_windowsOrdered = [];
+    Main._alttab_wFocusId = connect(global.display, 'notify::focus-window', function(display) {
+        Main._alttab_g_windowsOrdered = Main._alttab_g_windowsOrdered.filter(function(window) {
+            return window && window != display.focus_window && window.get_workspace();
+        }, this);
+        Main._alttab_g_windowsOrdered.unshift(display.focus_window);
+    });
+}
 
 var g_myMonitor = Main.layoutManager.primaryMonitor;
 
@@ -417,11 +420,11 @@ AltTabPopup.prototype = {
                 if (ignoredDiff) {
                     return ignoredDiff;
                 }
-                let inGlobalListDiff = (g_windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (g_windowsOrdered.indexOf(b) < 0 ? 1 : 0);
+                let inGlobalListDiff = (Main._alttab_g_windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (Main._alttab_g_windowsOrdered.indexOf(b) < 0 ? 1 : 0);
                 if (inGlobalListDiff) {
                     return inGlobalListDiff;
                 }
-                let globalDiff = g_windowsOrdered.indexOf(a) - g_windowsOrdered.indexOf(b);
+                let globalDiff = Main._alttab_g_windowsOrdered.indexOf(a) - Main._alttab_g_windowsOrdered.indexOf(b);
                 return globalDiff || windows.indexOf(a) - windows.indexOf(b);
             }, this);
             currentWindow = windows[0];
