@@ -137,6 +137,7 @@ const HELP_TEXT = [
     _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("z: Zoom to see all windows at once without scrolling (toggle)"),
     _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
+    _("F7: Toggle display of thumbnail header (showing window icon and title)"),
     _("F1: Show this quick-help screen"),
     "",
 ];
@@ -183,6 +184,16 @@ if (!("_alttab_wFocusId" in Main)) {
 }
 
 var g_myMonitor = Main.layoutManager.primaryMonitor;
+
+function createApplicationIcon(app, size) {
+    return app ?
+        app.create_icon_texture(size) :
+        new St.Icon({ icon_name: 'application-default-icon',
+            icon_type: St.IconType.FULLCOLOR,
+            icon_size: size
+        });
+}
+
 
 function AltTabPopup() {
     this._init();
@@ -744,6 +755,11 @@ AltTabPopup.prototype = {
                 let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
                 g_settings.vAlign = g_aligmentTypes[newIndex];
                 this.refresh();
+            } else if (keysym == Clutter.F7) {
+                if (g_settings.vAlign != 'center') {
+                    g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
+                    this._select(this._currentApp); // refresh
+                }
             }
             return true;
         }
@@ -1000,7 +1016,7 @@ AltTabPopup.prototype = {
             // Need to force an allocation so we can figure out the dimensions
             this._thumbnails.actor.get_allocation_box();
         }
-        this._thumbnails.addClones(this._appIcons[this._currentApp].cachedWindows[0]);
+        this._thumbnails.addClones(this._appIcons[this._currentApp].cachedWindows[0], this._appIcons[this._currentApp].app);
 
 
         this._thumbnails.actor.opacity = 0;
@@ -1418,15 +1434,6 @@ AppIcon.prototype = {
         return this.window.get_workspace() == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
     },
 
-    _createApplicationIcon: function(size) {
-        return this.app ?
-            this.app.create_icon_texture(size) :
-            new St.Icon({ icon_name: 'application-default-icon',
-                icon_type: St.IconType.FULLCOLOR,
-                icon_size: size
-            });
-    },
-
     set_size: function(sizeIn, focused) {
         let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
@@ -1442,13 +1449,13 @@ AppIcon.prototype = {
                 let [width, height] = clones[0].actor.get_size();
                 clones[0].actor.set_position(Math.floor((size - width)/2), 0);
                 let isize = Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]);
-                let icon = this._createApplicationIcon(isize);
+                let icon = createApplicationIcon(this.app, isize);
                 this.icon.add_actor(icon);
                 icon.set_position(Math.floor((size - isize)/2), size - isize);
             }
         }
         else {
-            this.icon = this._createApplicationIcon(size);
+            this.icon = createApplicationIcon(this.app, size);
         }
         // Make some room for the window title.
         this._label_bin.set_size(Math.floor(size * 1.2), Math.max(50, Math.floor(size/2)));
@@ -1648,26 +1655,47 @@ function ThumbnailList() {
 
 ThumbnailList.prototype = {
     _init : function() {
+        this.headerPadding = 4;
         this.actor = new St.Group({ style_class: 'switcher-list' });
-        this._container = new St.Group({reactive: true});
-        this.actor.add_actor(this._container);
-        this._container.connect('button-press-event', Lang.bind(this, function() {this.emit('item-activated', this._window); }));
+        let layout = new St.BoxLayout({vertical: true, y_align: St.Align.START });
+        this.actor.add_actor(layout);
+        let header = this.header = new St.BoxLayout({vertical: false});
+        layout.add(header, { x_fill: false, y_fill: false, y_align: St.Align.END });
+        this.container = new St.Group({reactive: true});
+        layout.add(this.container, { x_fill: false, y_fill: false, y_align: St.Align.END });
+        this.container.connect('button-press-event', Lang.bind(this, function() {this.emit('item-activated', this._window); }));
     },
 
-    addClones : function (window) {
+    addClones : function (window, app) {
         this._window = window;
-        this._container.destroy_children();
+        this.container.destroy_children();
+        if (this.header) {
+            this.header.destroy_children();
+        }
         if (!window) {
             return;
         }
-        let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1;
+        let headerHeight = 0;
+        let displayHeaders = g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
+        this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
+        if (displayHeaders) {
+            headerHeight = 32 + this.headerPadding;
+            let bin = new St.Group();
+            bin.add_actor(createApplicationIcon(app, headerHeight));
+            this.header.add(bin, { x_fill: false, y_fill: false, y_align: St.Align.START });
+            let label = new St.Label({text: window.title});
+            this.header.add(label, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+        }
+
+        let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight;
         let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1;
-        this._container.set_size(binWidth, binHeight);
+        
+        this.container.set_size(binWidth, binHeight);
 
         let clones = WindowUtils.createWindowClone(window, 0, true, false);
         for (let j = 0; j < clones.length; j++) {
             let clone = clones[j];
-            this._container.add_actor(clone.actor);
+            this.container.add_actor(clone.actor);
             let scaleY = binHeight/g_myMonitor.height;
             let scaleX = binWidth/g_myMonitor.width;
             let scale = Math.min(scaleX, scaleY);
@@ -1741,12 +1769,18 @@ function init(metadata) {
             "vAlign",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "display-thumbnail-headers",
+            "displayThumbnailHeaders",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
         g_settings.thumbnailsBehindIdenticalIcons = true;
         g_settings.allWorkspacesMode = false;
         g_settings.vAlign = 'center';
+        g_settings.displayThumbnailHeaders = true;
     }
 }
 

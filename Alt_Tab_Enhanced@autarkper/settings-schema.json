@@ -18,5 +18,10 @@
     "Bottom" : "bottom"
     },
     "description" : "Where to display the window switcher"
+ },
+ "display-thumbnail-headers": {
+    "type" : "checkbox",
+    "default" : true,
+    "description" : "Whether to display thumbnail headers, showing the window icon and title"
  }
 }
