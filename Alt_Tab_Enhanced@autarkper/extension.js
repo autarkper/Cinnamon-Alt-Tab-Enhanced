@@ -468,8 +468,8 @@ AltTabPopup.prototype = {
         if (forwardWindow) {forwardIndex = windows.indexOf(forwardWindow)};
         if (backwardWindow) {backwardIndex = windows.indexOf(backwardWindow)};
 
-        // Size the icon bar primarily to fit the windows of the current workspace.
-        this._numPrimaryItems_Orig = Math.max(2, wsWindows.length);
+        // Size the icon bar primarily to fit the windows of the current workspace, and a few more
+        this._numPrimaryItems_Orig = Math.min(Math.max(2, wsWindows.length + 4), windows.length);
         this._numPrimaryItems = this._numPrimaryItems_Orig;
         this._zoomedOut = false;
 
