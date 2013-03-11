@@ -823,7 +823,7 @@ AltTabPopup.prototype = {
         }
     },
 
-    _appActivated : function(appSwitcher, n) {
+    _appActivated : function(sender, n) {
         // If the user clicks on the selected app, activate the
         // selected window; otherwise (e.g., they click on an app while
         // !mouseActive) activate the clicked-on app.
@@ -831,7 +831,7 @@ AltTabPopup.prototype = {
         this.destroy();
     },
 
-    _windowActivated : function(thumbnailList, window) {
+    _windowActivated : function(sender, window) {
         this._activateWindow(window);
         this.destroy();
     },
@@ -1010,7 +1010,7 @@ AltTabPopup.prototype = {
 
     _createThumbnails : function() {
         if (!this._thumbnails) {
-            this._thumbnails = new ThumbnailList();
+            this._thumbnails = new ThumbnailHolder();
             this._thumbnails.connect('item-activated', Lang.bind(this, this._windowActivated));
             this.actor.add_actor(this._thumbnails.actor);
             // Need to force an allocation so we can figure out the dimensions
@@ -1649,11 +1649,11 @@ AppSwitcher.prototype = {
     }
 };
 
-function ThumbnailList() {
+function ThumbnailHolder() {
     this._init.apply(this, arguments);
 }
 
-ThumbnailList.prototype = {
+ThumbnailHolder.prototype = {
     _init : function() {
         this.headerPadding = 4;
         this.actor = new St.Group({ style_class: 'switcher-list' });
@@ -1704,7 +1704,7 @@ ThumbnailList.prototype = {
         }
     }
 };
-Signals.addSignalMethods(ThumbnailList.prototype);
+Signals.addSignalMethods(ThumbnailHolder.prototype);
 
 function _drawArrow(area, side) {
     let themeNode = area.get_theme_node();
