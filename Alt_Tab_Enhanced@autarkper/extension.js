@@ -1656,14 +1656,14 @@ function ThumbnailHolder() {
 ThumbnailHolder.prototype = {
     _init : function() {
         this.headerPadding = 4;
-        this.actor = new St.Group({ style_class: 'switcher-list' });
+        this.actor = new St.Group({ style_class: 'switcher-list', reactive: true });
         let layout = new St.BoxLayout({vertical: true, y_align: St.Align.START });
         this.actor.add_actor(layout);
         let header = this.header = new St.BoxLayout({vertical: false});
         layout.add(header, { x_fill: false, y_fill: false, y_align: St.Align.END });
-        this.container = new St.Group({reactive: true});
+        this.container = new St.Group();
         layout.add(this.container, { x_fill: false, y_fill: false, y_align: St.Align.END });
-        this.container.connect('button-press-event', Lang.bind(this, function() {this.emit('item-activated', this._window); }));
+        this.actor.connect('button-press-event', Lang.bind(this, function() {this.emit('item-activated', this._window); }));
     },
 
     addClones : function (window, app) {
