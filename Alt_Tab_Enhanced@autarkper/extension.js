@@ -1411,7 +1411,7 @@ AppIcon.prototype = {
             Mainloop.source_remove(this._urgencyTimeout);
             this._urgencyTimeout = 0;
         }
-        let bbox = this.actor._bbox;
+        let bbox = this._iconBin;
         let is_urgent = this.window.is_demanding_attention() || this.window.is_urgent();
 
         if (is_urgent && !bbox.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
