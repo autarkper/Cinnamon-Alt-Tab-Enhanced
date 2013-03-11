@@ -174,12 +174,17 @@ if (!g_vars) {
     g_vars.windowsToIgnore = [];
     g_vars.globalFocusOrder = false;
 
-    g_vars.wFocusId = connect(global.display, 'notify::focus-window', function(display) {
+    connect(global.display, 'notify::focus-window', function(display) {
         g_vars.windowsOrdered = g_vars.windowsOrdered.filter(function(window) {
             return window && window != display.focus_window && window.get_workspace();
         }, this);
         g_vars.windowsOrdered.unshift(display.focus_window);
     });
+    function getSwitcherStyle() {
+        g_vars.switcherStyle = global.settings.get_string("alttab-switcher-style");
+    };
+    connect(global.settings, 'changed::alttab-switcher-style', getSwitcherStyle);
+    getSwitcherStyle();
 
     // this object will be populated with our settings, if settings support is available
     g_vars.settings = {};
@@ -252,7 +257,7 @@ AltTabPopup.prototype = {
         this._previewEnabled = false;
         this._iconsEnabled = false;
         this._thumbnailsEnabled = false;
-        let styleSettings = global.settings.get_string("alttab-switcher-style");
+        let styleSettings = g_vars.switcherStyle;
         let features = styleSettings.split('+');
         let found = false;
         for (let i in features) {
