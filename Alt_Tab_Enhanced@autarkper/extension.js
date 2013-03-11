@@ -1069,12 +1069,12 @@ AltTabPopup.prototype = {
     }
 };
 
-function SwitcherList(squareItems) {
-    this._init(squareItems);
+function AppSwitcher() {
+    this._init.apply(this, arguments);
 }
 
-SwitcherList.prototype = {
-    _init : function(squareItems) {
+AppSwitcher.prototype = {
+    _init : function(windows, showThumbnails, showIcons, altTabPopup) {
         this.actor = new Cinnamon.GenericContainer({ style_class: 'switcher-list' });
         this.actor.connect('get-preferred-width', Lang.bind(this, this._getPreferredWidth));
         this.actor.connect('get-preferred-height', Lang.bind(this, this._getPreferredHeight));
@@ -1120,411 +1120,10 @@ SwitcherList.prototype = {
         this._items = [];
         this._highlighted = -1;
         this._separators = [];
-        this._squareItems = squareItems;
+        this._squareItems = false;
         this._minSize = 0;
         this._scrollableRight = true;
         this._scrollableLeft = false;
-    },
-
-    _allocateTop: function(actor, box, flags) {
-        let leftPadding = this.actor.get_theme_node().get_padding(St.Side.LEFT);
-        let rightPadding = this.actor.get_theme_node().get_padding(St.Side.RIGHT);
-
-        let childBox = new Clutter.ActorBox();
-        let scrollable = this._minSize > box.x2 - box.x1;
-
-        this._clipBin.allocate(box, flags);
-
-        childBox.x1 = 0;
-        childBox.y1 = 0;
-        childBox.x2 = this._leftGradient.width;
-        childBox.y2 = this.actor.height;
-        this._leftGradient.allocate(childBox, flags);
-        this._leftGradient.opacity = (this._scrollableLeft && scrollable) ? 255 : 0;
-
-        childBox.x1 = (this.actor.allocation.x2 - this.actor.allocation.x1) - this._rightGradient.width;
-        childBox.y1 = 0;
-        childBox.x2 = childBox.x1 + this._rightGradient.width;
-        childBox.y2 = this.actor.height;
-        this._rightGradient.allocate(childBox, flags);
-        this._rightGradient.opacity = (this._scrollableRight && scrollable) ? 255 : 0;
-
-        let arrowWidth = Math.floor(leftPadding / 3);
-        let arrowHeight = arrowWidth * 2;
-        childBox.x1 = leftPadding / 2;
-        childBox.y1 = this.actor.height / 2 - arrowWidth;
-        childBox.x2 = childBox.x1 + arrowWidth;
-        childBox.y2 = childBox.y1 + arrowHeight;
-        this._leftArrow.allocate(childBox, flags);
-        this._leftArrow.opacity = this._leftGradient.opacity;
-
-        arrowWidth = Math.floor(rightPadding / 3);
-        arrowHeight = arrowWidth * 2;
-        childBox.x1 = this.actor.width - rightPadding / 2;
-        childBox.y1 = this.actor.height / 2 - arrowWidth;
-        childBox.x2 = childBox.x1 + arrowWidth;
-        childBox.y2 = childBox.y1 + arrowHeight;
-        this._rightArrow.allocate(childBox, flags);
-        this._rightArrow.opacity = this._rightGradient.opacity;
-    },
-
-    addItem : function(item, label) {
-        let bbox = new St.Button({ style_class: 'item-box',
-                                   reactive: true });
-        item._bbox = bbox;
-        bbox.set_child(item);
-        this._list.add_actor(bbox);
-
-        let n = this._items.length;
-        bbox.connect('clicked', Lang.bind(this, function() { this._onItemClicked(n); }));
-
-        bbox.label_actor = label;
-
-        this._items.push(bbox);
-    },
-
-    _onItemClicked: function (index) {
-        this._itemActivated(index);
-    },
-
-    addSeparator: function () {
-        if (!g_vars.globalFocusOrder) {
-            let box = new St.Bin({ style_class: 'separator' });
-            this._separators.push(box);
-            this._list.add_actor(box);
-        }
-    },
-
-    highlight: function(index, justOutline) {
-        if (this._highlightTimeout) {
-            Mainloop.source_remove(this._highlightTimeout);
-        }
-        this._highlightTimeout = Mainloop.timeout_add(25, Lang.bind(this, function() {
-            this._highlightTimeout = 0;
-
-            let prevIndex = this._highlighted;
-            // If previous index is negative, we are probably initializing, and we want
-            // to show as many of the current workspace's windows as possible.
-
-            let direction = prevIndex == -1 ? 1 : index - prevIndex;
-            if (this._highlighted != -1) {
-                this._items[this._highlighted].remove_style_pseudo_class('outlined');
-                this._items[this._highlighted].remove_style_pseudo_class('selected');
-            }
-            this._highlighted = index;
-            if (this._highlighted != -1) {
-                if (justOutline)
-                    this._items[this._highlighted].add_style_pseudo_class('outlined');
-                else
-                    this._items[this._highlighted].add_style_pseudo_class('selected');
-            }
-            // If we're close to either the left or the right edge, we want to scroll
-            // the edge-most items into view.
-            let scrollMax = Math.min(5, Math.floor(this._items.length/4));
-            this._scrollTo(index, direction, scrollMax, prevIndex == -1);
-        }));
-    },
-
-    _scrollTo: function(index, direction, scrollMax_, fast) {
-        let scrollMax = scrollMax_ ? scrollMax_ : 1;
-        let ixScroll = direction > 0 ?
-            Math.min(index + scrollMax, this._items.length - 1) : // right
-            Math.max(index - scrollMax, 0); // left
-
-        let [absItemX, absItemY] = this._items[ixScroll].get_transformed_position();
-        let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
-        let [containerWidth, containerHeight] = this.actor.get_transformed_size();
-
-        if (direction > 0) {
-            if (ixScroll == this._items.length - 1) {
-                this._scrollableRight = false;
-                this._rightArrow.opacity = this._rightGradient.opacity = 0;
-            }
-            if (posX + this._items[ixScroll].get_width() >= containerWidth) {
-                Tweener.removeTweens(this._list);
-                this._scrollableLeft = true;
-                let monitor = g_myMonitor;
-                let padding = this.actor.get_theme_node().get_horizontal_padding();
-                let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
-                let x = this._items[ixScroll].allocation.x2 - monitor.width + padding + parentPadding;
-                Tweener.addTween(this._list, { anchor_x: x,
-                    time: fast ? 0 : POPUP_SCROLL_TIME,
-                    transition: 'linear'
-                });
-            }
-        }
-        else if (direction < 0) {
-            if (ixScroll == 0) {
-                this._scrollableLeft = false;
-                this._leftArrow.opacity = this._leftGradient.opacity = 0;
-            }
-            let padding = this.actor.get_theme_node().get_horizontal_padding();
-            if (posX <= padding) {
-                Tweener.removeTweens(this._list);
-                this._scrollableRight = true;
-                let x = (ixScroll == 0 ? this._list.get_children() : this._items)[ixScroll].allocation.x1;
-                Tweener.addTween(this._list, { anchor_x: x,
-                    time: fast ? 0 : POPUP_SCROLL_TIME,
-                    transition: 'linear'
-                });
-            }
-        }
-    },
-
-    _itemActivated: function(n) {
-        this.emit('item-activated', n);
-    },
-
-    _maxChildWidth: function (forHeight) {
-        let maxChildMin = 0;
-        let maxChildNat = 0;
-
-        for (let i = 0; i < this._items.length; i++) {
-            let [childMin, childNat] = this._items[i].get_preferred_width(forHeight);
-            maxChildMin = Math.max(childMin, maxChildMin);
-            maxChildNat = Math.max(childNat, maxChildNat);
-
-            if (this._squareItems) {
-                let [childMin, childNat] = this._items[i].get_preferred_height(-1);
-                maxChildMin = Math.max(childMin, maxChildMin);
-                maxChildNat = Math.max(childNat, maxChildNat);
-            }
-        }
-
-        return [maxChildMin, maxChildNat];
-    },
-
-    _getPreferredWidth: function (actor, forHeight, alloc) {
-        let separatorWidth = 0;
-        if (this._separators.length) {
-            let [sepMin, sepNat] = this._separators[0].get_preferred_width(forHeight);
-            separatorWidth = Math.max(1, this._separators.length - 1) * (sepNat + this._list.spacing);
-        }
-
-        let totalSpacing = this._list.spacing * Math.max(1, (this._items.length - 1));
-        let accItemWidth = 0;
-        for (let i = 0; i < this._items.length; i++) {
-            let [childMin, childNat] = this._items[i].get_preferred_width(forHeight);
-            accItemWidth += childMin;
-        }
-        alloc.min_size = accItemWidth + separatorWidth + totalSpacing;
-        alloc.natural_size = alloc.min_size;
-        this._minSize = alloc.min_size;
-    },
-
-    _getPreferredHeight: function (actor, forWidth, alloc) {
-        let maxChildMin = 0;
-        let maxChildNat = 0;
-
-        for (let i = 0; i < this._items.length; i++) {
-            let [childMin, childNat] = this._items[i].get_preferred_height(-1);
-            maxChildMin = Math.max(childMin, maxChildMin);
-            maxChildNat = Math.max(childNat, maxChildNat);
-        }
-
-        if (this._squareItems) {
-            let [childMin, childNat] = this._maxChildWidth(-1);
-            maxChildMin = Math.max(childMin, maxChildMin);
-            maxChildNat = maxChildMin;
-        }
-
-        alloc.min_size = maxChildMin;
-        alloc.natural_size = maxChildNat;
-    },
-
-    _allocate: function (actor, box, flags) {
-        let childHeight = box.y2 - box.y1;
-
-        let [maxChildMin, maxChildNat] = this._maxChildWidth(childHeight);
-        let totalSpacing = this._list.spacing * (this._items.length - 1);
-
-        let separatorWidth = 0;
-        if (this._separators.length) {
-            let [sepMin, sepNat] = this._separators[0].get_preferred_width(childHeight);
-            separatorWidth = sepNat;
-            totalSpacing += Math.max(1, this._separators.length - 1) * this._list.spacing;
-        }
-
-        let childWidth = Math.floor(Math.max(0, box.x2 - box.x1 - totalSpacing - separatorWidth) / this._items.length);
-
-        let x = 0;
-        let children = this._list.get_children();
-        let childBox = new Clutter.ActorBox();
-
-        let primary = g_myMonitor;
-        let parentRightPadding = this.actor.get_parent().get_theme_node().get_padding(St.Side.RIGHT);
-        if (this.actor.allocation.x2 == primary.x + primary.width - parentRightPadding) {
-            if (this._squareItems)
-                childWidth = childHeight;
-            else {
-                let ixxi = (this._highlighted + this._items.length) % this._items.length;
-                let [childMin, childNat] = this._items[ixxi].get_preferred_width(childHeight);
-                childWidth = childMin;
-            }
-        }
-
-        for (let i = 0; i < children.length; i++) {
-            if (this._items.indexOf(children[i]) != -1) {
-                let [childMin, childNat] = children[i].get_preferred_height(childWidth);
-                let [width, height] = children[i].get_size();
-                let vSpacing = Math.floor((childHeight - childNat) / 2);
-                childBox.x1 = x;
-                childBox.y1 = vSpacing;
-                childBox.x2 = x + width;
-                childBox.y2 = childBox.y1 + height;
-                children[i].allocate(childBox, flags);
-
-                x += this._list.spacing + width;
-            } else if (this._separators.indexOf(children[i]) != -1) {
-                // We want the separator to be more compact than the rest.
-                childBox.x1 = x;
-                childBox.y1 = 0;
-                childBox.x2 = x + separatorWidth;
-                childBox.y2 = childHeight;
-                children[i].allocate(childBox, flags);
-                x += this._list.spacing + separatorWidth;
-            } else {
-                // Something else, eg, AppSwitcher's arrows;
-                // we don't allocate it.
-            }
-        }
-
-        let leftPadding = this.actor.get_theme_node().get_padding(St.Side.LEFT);
-        let rightPadding = this.actor.get_theme_node().get_padding(St.Side.RIGHT);
-        let topPadding = this.actor.get_theme_node().get_padding(St.Side.TOP);
-        let bottomPadding = this.actor.get_theme_node().get_padding(St.Side.BOTTOM);
-
-        // Clip the area for scrolling
-        this._clipBin.set_clip(0, -topPadding, (this.actor.allocation.x2 - this.actor.allocation.x1) - leftPadding - rightPadding, this.actor.height + bottomPadding);
-    }
-};
-
-Signals.addSignalMethods(SwitcherList.prototype);
-
-function AppIcon() {
-    this._init.apply(this, arguments);
-}
-
-AppIcon.prototype = {
-    _init: function(window, showThumbnail, showIcons) {
-        this.window = window;
-        this.ignored = g_vars.windowsToIgnore.indexOf(window) >= 0;
-        this.showThumbnail = showThumbnail;
-        this.showIcons = showIcons;
-        let tracker = Cinnamon.WindowTracker.get_default();
-        this.app = tracker.get_window_app(window);
-        this.actor = new St.BoxLayout({ style_class: 'alt-tab-app',
-                                         vertical: true, y_align: St.Align.START });
-        this.actor.connect('destroy', Lang.bind(this, function() {
-            if (this._urgencyTimeout) {
-                Mainloop.source_remove(this._urgencyTimeout);
-            }
-        }));
-        this.icon = null;
-
-        this._iconBin = new St.Bin();
-        this.actor.add(this._iconBin, { x_fill: false, y_fill: false, y_align: St.Align.END } );
-
-        this.label = new St.Label();
-        this.label.clutter_text.line_wrap = true;
-        this._label_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
-        this._label_bin.add_actor(this.label);
-        this.actor.add(this._label_bin);
-
-        this.wsLabel = new St.Label();
-        this.wsLabel.clutter_text.line_wrap = true;
-        this._wsLabel_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
-        this._wsLabel_bin.add_actor(this.wsLabel);
-        this.actor.add(this._wsLabel_bin);
-
-        this.updateLabel();
-    },
-
-    _checkAttention: function() {
-        if (!this.actor._bbox) {return;}
-        if (this._urgencyTimeout) {
-            Mainloop.source_remove(this._urgencyTimeout);
-            this._urgencyTimeout = 0;
-        }
-        let bbox = this._iconBin;
-        let is_urgent = this.window.is_demanding_attention() || this.window.is_urgent();
-
-        if (is_urgent && !bbox.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
-            bbox.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
-        }
-        else if (!is_urgent && bbox.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
-            bbox.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
-        }
-        if (is_urgent) {
-            this._urgencyTimeout = Mainloop.timeout_add(5000, Lang.bind(this, this._checkAttention));
-        }
-    },
-
-    updateLabel: function() {
-        let ws = this.window.get_workspace().index();
-        this.wsLabel.set_text("(" + (ws + 1) + ")");
-
-        let title = this.window.get_title();
-        title = typeof(title) != 'undefined' ? title : (this.app ? this.app.get_name() : "");
-        this.label.set_text(title.length && this.window.minimized ? "[" + title + "]" : title);
-    },
-
-    calculateSlotSize: function(sizeIn) {
-        // Icons are sized smaller if they don't belong to the active workspace
-        return this.window.get_workspace() == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
-    },
-
-    set_size: function(sizeIn, focused) {
-        let size = this.calculateSlotSize(sizeIn);
-        if (this.icon) {this.icon.destroy();}
-        if (!this.showIcons || (
-            (g_settings.thumbnailsBehindIcons == 'behind-identical' && this.app && this.app.get_windows().length > 1)
-            || g_settings.thumbnailsBehindIcons == 'always') ) {
-            this.icon = new St.Group();
-            let clones = WindowUtils.createWindowClone(this.window, size, true, true);
-            for (i in clones) {
-                let clone = clones[i];
-                this.icon.add_actor(clone.actor);
-                clone.actor.set_position(clone.x, clone.y);
-            }
-            if (this.showIcons) {
-                let [width, height] = clones[0].actor.get_size();
-                clones[0].actor.set_position(Math.floor((size - width)/2), 0);
-                let isize = Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]);
-                let icon = createApplicationIcon(this.app, isize);
-                this.icon.add_actor(icon);
-                icon.set_position(Math.floor((size - isize)/2), size - isize);
-            }
-        }
-        else {
-            this.icon = createApplicationIcon(this.app, size);
-        }
-        // Make some room for the window title.
-        this._label_bin.set_size(Math.floor(size * 1.2), Math.max(50, Math.floor(size/2)));
-        if (this.ignored) {
-            this.icon.opacity = 170;
-        }
-        this._iconBin.child = this.icon;
-        this._iconBin.set_size(Math.floor(size * 1.2), sizeIn);
-        if (g_vars.globalFocusOrder) {
-            this.wsLabel.show();
-        }
-        else {
-            this.wsLabel.hide();
-            this.wsLabel.height = 0;
-        }
-    }
-};
-
-function AppSwitcher() {
-    this._init.apply(this, arguments);
-}
-
-AppSwitcher.prototype = {
-    __proto__ : SwitcherList.prototype,
-
-    _init : function(windows, showThumbnails, showIcons, altTabPopup) {
-        SwitcherList.prototype._init.call(this, false);
 
         // Construct the AppIcons, add to the popup
         let activeWorkspace = global.screen.get_active_workspace();
@@ -1654,7 +1253,7 @@ AppSwitcher.prototype = {
             this.icons[this._prevApp].set_size(this._iconSize);
         }
 
-        SwitcherList.prototype.highlight.call(this, n, justOutline);
+        this.highlightInner(n, justOutline);
         this._prevApp = this._curApp = n;
  
         if (this._curApp != -1 && this._altTabPopup._iconsEnabled) {
@@ -1688,6 +1287,374 @@ AppSwitcher.prototype = {
         this.icons.push(appIcon);
         this.addItem(appIcon.actor, appIcon.label);
         appIcon._checkAttention();
+    },
+
+    _allocateTop: function(actor, box, flags) {
+        let leftPadding = this.actor.get_theme_node().get_padding(St.Side.LEFT);
+        let rightPadding = this.actor.get_theme_node().get_padding(St.Side.RIGHT);
+
+        let childBox = new Clutter.ActorBox();
+        let scrollable = this._minSize > box.x2 - box.x1;
+
+        this._clipBin.allocate(box, flags);
+
+        childBox.x1 = 0;
+        childBox.y1 = 0;
+        childBox.x2 = this._leftGradient.width;
+        childBox.y2 = this.actor.height;
+        this._leftGradient.allocate(childBox, flags);
+        this._leftGradient.opacity = (this._scrollableLeft && scrollable) ? 255 : 0;
+
+        childBox.x1 = (this.actor.allocation.x2 - this.actor.allocation.x1) - this._rightGradient.width;
+        childBox.y1 = 0;
+        childBox.x2 = childBox.x1 + this._rightGradient.width;
+        childBox.y2 = this.actor.height;
+        this._rightGradient.allocate(childBox, flags);
+        this._rightGradient.opacity = (this._scrollableRight && scrollable) ? 255 : 0;
+
+        let arrowWidth = Math.floor(leftPadding / 3);
+        let arrowHeight = arrowWidth * 2;
+        childBox.x1 = leftPadding / 2;
+        childBox.y1 = this.actor.height / 2 - arrowWidth;
+        childBox.x2 = childBox.x1 + arrowWidth;
+        childBox.y2 = childBox.y1 + arrowHeight;
+        this._leftArrow.allocate(childBox, flags);
+        this._leftArrow.opacity = this._leftGradient.opacity;
+
+        arrowWidth = Math.floor(rightPadding / 3);
+        arrowHeight = arrowWidth * 2;
+        childBox.x1 = this.actor.width - rightPadding / 2;
+        childBox.y1 = this.actor.height / 2 - arrowWidth;
+        childBox.x2 = childBox.x1 + arrowWidth;
+        childBox.y2 = childBox.y1 + arrowHeight;
+        this._rightArrow.allocate(childBox, flags);
+        this._rightArrow.opacity = this._rightGradient.opacity;
+    },
+
+    addItem : function(item, label) {
+        let bbox = new St.Button({ style_class: 'item-box',
+                                   reactive: true });
+        item._bbox = bbox;
+        bbox.set_child(item);
+        this._list.add_actor(bbox);
+
+        let n = this._items.length;
+        bbox.connect('clicked', Lang.bind(this, function() { this._onItemClicked(n); }));
+
+        bbox.label_actor = label;
+
+        this._items.push(bbox);
+    },
+
+    _onItemClicked: function (index) {
+        this._itemActivated(index);
+    },
+
+    addSeparator: function () {
+        if (!g_vars.globalFocusOrder) {
+            let box = new St.Bin({ style_class: 'separator' });
+            this._separators.push(box);
+            this._list.add_actor(box);
+        }
+    },
+
+    highlightInner: function(index, justOutline) {
+        if (this._highlightTimeout) {
+            Mainloop.source_remove(this._highlightTimeout);
+        }
+        this._highlightTimeout = Mainloop.timeout_add(25, Lang.bind(this, function() {
+            this._highlightTimeout = 0;
+
+            let prevIndex = this._highlighted;
+            // If previous index is negative, we are probably initializing, and we want
+            // to show as many of the current workspace's windows as possible.
+
+            let direction = prevIndex == -1 ? 1 : index - prevIndex;
+            if (this._highlighted != -1) {
+                this._items[this._highlighted].remove_style_pseudo_class('outlined');
+                this._items[this._highlighted].remove_style_pseudo_class('selected');
+            }
+            this._highlighted = index;
+            if (this._highlighted != -1) {
+                if (justOutline)
+                    this._items[this._highlighted].add_style_pseudo_class('outlined');
+                else
+                    this._items[this._highlighted].add_style_pseudo_class('selected');
+            }
+            // If we're close to either the left or the right edge, we want to scroll
+            // the edge-most items into view.
+            let scrollMax = Math.min(5, Math.floor(this._items.length/4));
+            this._scrollTo(index, direction, scrollMax, prevIndex == -1);
+        }));
+    },
+
+    _scrollTo: function(index, direction, scrollMax_, fast) {
+        let scrollMax = scrollMax_ ? scrollMax_ : 1;
+        let ixScroll = direction > 0 ?
+            Math.min(index + scrollMax, this._items.length - 1) : // right
+            Math.max(index - scrollMax, 0); // left
+
+        let [absItemX, absItemY] = this._items[ixScroll].get_transformed_position();
+        let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
+        let [containerWidth, containerHeight] = this.actor.get_transformed_size();
+
+        if (direction > 0) {
+            if (ixScroll == this._items.length - 1) {
+                this._scrollableRight = false;
+                this._rightArrow.opacity = this._rightGradient.opacity = 0;
+            }
+            if (posX + this._items[ixScroll].get_width() >= containerWidth) {
+                Tweener.removeTweens(this._list);
+                this._scrollableLeft = true;
+                let monitor = g_myMonitor;
+                let padding = this.actor.get_theme_node().get_horizontal_padding();
+                let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
+                let x = this._items[ixScroll].allocation.x2 - monitor.width + padding + parentPadding;
+                Tweener.addTween(this._list, { anchor_x: x,
+                    time: fast ? 0 : POPUP_SCROLL_TIME,
+                    transition: 'linear'
+                });
+            }
+        }
+        else if (direction < 0) {
+            if (ixScroll == 0) {
+                this._scrollableLeft = false;
+                this._leftArrow.opacity = this._leftGradient.opacity = 0;
+            }
+            let padding = this.actor.get_theme_node().get_horizontal_padding();
+            if (posX <= padding) {
+                Tweener.removeTweens(this._list);
+                this._scrollableRight = true;
+                let x = (ixScroll == 0 ? this._list.get_children() : this._items)[ixScroll].allocation.x1;
+                Tweener.addTween(this._list, { anchor_x: x,
+                    time: fast ? 0 : POPUP_SCROLL_TIME,
+                    transition: 'linear'
+                });
+            }
+        }
+    },
+
+    _itemActivated: function(n) {
+        this.emit('item-activated', n);
+    },
+
+    _maxChildWidth: function (forHeight) {
+        let maxChildMin = 0;
+        let maxChildNat = 0;
+
+        for (let i = 0; i < this._items.length; i++) {
+            let [childMin, childNat] = this._items[i].get_preferred_width(forHeight);
+            maxChildMin = Math.max(childMin, maxChildMin);
+            maxChildNat = Math.max(childNat, maxChildNat);
+
+            if (this._squareItems) {
+                let [childMin, childNat] = this._items[i].get_preferred_height(-1);
+                maxChildMin = Math.max(childMin, maxChildMin);
+                maxChildNat = Math.max(childNat, maxChildNat);
+            }
+        }
+
+        return [maxChildMin, maxChildNat];
+    },
+
+    _getPreferredWidth: function (actor, forHeight, alloc) {
+        let separatorWidth = 0;
+        if (this._separators.length) {
+            let [sepMin, sepNat] = this._separators[0].get_preferred_width(forHeight);
+            separatorWidth = Math.max(1, this._separators.length - 1) * (sepNat + this._list.spacing);
+        }
+
+        let totalSpacing = this._list.spacing * Math.max(1, (this._items.length - 1));
+        let accItemWidth = 0;
+        for (let i = 0; i < this._items.length; i++) {
+            let [childMin, childNat] = this._items[i].get_preferred_width(forHeight);
+            accItemWidth += childMin;
+        }
+        alloc.min_size = accItemWidth + separatorWidth + totalSpacing;
+        alloc.natural_size = alloc.min_size;
+        this._minSize = alloc.min_size;
+    },
+
+    _allocate: function (actor, box, flags) {
+        let childHeight = box.y2 - box.y1;
+
+        let [maxChildMin, maxChildNat] = this._maxChildWidth(childHeight);
+        let totalSpacing = this._list.spacing * (this._items.length - 1);
+
+        let separatorWidth = 0;
+        if (this._separators.length) {
+            let [sepMin, sepNat] = this._separators[0].get_preferred_width(childHeight);
+            separatorWidth = sepNat;
+            totalSpacing += Math.max(1, this._separators.length - 1) * this._list.spacing;
+        }
+
+        let childWidth = Math.floor(Math.max(0, box.x2 - box.x1 - totalSpacing - separatorWidth) / this._items.length);
+
+        let x = 0;
+        let children = this._list.get_children();
+        let childBox = new Clutter.ActorBox();
+
+        let primary = g_myMonitor;
+        let parentRightPadding = this.actor.get_parent().get_theme_node().get_padding(St.Side.RIGHT);
+        if (this.actor.allocation.x2 == primary.x + primary.width - parentRightPadding) {
+            if (this._squareItems)
+                childWidth = childHeight;
+            else {
+                let ixxi = (this._highlighted + this._items.length) % this._items.length;
+                let [childMin, childNat] = this._items[ixxi].get_preferred_width(childHeight);
+                childWidth = childMin;
+            }
+        }
+
+        for (let i = 0; i < children.length; i++) {
+            if (this._items.indexOf(children[i]) != -1) {
+                let [childMin, childNat] = children[i].get_preferred_height(childWidth);
+                let [width, height] = children[i].get_size();
+                let vSpacing = Math.floor((childHeight - childNat) / 2);
+                childBox.x1 = x;
+                childBox.y1 = vSpacing;
+                childBox.x2 = x + width;
+                childBox.y2 = childBox.y1 + height;
+                children[i].allocate(childBox, flags);
+
+                x += this._list.spacing + width;
+            } else if (this._separators.indexOf(children[i]) != -1) {
+                // We want the separator to be more compact than the rest.
+                childBox.x1 = x;
+                childBox.y1 = 0;
+                childBox.x2 = x + separatorWidth;
+                childBox.y2 = childHeight;
+                children[i].allocate(childBox, flags);
+                x += this._list.spacing + separatorWidth;
+            } else {
+                // Something else, eg, AppSwitcher's arrows;
+                // we don't allocate it.
+            }
+        }
+
+        let leftPadding = this.actor.get_theme_node().get_padding(St.Side.LEFT);
+        let rightPadding = this.actor.get_theme_node().get_padding(St.Side.RIGHT);
+        let topPadding = this.actor.get_theme_node().get_padding(St.Side.TOP);
+        let bottomPadding = this.actor.get_theme_node().get_padding(St.Side.BOTTOM);
+
+        // Clip the area for scrolling
+        this._clipBin.set_clip(0, -topPadding, (this.actor.allocation.x2 - this.actor.allocation.x1) - leftPadding - rightPadding, this.actor.height + bottomPadding);
+    }
+};
+Signals.addSignalMethods(AppSwitcher.prototype);
+
+function AppIcon() {
+    this._init.apply(this, arguments);
+}
+
+AppIcon.prototype = {
+    _init: function(window, showThumbnail, showIcons) {
+        this.window = window;
+        this.ignored = g_vars.windowsToIgnore.indexOf(window) >= 0;
+        this.showThumbnail = showThumbnail;
+        this.showIcons = showIcons;
+        let tracker = Cinnamon.WindowTracker.get_default();
+        this.app = tracker.get_window_app(window);
+        this.actor = new St.BoxLayout({ style_class: 'alt-tab-app',
+                                         vertical: true, y_align: St.Align.START });
+        this.actor.connect('destroy', Lang.bind(this, function() {
+            if (this._urgencyTimeout) {
+                Mainloop.source_remove(this._urgencyTimeout);
+            }
+        }));
+        this.icon = null;
+
+        this._iconBin = new St.Bin();
+        this.actor.add(this._iconBin, { x_fill: false, y_fill: false, y_align: St.Align.END } );
+
+        this.label = new St.Label();
+        this.label.clutter_text.line_wrap = true;
+        this._label_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
+        this._label_bin.add_actor(this.label);
+        this.actor.add(this._label_bin);
+
+        this.wsLabel = new St.Label();
+        this.wsLabel.clutter_text.line_wrap = true;
+        this._wsLabel_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
+        this._wsLabel_bin.add_actor(this.wsLabel);
+        this.actor.add(this._wsLabel_bin);
+
+        this.updateLabel();
+    },
+
+    _checkAttention: function() {
+        if (!this.actor._bbox) {return;}
+        if (this._urgencyTimeout) {
+            Mainloop.source_remove(this._urgencyTimeout);
+            this._urgencyTimeout = 0;
+        }
+        let bbox = this._iconBin;
+        let is_urgent = this.window.is_demanding_attention() || this.window.is_urgent();
+
+        if (is_urgent && !bbox.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+            bbox.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+        }
+        else if (!is_urgent && bbox.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+            bbox.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+        }
+        if (is_urgent) {
+            this._urgencyTimeout = Mainloop.timeout_add(5000, Lang.bind(this, this._checkAttention));
+        }
+    },
+
+    updateLabel: function() {
+        let ws = this.window.get_workspace().index();
+        this.wsLabel.set_text("(" + (ws + 1) + ")");
+
+        let title = this.window.get_title();
+        title = typeof(title) != 'undefined' ? title : (this.app ? this.app.get_name() : "");
+        this.label.set_text(title.length && this.window.minimized ? "[" + title + "]" : title);
+    },
+
+    calculateSlotSize: function(sizeIn) {
+        // Icons are sized smaller if they don't belong to the active workspace
+        return this.window.get_workspace() == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
+    },
+
+    set_size: function(sizeIn, focused) {
+        let size = this.calculateSlotSize(sizeIn);
+        if (this.icon) {this.icon.destroy();}
+        if (!this.showIcons || (
+            (g_settings.thumbnailsBehindIcons == 'behind-identical' && this.app && this.app.get_windows().length > 1)
+            || g_settings.thumbnailsBehindIcons == 'always') ) {
+            this.icon = new St.Group();
+            let clones = WindowUtils.createWindowClone(this.window, size, true, true);
+            for (i in clones) {
+                let clone = clones[i];
+                this.icon.add_actor(clone.actor);
+                clone.actor.set_position(clone.x, clone.y);
+            }
+            if (this.showIcons) {
+                let [width, height] = clones[0].actor.get_size();
+                clones[0].actor.set_position(Math.floor((size - width)/2), 0);
+                let isize = Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]);
+                let icon = createApplicationIcon(this.app, isize);
+                this.icon.add_actor(icon);
+                icon.set_position(Math.floor((size - isize)/2), size - isize);
+            }
+        }
+        else {
+            this.icon = createApplicationIcon(this.app, size);
+        }
+        // Make some room for the window title.
+        this._label_bin.set_size(Math.floor(size * 1.2), Math.max(50, Math.floor(size/2)));
+        if (this.ignored) {
+            this.icon.opacity = 170;
+        }
+        this._iconBin.child = this.icon;
+        this._iconBin.set_size(Math.floor(size * 1.2), sizeIn);
+        if (g_vars.globalFocusOrder) {
+            this.wsLabel.show();
+        }
+        else {
+            this.wsLabel.hide();
+            this.wsLabel.height = 0;
+        }
     }
 };
 
