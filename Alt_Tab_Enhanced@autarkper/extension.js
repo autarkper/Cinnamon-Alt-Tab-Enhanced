@@ -138,6 +138,7 @@ const HELP_TEXT = [
     _("z: Zoom to see all windows at once without scrolling (toggle)"),
     _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
+    _("F8: Switch between the most common Alt-Tab styles"),
     _("F1: Show this quick-help screen"),
     "",
 ];
@@ -164,6 +165,7 @@ function primaryModifier(mask) {
 }
 
 const g_aligmentTypes = ["top", "center", "bottom"];
+const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails"]; // the most usual ones ...
 
 var g_vars = Main._alttab_enhanced_vars;
 if (!g_vars) {
@@ -254,9 +256,14 @@ AltTabPopup.prototype = {
 
         Main.uiGroup.add_actor(this.actor);
 
+        this._processSwitcherStyle();
+    },
+
+    _processSwitcherStyle: function() {
         this._previewEnabled = false;
         this._iconsEnabled = false;
         this._thumbnailsEnabled = false;
+
         let styleSettings = g_vars.switcherStyle;
         let features = styleSettings.split('+');
         let found = false;
@@ -770,6 +777,12 @@ AltTabPopup.prototype = {
                     g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
                     this._select(this._currentApp); // refresh
                 }
+            } else if (keysym == Clutter.F8) {
+                let index = g_alttabStyles.indexOf(g_vars.switcherStyle);
+                let newIndex = (index + 1 + g_alttabStyles.length) % g_alttabStyles.length;
+                g_vars.switcherStyle = g_alttabStyles[newIndex];
+                this._processSwitcherStyle();
+                this.refresh();
             }
             return true;
         }
@@ -902,6 +915,11 @@ AltTabPopup.prototype = {
     _doWindowPreview: function() {
         if (!this._previewEnabled || this._appIcons.length < 1 || this._currentApp < 0)
         {
+            this._clearPreview();
+            if (!this._previewEnabled && this._previewBackdrop) {
+                this._previewBackdrop.destroy();
+                this._previewBackdrop = null;
+            }
             return;
         }
 
@@ -1012,6 +1030,11 @@ AltTabPopup.prototype = {
 
     _destroyThumbnails : function() {
         if (!this._thumbnails) {
+            return;
+        }
+        if (!this._thumbnailsEnabled) {
+            this._thumbnails.actor.destroy();
+            this._thumbnails = null;
             return;
         }
         this._thumbnails.addClones(null);
