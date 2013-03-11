@@ -1120,7 +1120,6 @@ AppSwitcher.prototype = {
         this._items = [];
         this._highlighted = -1;
         this._separators = [];
-        this._squareItems = false;
         this._minSize = 0;
         this._scrollableRight = true;
         this._scrollableLeft = false;
@@ -1446,12 +1445,6 @@ AppSwitcher.prototype = {
             let [childMin, childNat] = this._items[i].get_preferred_width(forHeight);
             maxChildMin = Math.max(childMin, maxChildMin);
             maxChildNat = Math.max(childNat, maxChildNat);
-
-            if (this._squareItems) {
-                let [childMin, childNat] = this._items[i].get_preferred_height(-1);
-                maxChildMin = Math.max(childMin, maxChildMin);
-                maxChildNat = Math.max(childNat, maxChildNat);
-            }
         }
 
         return [maxChildMin, maxChildNat];
@@ -1497,13 +1490,9 @@ AppSwitcher.prototype = {
         let primary = g_myMonitor;
         let parentRightPadding = this.actor.get_parent().get_theme_node().get_padding(St.Side.RIGHT);
         if (this.actor.allocation.x2 == primary.x + primary.width - parentRightPadding) {
-            if (this._squareItems)
-                childWidth = childHeight;
-            else {
-                let ixxi = (this._highlighted + this._items.length) % this._items.length;
-                let [childMin, childNat] = this._items[ixxi].get_preferred_width(childHeight);
-                childWidth = childMin;
-            }
+            let ixxi = (this._highlighted + this._items.length) % this._items.length;
+            let [childMin, childNat] = this._items[ixxi].get_preferred_width(childHeight);
+            childWidth = childMin;
         }
 
         for (let i = 0; i < children.length; i++) {
