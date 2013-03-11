@@ -1396,6 +1396,8 @@ AppSwitcher.prototype = {
         let [absItemX, absItemY] = this._items[ixScroll].get_transformed_position();
         let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
         let [containerWidth, containerHeight] = this.actor.get_transformed_size();
+        
+        let delay = fast ? 0 : 250;
 
         if (direction > 0) {
             if (ixScroll == this._items.length - 1) {
@@ -1409,10 +1411,17 @@ AppSwitcher.prototype = {
                 let padding = this.actor.get_theme_node().get_horizontal_padding();
                 let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
                 let x = this._items[ixScroll].allocation.x2 - monitor.width + padding + parentPadding;
-                Tweener.addTween(this._list, { anchor_x: x,
-                    time: fast ? 0 : POPUP_SCROLL_TIME,
-                    transition: 'linear'
-                });
+
+                if (this._highlightTimeout2) {
+                    Mainloop.source_remove(this._highlightTimeout2);
+                }
+                this._highlightTimeout2 = Mainloop.timeout_add(delay, Lang.bind(this, function() {
+                    this._highlightTimeout2 = 0;
+                    Tweener.addTween(this._list, { anchor_x: x,
+                        time: fast ? 0 : POPUP_SCROLL_TIME,
+                        transition: 'linear'
+                    });
+                }));
             }
         }
         else if (direction < 0) {
@@ -1425,10 +1434,16 @@ AppSwitcher.prototype = {
                 Tweener.removeTweens(this._list);
                 this._scrollableRight = true;
                 let x = (ixScroll == 0 ? this._list.get_children() : this._items)[ixScroll].allocation.x1;
-                Tweener.addTween(this._list, { anchor_x: x,
-                    time: fast ? 0 : POPUP_SCROLL_TIME,
-                    transition: 'linear'
-                });
+
+                if (this._highlightTimeout3) {
+                    Mainloop.source_remove(this._highlightTimeout3);
+                }
+                this._highlightTimeout3 = Mainloop.timeout_add(delay, Lang.bind(this, function() {
+                    Tweener.addTween(this._list, { anchor_x: x,
+                        time: fast ? 0 : POPUP_SCROLL_TIME,
+                        transition: 'linear'
+                    });
+                }));
             }
         }
     },
