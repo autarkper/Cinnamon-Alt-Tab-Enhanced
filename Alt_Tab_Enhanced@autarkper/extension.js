@@ -139,6 +139,7 @@ const HELP_TEXT = [
     _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
     _("F8: Switch between the most common Alt-Tab styles"),
+    _("F9: Switch between the thumbnail-behind-icon styles"),
     _("F1: Show this quick-help screen"),
     "",
 ];
@@ -166,6 +167,7 @@ function primaryModifier(mask) {
 
 const g_aligmentTypes = ["top", "center", "bottom"];
 const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails"]; // the most usual ones ...
+const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
 
 var g_vars = Main._alttab_enhanced_vars;
 if (!g_vars) {
@@ -284,7 +286,7 @@ AltTabPopup.prototype = {
         if (!found) {
             this._iconsEnabled = true;
         }
-        this._showThumbnails = (this._thumbnailsEnabled || this._previewEnabled);
+        this._showThumbnails = this._thumbnailsEnabled;
     },
 
     _indexOfWindow: function(metaWindow) {
@@ -782,6 +784,11 @@ AltTabPopup.prototype = {
                 let newIndex = (index + 1 + g_alttabStyles.length) % g_alttabStyles.length;
                 g_vars.switcherStyle = g_alttabStyles[newIndex];
                 this._processSwitcherStyle();
+                this.refresh();
+            } else if (keysym == Clutter.F9) {
+                let index = g_thumbnailIconOptions.indexOf(g_settings.thumbnailsBehindIcons);
+                let newIndex = (index + 1 + g_thumbnailIconOptions.length) % g_thumbnailIconOptions.length;
+                g_settings.thumbnailsBehindIcons = g_thumbnailIconOptions[newIndex];
                 this.refresh();
             }
             return true;
@@ -1470,7 +1477,9 @@ AppIcon.prototype = {
     set_size: function(sizeIn, focused) {
         let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
-        if (!this.showIcons || (this.showThumbnail && g_settings.thumbnailsBehindIdenticalIcons && this.app && this.app.get_windows().length > 1)) {
+        if (!this.showIcons || (
+            (g_settings.thumbnailsBehindIcons == 'behind-identical' && this.app && this.app.get_windows().length > 1)
+            || g_settings.thumbnailsBehindIcons == 'always') ) {
             this.icon = new St.Group();
             let clones = WindowUtils.createWindowClone(this.window, size, true, true);
             for (i in clones) {
@@ -1788,8 +1797,8 @@ function init(metadata) {
         let settings = new Settings.ExtensionSettings(g_settings, metadata['uuid']);
 
         settings.bindProperty(Settings.BindingDirection.IN,
-            "thumbnails-behind-identical-icons",
-            "thumbnailsBehindIdenticalIcons",
+            "thumbnails-behind-icons",
+            "thumbnailsBehindIcons",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
@@ -1810,7 +1819,7 @@ function init(metadata) {
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
-        g_settings.thumbnailsBehindIdenticalIcons = true;
+        g_settings.thumbnailsBehindIcons = "behind-identical";
         g_settings.allWorkspacesMode = false;
         g_settings.vAlign = 'center';
         g_settings.displayThumbnailHeaders = true;

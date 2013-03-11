@@ -1,8 +1,13 @@
 {
- "thumbnails-behind-identical-icons": {
-    "type" : "checkbox",
-    "default" : true,
-    "description" : "Whether to display a thumbnail behind different windows having the same icon"
+ "thumbnails-behind-icons": {
+    "type" : "radiogroup",
+    "default" : "behind-identical",
+    "options" : {
+        "Never" : "never",
+        "Always" : "always",
+        "Behind identical icons" : "behind-identical"
+    },
+    "description" : "Whether to display a thumbnail behind icons"
  },
  "all-workspaces-mode": {
     "type" : "checkbox",
@@ -13,9 +18,9 @@
     "type" : "radiogroup",
     "default" : "center",
     "options" : {
-    "Top" : "top",
-    "Center" : "center",
-    "Bottom" : "bottom"
+        "Top" : "top",
+        "Center" : "center",
+        "Bottom" : "bottom"
     },
     "description" : "Where to display the window switcher"
  },
