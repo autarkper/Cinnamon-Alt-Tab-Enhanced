@@ -163,25 +163,30 @@ function primaryModifier(mask) {
     return primary;
 }
 
-// this object will be populated with our settings, if settings support is available
-var g_settings = {
-};
+const g_aligmentTypes = ["top", "center", "bottom"];
 
-var g_windowsToIgnore = [];
-var g_globalFocusOrder = false;
-var g_aligmentTypes = ["top", "center", "bottom"];
-
-if (!("_alttab_wFocusId" in Main)) {
+var g_vars = Main._alttab_enhanced_vars;
+if (!g_vars) {
+    g_vars = Main._alttab_enhanced_vars = {};
 // there are some things we want to live on, even when we are disabled,
 // so that we don't have to start from scratch if we are enabled again
-    Main._alttab_g_windowsOrdered = [];
-    Main._alttab_wFocusId = connect(global.display, 'notify::focus-window', function(display) {
-        Main._alttab_g_windowsOrdered = Main._alttab_g_windowsOrdered.filter(function(window) {
+    g_vars.windowsOrdered = [];
+    g_vars.windowsToIgnore = [];
+    g_vars.globalFocusOrder = false;
+
+    g_vars.wFocusId = connect(global.display, 'notify::focus-window', function(display) {
+        g_vars.windowsOrdered = g_vars.windowsOrdered.filter(function(window) {
             return window && window != display.focus_window && window.get_workspace();
         }, this);
-        Main._alttab_g_windowsOrdered.unshift(display.focus_window);
+        g_vars.windowsOrdered.unshift(display.focus_window);
     });
+
+    // this object will be populated with our settings, if settings support is available
+    g_vars.settings = {};
+
 }
+
+const g_settings = g_vars.settings;
 
 var g_myMonitor = Main.layoutManager.primaryMonitor;
 
@@ -238,7 +243,7 @@ AltTabPopup.prototype = {
         connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
 
         // remove zombies
-        g_windowsToIgnore = g_windowsToIgnore.filter(function(window) {
+        g_vars.windowsToIgnore = g_vars.windowsToIgnore.filter(function(window) {
             return window.get_workspace() != null;
         });
 
@@ -408,7 +413,7 @@ AltTabPopup.prototype = {
             if (i != activeWsIndex) {
                 wlist = wlist.filter(function(window) {
                     // We don't want duplicates. Ignored windows from other workspaces are not welcome.
-                    return !window.is_on_all_workspaces() && (!g_globalFocusOrder || g_windowsToIgnore.indexOf(window) < 0);
+                    return !window.is_on_all_workspaces() && (!g_vars.globalFocusOrder || g_vars.windowsToIgnore.indexOf(window) < 0);
                 }, this);
             }
             if (g_settings.allWorkspacesMode || i == activeWsIndex) {
@@ -423,21 +428,21 @@ AltTabPopup.prototype = {
             }
         }
 
-        if (g_globalFocusOrder) {
+        if (g_vars.globalFocusOrder) {
             windows = windows.sort(function(a, b) {
                 let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
                 if (minimizedDiff) {
                     return minimizedDiff;
                 }
-                let ignoredDiff = (g_windowsToIgnore.indexOf(a) < 0 ? 0 : 1) - (g_windowsToIgnore.indexOf(b) < 0 ? 0 : 1);
+                let ignoredDiff = (g_vars.windowsToIgnore.indexOf(a) < 0 ? 0 : 1) - (g_vars.windowsToIgnore.indexOf(b) < 0 ? 0 : 1);
                 if (ignoredDiff) {
                     return ignoredDiff;
                 }
-                let inGlobalListDiff = (Main._alttab_g_windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (Main._alttab_g_windowsOrdered.indexOf(b) < 0 ? 1 : 0);
+                let inGlobalListDiff = (g_vars.windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (g_vars.windowsOrdered.indexOf(b) < 0 ? 1 : 0);
                 if (inGlobalListDiff) {
                     return inGlobalListDiff;
                 }
-                let globalDiff = Main._alttab_g_windowsOrdered.indexOf(a) - Main._alttab_g_windowsOrdered.indexOf(b);
+                let globalDiff = g_vars.windowsOrdered.indexOf(a) - g_vars.windowsOrdered.indexOf(b);
                 return globalDiff || windows.indexOf(a) - windows.indexOf(b);
             }, this);
             currentWindow = windows[0];
@@ -472,7 +477,7 @@ AltTabPopup.prototype = {
         }
         let haveSelection = this._selectedWindow != null; // this._selectedWindow is modified by _select
 
-        if (g_settings.allWorkspacesMode && !this._thumbnailsEnabled && !g_globalFocusOrder) { // restricted feature
+        if (g_settings.allWorkspacesMode && !this._thumbnailsEnabled && !g_vars.globalFocusOrder) { // restricted feature
             this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
         }
 
@@ -718,8 +723,8 @@ AltTabPopup.prototype = {
                 }
             } else if (keysym == Clutter.g && ctrlDown) {
                 if (global.screen.n_workspaces > 1) {
-                    g_globalFocusOrder = !g_globalFocusOrder;
-                    if (g_globalFocusOrder) {
+                    g_vars.globalFocusOrder = !g_vars.globalFocusOrder;
+                    if (g_vars.globalFocusOrder) {
                         g_settings.allWorkspacesMode = true; // enable together, but disable separately
                     }
                     this.refresh();
@@ -730,9 +735,9 @@ AltTabPopup.prototype = {
                 }
             } else if (keysym == Clutter.i && ctrlDown) {
                 if (this._currentApp >= 0) {
-                    if (g_windowsToIgnore.indexOf(this._appIcons[this._currentApp].window) < 0) {
+                    if (g_vars.windowsToIgnore.indexOf(this._appIcons[this._currentApp].window) < 0) {
                         this._appIcons[this._currentApp].ignored = true;
-                        g_windowsToIgnore.push(this._appIcons[this._currentApp].window);
+                        g_vars.windowsToIgnore.push(this._appIcons[this._currentApp].window);
                     }
                 }
             } else if (keysym == Clutter.m && !ctrlDown) {
@@ -1148,7 +1153,7 @@ SwitcherList.prototype = {
     },
 
     addSeparator: function () {
-        if (!g_globalFocusOrder) {
+        if (!g_vars.globalFocusOrder) {
             let box = new St.Bin({ style_class: 'separator' });
             this._separators.push(box);
             this._list.add_actor(box);
@@ -1368,7 +1373,7 @@ function AppIcon() {
 AppIcon.prototype = {
     _init: function(window, showThumbnail, showIcons) {
         this.window = window;
-        this.ignored = g_windowsToIgnore.indexOf(window) >= 0;
+        this.ignored = g_vars.windowsToIgnore.indexOf(window) >= 0;
         this.showThumbnail = showThumbnail;
         this.showIcons = showIcons;
         let tracker = Cinnamon.WindowTracker.get_default();
@@ -1464,7 +1469,7 @@ AppIcon.prototype = {
         }
         this._iconBin.child = this.icon;
         this._iconBin.set_size(Math.floor(size * 1.2), sizeIn);
-        if (g_globalFocusOrder) {
+        if (g_vars.globalFocusOrder) {
             this.wsLabel.show();
         }
         else {
