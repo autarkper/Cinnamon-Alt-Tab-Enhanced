@@ -491,7 +491,7 @@ AltTabPopup.prototype = {
         }
         let haveSelection = this._selectedWindow != null; // this._selectedWindow is modified by _select
 
-        if (g_settings.allWorkspacesMode && !this._thumbnailsEnabled && !g_vars.globalFocusOrder) { // restricted feature
+        if (g_settings.allWorkspacesMode && g_settings.displayOriginArrow && !g_vars.globalFocusOrder) { // restricted feature
             this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
         }
 
@@ -1816,6 +1816,11 @@ function init(metadata) {
             "displayThumbnailHeaders",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "display-origin-arrow",
+            "displayOriginArrow",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -1823,6 +1828,7 @@ function init(metadata) {
         g_settings.allWorkspacesMode = false;
         g_settings.vAlign = 'center';
         g_settings.displayThumbnailHeaders = true;
+        g_settings.displayOriginArrow = true;
     }
 }
 

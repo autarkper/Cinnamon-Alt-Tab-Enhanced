@@ -28,5 +28,10 @@
     "type" : "checkbox",
     "default" : true,
     "description" : "Whether to display thumbnail headers, showing the window icon and title"
+ },
+ "display-origin-arrow": {
+    "type" : "checkbox",
+    "default" : true,
+    "description" : "Whether to display a small arrow, below the icon, to indicate the window you came from"
  }
 }
