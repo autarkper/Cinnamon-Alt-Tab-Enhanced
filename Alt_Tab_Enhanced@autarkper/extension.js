@@ -130,12 +130,10 @@ const HELP_TEXT = [
     _("Ctrl+Space: Enter \"persistent mode\", in which Alt-Tab will remain open until actively closed"),
     _("m: Move selected window to next monitor"),
     _("n: Minimize selected window"),
-    _("h: Hide Alt-Tab so you can see what's underneath (toggle)"),
     _("Ctrl+w: Close selected window. Use with care!"),
-    _("+ (Plus): Show windows from all workspaces"),
-    _("- (Minus): Show windows from current workspace only"),
     _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("z: Zoom to see all windows at once without scrolling (toggle)"),
+    _("F5: Toggle between seeing all windows or only the windows from the current workspace"),
     _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
     _("F8: Switch between the most common Alt-Tab styles"),
@@ -728,12 +726,6 @@ AltTabPopup.prototype = {
                 this._persistent = true;
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
-            } else if (keysym == Clutter.plus || keysym == Clutter.minus) {
-                let newMode = keysym == Clutter.plus;
-                if (g_settings.allWorkspacesMode != newMode) {
-                    g_settings.allWorkspacesMode = newMode;
-                    this.refresh();
-                }
             } else if (keysym == Clutter.h) { // toggle hide
                 if (this._hiding) {
                     this._hiding = false;
@@ -777,6 +769,9 @@ AltTabPopup.prototype = {
                     (window.minimized ? window.unminimize : window.minimize).call(window, global.get_current_time());
                     this._select(this._currentApp); // refresh
                 }
+            } else if (keysym == Clutter.F5) {
+                g_settings.allWorkspacesMode = !g_settings.allWorkspacesMode;
+                this.refresh();
             } else if (keysym == Clutter.F6) {
                 let alignmentTypeIndex = g_aligmentTypes.indexOf(g_settings.vAlign);
                 let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
