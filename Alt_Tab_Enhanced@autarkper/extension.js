@@ -905,6 +905,7 @@ AltTabPopup.prototype = {
 
     destroy : function() {
         this.actor.destroy();
+        this.actor = null;
     },
 
     _onDestroy : function() {
@@ -1163,7 +1164,7 @@ AppSwitcher.prototype = {
         let modelIndex = (this._curApp + this._items.length + 2) % this._items.length;
 
         let themeNode = this._items[modelIndex].get_theme_node();
-        let iconPadding = themeNode.get_horizontal_padding() * 2;
+        let iconPadding = themeNode.get_horizontal_padding();
         let iconVPadding = themeNode.get_vertical_padding() * 2;
         let iconBorder = themeNode.get_border_width(St.Side.LEFT) + themeNode.get_border_width(St.Side.RIGHT);
         let [iconMinHeight, iconNaturalHeight] = this.icons[modelIndex].label.get_preferred_height(-1);
@@ -1394,7 +1395,25 @@ AppSwitcher.prototype = {
         return Math.round(x2 ? posX + actor.width : posX);
     },
 
-    _scrollTo: function(index, direction, scrollMax_, fast) {
+    determineScrolling: function() {
+        let theme_node = this.actor.get_theme_node();
+        if (!theme_node) {return;}
+
+        let [containerWidth, containerHeight] = this.actor.get_transformed_size();
+        let padding = theme_node.get_horizontal_padding();
+
+        let rightX = this._getStagePosX(this._items[this._items.length - 1], true);
+        let leftX = this._getStagePosX(this._items[0]);
+        let scrollableLeft = leftX < padding/2;
+        let scrollableRight = rightX >= containerWidth;
+
+        this._scrollableLeft = scrollableLeft;
+        this._leftArrow.opacity = this._leftGradient.opacity = scrollableLeft ? 255 : 0;
+        this._scrollableRight = scrollableRight;
+        this._rightArrow.opacity = this._rightGradient.opacity = scrollableRight ? 255: 0;
+    },
+
+    _scrollTo: function(index, direction, scrollMax_, fast) {        
         let scrollMax = scrollMax_ ? scrollMax_ : 1;
         let ixScroll = direction > 0 ?
             Math.min(index + scrollMax, this._items.length - 1) : // right
@@ -1405,18 +1424,6 @@ AppSwitcher.prototype = {
         
         let padding = this.actor.get_theme_node().get_horizontal_padding();
 
-        let determineScrolling = Lang.bind(this, function() {
-            let rightX = this._getStagePosX(this._items[this._items.length - 1], true);
-            let leftX = this._getStagePosX(this._items[0]);
-            let scrollableLeft = leftX < padding/2;
-            let scrollableRight = rightX >= containerWidth;
-
-            this._scrollableLeft = scrollableLeft;
-            this._leftArrow.opacity = this._leftGradient.opacity = scrollableLeft ? 255 : 0;
-            this._scrollableRight = scrollableRight;
-            this._rightArrow.opacity = this._rightGradient.opacity = scrollableRight ? 255: 0;
-        });
-
         let delay = fast ? 0 : 250;
         let scrollit = Lang.bind(this, function(x) {
             if (this._highlightTimeout3) {
@@ -1426,7 +1433,8 @@ AppSwitcher.prototype = {
                 Tweener.addTween(this._list, { anchor_x: x,
                     time: fast ? 0 : POPUP_SCROLL_TIME,
                     transition: 'linear',
-                    onComplete: determineScrolling
+                    onComplete: this.determineScrolling,
+                    onCompleteScope: this
                 });
             }));
         });
@@ -1544,6 +1552,7 @@ AppSwitcher.prototype = {
 
         // Clip the area for scrolling
         this._clipBin.set_clip(0, -topPadding, (this.actor.allocation.x2 - this.actor.allocation.x1) - leftPadding - rightPadding, this.actor.height + bottomPadding);
+        this.determineScrolling();
     }
 };
 Signals.addSignalMethods(AppSwitcher.prototype);
