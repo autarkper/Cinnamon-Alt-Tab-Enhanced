@@ -1662,50 +1662,66 @@ ThumbnailHolder.prototype = {
     _init : function() {
         this.headerPadding = 4;
         this.actor = new St.Group({ style_class: 'switcher-list', reactive: true });
-        let layout = new St.BoxLayout({vertical: true, y_align: St.Align.START });
+        let layout = this.layout = new St.BoxLayout({vertical: true, y_align: St.Align.START });
         this.actor.add_actor(layout);
         let header = this.header = new St.BoxLayout({vertical: false});
         layout.add(header, { x_fill: false, y_fill: false, y_align: St.Align.END });
-        this.container = new St.Group();
-        layout.add(this.container, { x_fill: false, y_fill: false, y_align: St.Align.END });
+        this.containerHolder = new St.Group();
+        this.layout.add(this.containerHolder, { x_fill: false, y_fill: false, y_align: St.Align.END });
         this.actor.connect('button-press-event', Lang.bind(this, function() {this.emit('item-activated', this._window); }));
     },
 
     addClones : function (window, app) {
         this._window = window;
-        this.container.destroy_children();
+        let old_container = this.container;
+        this.container = null;
         if (this.header) {
             this.header.destroy_children();
         }
-        if (!window) {
-            return;
-        }
-        let headerHeight = 0;
-        let displayHeaders = g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
-        this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
-        if (displayHeaders) {
-            headerHeight = 32 + this.headerPadding;
-            let bin = new St.Group();
-            bin.add_actor(createApplicationIcon(app, headerHeight));
-            this.header.add(bin, { x_fill: false, y_fill: false, y_align: St.Align.START });
-            let label = new St.Label({text: window.title});
-            this.header.add(label, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+        if (window) {
+            this.container = new St.Group();
+            this.containerHolder.add_actor(this.container);
+            this.container.opacity = 0;
+            let headerHeight = 0;
+            let displayHeaders = g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
+            this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
+            if (displayHeaders) {
+                headerHeight = 32 + this.headerPadding;
+                let bin = new St.Group();
+                bin.add_actor(createApplicationIcon(app, headerHeight));
+                this.header.add(bin, { x_fill: false, y_fill: false, y_align: St.Align.START });
+                let label = new St.Label({text: window.title});
+                this.header.add(label, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+            }
+
+            let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight;
+            let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1;
+            
+            this.container.set_size(binWidth, binHeight);
+
+            let clones = WindowUtils.createWindowClone(window, 0, true, false);
+            for (let j = 0; j < clones.length; j++) {
+                let clone = clones[j];
+                this.container.add_actor(clone.actor);
+                let scaleY = binHeight/g_myMonitor.height;
+                let scaleX = binWidth/g_myMonitor.width;
+                let scale = Math.min(scaleX, scaleY);
+                clone.actor.set_scale(scale, scale);
+                clone.actor.set_position(Math.floor((binWidth-clone.actor.width*scale)/2), Math.floor((binHeight-clone.actor.height*scale)/2));
+            }
+            Tweener.addTween(this.container, { opacity: 255,
+                time: THUMBNAIL_FADE_TIME * 3,
+                transition: 'easeOutQuad'
+            });
         }
 
-        let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight;
-        let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1;
-        
-        this.container.set_size(binWidth, binHeight);
-
-        let clones = WindowUtils.createWindowClone(window, 0, true, false);
-        for (let j = 0; j < clones.length; j++) {
-            let clone = clones[j];
-            this.container.add_actor(clone.actor);
-            let scaleY = binHeight/g_myMonitor.height;
-            let scaleX = binWidth/g_myMonitor.width;
-            let scale = Math.min(scaleX, scaleY);
-            clone.actor.set_scale(scale, scale);
-            clone.actor.set_position(Math.floor((binWidth-clone.actor.width*scale)/2), Math.floor((binHeight-clone.actor.height*scale)/2));
+        if (old_container) {
+            Tweener.addTween(old_container, {
+                opacity: 0,
+                time: THUMBNAIL_FADE_TIME * 3,
+                transition: 'easeOutQuad',
+                onComplete: Lang.bind(old_container, old_container.destroy)
+            });
         }
     }
 };
