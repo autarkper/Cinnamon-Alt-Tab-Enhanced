@@ -115,7 +115,7 @@ var PREVIEW_SWITCHER_FADEOUT_TIME = 0.5; // seconds
 
 const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
 
-const iconSizes = [96, 80, 64, 48, 32, 22];
+const iconSizes = [80, 72, 64, 56, 48, 40, 32, 24];
 
 const HELP_TEXT = [
     "",
