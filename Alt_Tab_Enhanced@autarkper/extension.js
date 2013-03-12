@@ -1389,10 +1389,10 @@ AppSwitcher.prototype = {
         }));
     },
 
-    _getStagePosX: function(actor, x2) {
+    _getStagePosX: function(actor, offset) {
         let [absItemX, absItemY] = actor.get_transformed_position();
         let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
-        return Math.round(x2 ? posX + actor.width : posX);
+        return Math.round(posX + actor.width * (offset || 0));
     },
 
     determineScrolling: function() {
@@ -1402,8 +1402,8 @@ AppSwitcher.prototype = {
         let [containerWidth, containerHeight] = this.actor.get_transformed_size();
         let padding = theme_node.get_horizontal_padding();
 
-        let rightX = this._getStagePosX(this._items[this._items.length - 1], true);
-        let leftX = this._getStagePosX(this._items[0]);
+        let rightX = this._getStagePosX(this._items[this._items.length - 1], 0.5);
+        let leftX = this._getStagePosX(this._items[0], 0.7);
         let scrollableLeft = leftX < padding/2;
         let scrollableRight = rightX >= containerWidth;
 
