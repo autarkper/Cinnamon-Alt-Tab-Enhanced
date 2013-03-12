@@ -1734,12 +1734,17 @@ ThumbnailHolder.prototype = {
         }
 
         if (old_container) {
-            Tweener.addTween(old_container, {
-                opacity: 0,
-                time: THUMBNAIL_FADE_TIME * 3,
-                transition: 'easeOutQuad',
-                onComplete: Lang.bind(old_container, old_container.destroy)
-            });
+            if (window) {
+                Tweener.addTween(old_container, {
+                    opacity: 0,
+                    time: THUMBNAIL_FADE_TIME * 3,
+                    transition: 'easeOutQuad',
+                    onComplete: Lang.bind(old_container, old_container.destroy)
+                });
+            }
+            else {
+                old_container.destroy();
+            }
         }
     }
 };
