@@ -185,10 +185,12 @@ if (!g_vars) {
         g_vars.windowsOrdered.unshift(display.focus_window);
     });
     function getSwitcherStyle() {
+        g_vars.switcherStyleUpdated = true;
         g_vars.switcherStyle = global.settings.get_string("alttab-switcher-style");
     };
     connect(global.settings, 'changed::alttab-switcher-style', getSwitcherStyle);
     getSwitcherStyle();
+    g_vars.switcherStyleUpdated = false;
 
     // this object will be populated with our settings, if settings support is available
     g_vars.settings = {};
@@ -287,6 +289,12 @@ AltTabPopup.prototype = {
             this._iconsEnabled = true;
         }
         this._showThumbnails = this._thumbnailsEnabled;
+        if (g_vars.switcherStyleUpdated) {
+            if (!this._thumbnailsEnabled) {
+                g_settings.vAlign = 'center';
+            }
+        }
+        g_vars.switcherStyleUpdated = false;
     },
 
     _indexOfWindow: function(metaWindow) {
