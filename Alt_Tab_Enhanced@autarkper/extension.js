@@ -1380,63 +1380,63 @@ AppSwitcher.prototype = {
         }));
     },
 
+    _getStagePosX: function(actor, x2) {
+        let [absItemX, absItemY] = actor.get_transformed_position();
+        let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
+        return Math.round(x2 ? posX + actor.width : posX);
+    },
+
     _scrollTo: function(index, direction, scrollMax_, fast) {
         let scrollMax = scrollMax_ ? scrollMax_ : 1;
         let ixScroll = direction > 0 ?
             Math.min(index + scrollMax, this._items.length - 1) : // right
             Math.max(index - scrollMax, 0); // left
 
-        let [absItemX, absItemY] = this._items[ixScroll].get_transformed_position();
-        let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
+        let posX = this._getStagePosX(this._items[ixScroll]);
         let [containerWidth, containerHeight] = this.actor.get_transformed_size();
         
+        let padding = this.actor.get_theme_node().get_horizontal_padding();
+
+        let determineScrolling = Lang.bind(this, function() {
+            let rightX = this._getStagePosX(this._items[this._items.length - 1], true);
+            let leftX = this._getStagePosX(this._items[0]);
+            let scrollableLeft = leftX < padding/2;
+            let scrollableRight = rightX >= containerWidth;
+
+            this._scrollableLeft = scrollableLeft;
+            this._leftArrow.opacity = this._leftGradient.opacity = scrollableLeft ? 255 : 0;
+            this._scrollableRight = scrollableRight;
+            this._rightArrow.opacity = this._rightGradient.opacity = scrollableRight ? 255: 0;
+        });
+
         let delay = fast ? 0 : 250;
+        let scrollit = Lang.bind(this, function(x) {
+            if (this._highlightTimeout3) {
+                Mainloop.source_remove(this._highlightTimeout3);
+            }
+            this._highlightTimeout3 = Mainloop.timeout_add(delay, Lang.bind(this, function() {
+                Tweener.addTween(this._list, { anchor_x: x,
+                    time: fast ? 0 : POPUP_SCROLL_TIME,
+                    transition: 'linear',
+                    onComplete: determineScrolling
+                });
+            }));
+        });
 
         if (direction > 0) {
-            if (ixScroll == this._items.length - 1) {
-                this._scrollableRight = false;
-                this._rightArrow.opacity = this._rightGradient.opacity = 0;
-            }
             if (posX + this._items[ixScroll].get_width() >= containerWidth) {
                 Tweener.removeTweens(this._list);
-                this._scrollableLeft = true;
                 let monitor = g_myMonitor;
-                let padding = this.actor.get_theme_node().get_horizontal_padding();
                 let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
                 let x = this._items[ixScroll].allocation.x2 - monitor.width + padding + parentPadding;
-
-                if (this._highlightTimeout2) {
-                    Mainloop.source_remove(this._highlightTimeout2);
-                }
-                this._highlightTimeout2 = Mainloop.timeout_add(delay, Lang.bind(this, function() {
-                    this._highlightTimeout2 = 0;
-                    Tweener.addTween(this._list, { anchor_x: x,
-                        time: fast ? 0 : POPUP_SCROLL_TIME,
-                        transition: 'linear'
-                    });
-                }));
+                scrollit(x);
             }
         }
         else if (direction < 0) {
-            if (ixScroll == 0) {
-                this._scrollableLeft = false;
-                this._leftArrow.opacity = this._leftGradient.opacity = 0;
-            }
-            let padding = this.actor.get_theme_node().get_horizontal_padding();
             if (posX <= padding) {
                 Tweener.removeTweens(this._list);
-                this._scrollableRight = true;
                 let x = (ixScroll == 0 ? this._list.get_children() : this._items)[ixScroll].allocation.x1;
-
-                if (this._highlightTimeout3) {
-                    Mainloop.source_remove(this._highlightTimeout3);
-                }
-                this._highlightTimeout3 = Mainloop.timeout_add(delay, Lang.bind(this, function() {
-                    Tweener.addTween(this._list, { anchor_x: x,
-                        time: fast ? 0 : POPUP_SCROLL_TIME,
-                        transition: 'linear'
-                    });
-                }));
+                scrollit(x);
             }
         }
     },
