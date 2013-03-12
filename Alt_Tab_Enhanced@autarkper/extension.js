@@ -1093,6 +1093,7 @@ AppSwitcher.prototype = {
 
         this._leftGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-left', vertical: true});
         this._rightGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-right', vertical: true});
+        this._rightGradient.style = this._leftGradient.style = "border-radius: 0";
         this.actor.add_actor(this._leftGradient);
         this.actor.add_actor(this._rightGradient);
 
