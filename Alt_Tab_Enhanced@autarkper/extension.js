@@ -1057,15 +1057,7 @@ AltTabPopup.prototype = {
             this._thumbnails.actor.get_allocation_box();
         }
         this._thumbnails.addClones(this._appIcons[this._currentApp].cachedWindows[0], this._appIcons[this._currentApp].app);
-
-
-        this._thumbnails.actor.opacity = 0;
-        Tweener.addTween(this._thumbnails.actor,
-                         { opacity: 255,
-                           time: THUMBNAIL_FADE_TIME,
-                           transition: 'easeOutQuad',
-                           onComplete: Lang.bind(this, function () { this.thumbnailsVisible = true; })
-                         });
+        this.thumbnailsVisible = true;
     }
 };
 
