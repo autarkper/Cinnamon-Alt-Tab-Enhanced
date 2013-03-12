@@ -579,11 +579,15 @@ AltTabPopup.prototype = {
         return true;
     },
 
-    _nextApp : function() {
-        return mod(this._currentApp + 1, this._appIcons.length);
+    _nextApp : function(nowrap) {
+        return nowrap
+            ? Math.min(this._currentApp + 1, this._appIcons.length - 1)
+            : mod(this._currentApp + 1, this._appIcons.length);
     },
-    _previousApp : function() {
-        return mod(this._currentApp - 1, this._appIcons.length);
+    _previousApp : function(nowrap) {
+        return nowrap
+            ? Math.max(this._currentApp - 1, 0)
+            : mod(this._currentApp - 1, this._appIcons.length);
     },
 
     _toggleZoom : function() {
@@ -660,13 +664,18 @@ AltTabPopup.prototype = {
         const SCROLL_AMOUNT = 5;
 
         if (pressed) {
+            let now = new Date().getTime();
+            let ms_diff =  now - (this.lastPressTs || 0);
+            this.lastPressTs = now;
+            let nowrap = ms_diff < 100;
+
             if (false) {
             } else if (keysym == Clutter.Escape) {
                 this.destroy();
             } else if (keysym == Clutter.Tab) {
-                this._select(this._nextApp());
+                this._select(this._nextApp(nowrap));
             } else if (keysym == Clutter.ISO_Left_Tab) {
-                this._select(this._previousApp());
+                this._select(this._previousApp(nowrap));
             } else if (keysym == Clutter.Home || keysym == Clutter.KP_Home) {
                 this._select(ctrlDown && this._homeWindow ? this._indexOfWindow(this._homeWindow) : 0);
             } else if (keysym == Clutter.End || keysym == Clutter.KP_End) {
@@ -697,7 +706,7 @@ AltTabPopup.prototype = {
                     (action == Meta.KeyBindingAction.WORKSPACE_DOWN ? Main.overview : Main.expo).show();
                 });
             } else if (action == Meta.KeyBindingAction.SWITCH_GROUP || action == Meta.KeyBindingAction.SWITCH_WINDOWS) {
-                this._select(backwards ? this._previousApp() : this._nextApp());
+                this._select(backwards ? this._previousApp(nowrap) : this._nextApp(nowrap));
             } else {
                 if (keysym == Clutter.Left) {
                     if (ctrlDown) {
@@ -705,7 +714,7 @@ AltTabPopup.prototype = {
                             return false;
                         }
                     }
-                    this._select(this._previousApp());
+                    this._select(this._previousApp(nowrap));
                 }
                 else if (keysym == Clutter.Right) {
                     if (ctrlDown) {
@@ -713,7 +722,7 @@ AltTabPopup.prototype = {
                             return false;
                         }
                     }
-                    this._select(this._nextApp());
+                    this._select(this._nextApp(nowrap));
                 }
             }
             return true;
