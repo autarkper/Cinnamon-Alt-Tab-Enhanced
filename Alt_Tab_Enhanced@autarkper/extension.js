@@ -199,6 +199,7 @@ if (!g_vars) {
 const g_settings = g_vars.settings;
 
 var g_myMonitor = Main.layoutManager.primaryMonitor;
+var g_myMonitorIndex = Main.layoutManager.primaryIndex;
 
 function createApplicationIcon(app, size) {
     return app ?
@@ -1721,8 +1722,14 @@ ThumbnailHolder.prototype = {
                 this.header.add(label, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
                 let title = new St.Label({text: window.title});
                 label.add(title, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
-                let ws = new St.Label({text: "[" + Main.getWorkspaceName(window.get_workspace().index()) + "]"});
-                label.add(ws, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+
+                let wsString = "[" + Main.getWorkspaceName(window.get_workspace().index()) + "]";
+                let windowMonitor = window.get_monitor();
+                let monitorString = windowMonitor != g_myMonitorIndex
+                    ? " (Monitor " + (windowMonitor + 1) + ")"
+                    : '';
+                let label2 = new St.Label({text: wsString + monitorString});
+                label.add(label2, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
             }
 
             let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight;
