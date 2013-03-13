@@ -1717,8 +1717,12 @@ ThumbnailHolder.prototype = {
                 let bin = new St.Group();
                 bin.add_actor(createApplicationIcon(app, headerHeight));
                 this.header.add(bin, { x_fill: false, y_fill: false, y_align: St.Align.START });
-                let label = new St.Label({text: window.title});
+                let label = new St.BoxLayout({vertical: true});
                 this.header.add(label, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+                let title = new St.Label({text: window.title});
+                label.add(title, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+                let ws = new St.Label({text: "[" + Main.getWorkspaceName(window.get_workspace().index()) + "]"});
+                label.add(ws, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
             }
 
             let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight;
