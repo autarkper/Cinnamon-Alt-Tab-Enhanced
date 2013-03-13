@@ -760,10 +760,16 @@ AltTabPopup.prototype = {
                 }
             } else if (keysym == Clutter.i && ctrlDown) {
                 if (this._currentApp >= 0) {
-                    if (g_vars.windowsToIgnore.indexOf(this._appIcons[this._currentApp].window) < 0) {
+                    let index = g_vars.windowsToIgnore.indexOf(this._appIcons[this._currentApp].window);
+                    if (index< 0) {
                         this._appIcons[this._currentApp].ignored = true;
                         g_vars.windowsToIgnore.push(this._appIcons[this._currentApp].window);
                     }
+                    else {
+                        g_vars.windowsToIgnore.splice(index, 1);
+                        this._appIcons[this._currentApp].ignored = false;
+                    }
+                    this._select(this._currentApp, true); // refresh
                 }
             } else if (keysym == Clutter.m && !ctrlDown) {
                 let monitorCount = Main.layoutManager.monitors.length;
