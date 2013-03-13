@@ -772,13 +772,13 @@ AltTabPopup.prototype = {
                     let index = window.get_monitor();
                     let newIndex = (index + monitorCount + 1) % monitorCount;
                     window.move_to_monitor(newIndex);
-                    this._select(this._currentApp); // refresh
+                    this._select(this._currentApp, true); // refresh
                 }
             } else if (keysym == Clutter.n && !ctrlDown) {
                 if (this._currentApp >= 0) {
                     let window = this._appIcons[this._currentApp].window;
                     (window.minimized ? window.unminimize : window.minimize).call(window, global.get_current_time());
-                    this._select(this._currentApp); // refresh
+                    this._select(this._currentApp, true); // refresh
                 }
             } else if (keysym == Clutter.F4) {
                 g_settings.compactLabels = !g_settings.compactLabels;
@@ -794,7 +794,7 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.F7) {
                 if (g_settings.vAlign != 'center') {
                     g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
-                    this._select(this._currentApp); // refresh
+                    this._select(this._currentApp, true); // refresh
                 }
             } else if (keysym == Clutter.F8) {
                 let index = g_alttabStyles.indexOf(g_vars.switcherStyle);
@@ -1022,7 +1022,11 @@ AltTabPopup.prototype = {
      * _select:
      * @app: index of the app to select
      */
-    _select : function(app) {
+    _select : function(app, force) {
+        let same = this._currentApp == app;
+        if (same && !force) {
+            return;
+        }
         if (this._thumbnailTimeoutId) {
             Mainloop.source_remove(this._thumbnailTimeoutId);
             this._thumbnailTimeoutId = 0;
