@@ -556,6 +556,9 @@ AltTabPopup.prototype = {
             this._appSwitcher.actor.hide();
         }
         this._appSwitcher.connect('item-activated', Lang.bind(this, this._appActivated));
+        this._appSwitcher.connect('hover', Lang.bind(this, function(sender, index) {
+            this._select(index);
+        }));
     },
     
     show : function(backward, binding, mask) {
@@ -1360,12 +1363,9 @@ AppSwitcher.prototype = {
         this._list.add_actor(bbox);
 
         let n = this._items.length;
-        bbox.connect('clicked', Lang.bind(this, function() { this._onItemClicked(n); }));
+        bbox.connect('clicked', Lang.bind(this, function() { this.emit('item-activated', n); }));
+        bbox.connect('motion-event', Lang.bind(this, function() {this.emit('hover', n);}));
         this._items.push(bbox);
-    },
-
-    _onItemClicked: function (index) {
-        this._itemActivated(index);
     },
 
     addSeparator: function () {
@@ -1469,10 +1469,6 @@ AppSwitcher.prototype = {
                 scrollit(x);
             }
         }
-    },
-
-    _itemActivated: function(n) {
-        this.emit('item-activated', n);
     },
 
     _maxChildWidth: function (forHeight) {
