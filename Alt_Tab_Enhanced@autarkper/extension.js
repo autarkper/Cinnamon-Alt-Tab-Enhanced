@@ -858,9 +858,9 @@ AltTabPopup.prototype = {
     _onScroll : function(actor, event) {
         let direction = event.get_scroll_direction();
         if (direction == Clutter.ScrollDirection.UP) {
-            this._select(this._previousApp());
+            this._select(this._previousApp(true));
         } else if (direction == Clutter.ScrollDirection.DOWN) {
-            this._select(this._nextApp());
+            this._select(this._nextApp(true));
         }
     },
 
