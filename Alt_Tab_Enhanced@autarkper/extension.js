@@ -1361,9 +1361,6 @@ AppSwitcher.prototype = {
 
         let n = this._items.length;
         bbox.connect('clicked', Lang.bind(this, function() { this._onItemClicked(n); }));
-
-        bbox.label_actor = label;
-
         this._items.push(bbox);
     },
 
@@ -1397,10 +1394,7 @@ AppSwitcher.prototype = {
             }
             this._highlighted = index;
             if (this._highlighted != -1) {
-                if (justOutline)
-                    this._items[this._highlighted].add_style_pseudo_class('outlined');
-                else
-                    this._items[this._highlighted].add_style_pseudo_class('selected');
+                this._items[this._highlighted].add_style_pseudo_class(justOutline ? 'outlined' : 'selected');
             }
             // If we're close to either the left or the right edge, we want to scroll
             // the edge-most items into view.
