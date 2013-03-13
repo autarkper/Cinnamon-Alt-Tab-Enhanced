@@ -978,32 +978,30 @@ AltTabPopup.prototype = {
             let childBox = new Clutter.ActorBox();
 
             let window = this._appIcons[this._currentApp].window;
-            let previewClones = new St.Group();
-            this.actor.add_actor(previewClones);
+            let app = this._appIcons[this._currentApp].app;
 
-            let clones = WindowUtils.createWindowClone(window, null, true, false);
-            for (let i = 0; i < clones.length; i++) {
-                let clone = clones[i];
-                previewClones.add_actor(clone.actor);
-                let [width, height] = clone.actor.get_size();
-                childBox.x1 = clone.x;
-                childBox.x2 = clone.x + width;
-                childBox.y1 = clone.y;
-                childBox.y2 = clone.y + height;
-                clone.actor.allocate(childBox, 0);
-            }
+            let th = new ThumbnailHolder();
+            let previewClones = th.actor;
+            this.actor.add_actor(previewClones);
+            let r = window.get_compositor_private();
+            childBox.x1 = r.x;
+            childBox.x2 = r.x + r.width;
+            childBox.y1 = r.y;
+            childBox.y2 = r.y + r.height;
+            previewClones.allocate(childBox, 0);
+            th.addClones(window, app, false);
+
             previewClones.lower(this._appSwitcher.actor);
             if (window.minimized) {
                 previewClones.opacity = 192;
             }
-            let app = this._appIcons[this._currentApp].app;
             const size = 64;
             let icon = app ? app.create_icon_texture(size) : null;
             if (icon) {
                 previewClones.add_actor(icon);
-                let x1 = childBox.x1 = clones[0].x;
+                let x1 = childBox.x1 = previewClones.x;
                 childBox.x2 = x1 + size;
-                let y1 = childBox.y1 = clones[0].y;
+                let y1 = childBox.y1 = previewClones.y;
                 childBox.y2 = y1 + size;
                 icon.allocate(childBox, 0);
             }
@@ -1101,7 +1099,7 @@ AltTabPopup.prototype = {
             // Need to force an allocation so we can figure out the dimensions
             this._thumbnails.actor.get_allocation_box();
         }
-        this._thumbnails.addClones(this._appIcons[this._currentApp].cachedWindows[0], this._appIcons[this._currentApp].app);
+        this._thumbnails.addClones(this._appIcons[this._currentApp].cachedWindows[0], this._appIcons[this._currentApp].app, true);
         this.thumbnailsVisible = true;
     }
 };
@@ -1736,7 +1734,7 @@ ThumbnailHolder.prototype = {
         this.actor.connect('button-press-event', Lang.bind(this, function() {this.emit('item-activated', this._window); }));
     },
 
-    addClones : function (window, app) {
+    addClones : function (window, app, doScale) {
         this._window = window;
         let old_container = this.container;
         this.container = null;
@@ -1748,7 +1746,7 @@ ThumbnailHolder.prototype = {
             this.containerHolder.add_actor(this.container);
             this.container.opacity = 0;
             let headerHeight = 0;
-            let displayHeaders = g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
+            let displayHeaders = doScale && g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
             this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
             if (displayHeaders) {
                 headerHeight = 32 + this.headerPadding;
@@ -1776,18 +1774,23 @@ ThumbnailHolder.prototype = {
 
             let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight;
             let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1;
-            
             this.container.set_size(binWidth, binHeight);
 
             let clones = WindowUtils.createWindowClone(window, 0, true, false);
             for (let j = 0; j < clones.length; j++) {
                 let clone = clones[j];
                 this.container.add_actor(clone.actor);
-                let scaleY = binHeight/g_myMonitor.height;
-                let scaleX = binWidth/g_myMonitor.width;
+                let scaleY = doScale ? binHeight/g_myMonitor.height : binHeight/clone.actor.height;
+                let scaleX = doScale ? binWidth/g_myMonitor.width : binWidth/clone.actor.width;
                 let scale = Math.min(scaleX, scaleY);
+
+                let childBox = new Clutter.ActorBox();
+                childBox.x1 = Math.floor((binWidth-clone.actor.width*scale)/2);
+                childBox.y1 = Math.floor((binHeight-clone.actor.height*scale)/2);
+                childBox.x2 = childBox.x1 + clone.actor.width;
+                childBox.y2 = childBox.y1 + clone.actor.height;
+                clone.actor.allocate(childBox, 0);
                 clone.actor.set_scale(scale, scale);
-                clone.actor.set_position(Math.floor((binWidth-clone.actor.width*scale)/2), Math.floor((binHeight-clone.actor.height*scale)/2));
             }
             Tweener.addTween(this.container, { opacity: 255,
                 time: THUMBNAIL_FADE_TIME * 3,
