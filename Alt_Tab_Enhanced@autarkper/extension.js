@@ -133,6 +133,7 @@ const HELP_TEXT = [
     _("Ctrl+w: Close selected window. Use with care!"),
     _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("z: Zoom to see all windows at once without scrolling (toggle)"),
+    _("F4: Toggle single-line window-title labels on/off"),
     _("F5: Toggle between seeing all windows or only windows from the current workspace"),
     _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
@@ -778,6 +779,9 @@ AltTabPopup.prototype = {
                     (window.minimized ? window.unminimize : window.minimize).call(window, global.get_current_time());
                     this._select(this._currentApp); // refresh
                 }
+            } else if (keysym == Clutter.F4) {
+                g_settings.compactLabels = !g_settings.compactLabels;
+                this.refresh();
             } else if (keysym == Clutter.F5) {
                 g_settings.allWorkspacesMode = !g_settings.allWorkspacesMode;
                 this.refresh();
@@ -1169,9 +1173,9 @@ AppSwitcher.prototype = {
 
         let themeNode = this._items[modelIndex].get_theme_node();
         let iconPadding = themeNode.get_horizontal_padding();
-        let iconVPadding = themeNode.get_vertical_padding() * 2;
+        let iconVPadding = themeNode.get_vertical_padding();
         let iconBorder = themeNode.get_border_width(St.Side.LEFT) + themeNode.get_border_width(St.Side.RIGHT);
-        let [iconMinHeight, iconNaturalHeight] = this.icons[modelIndex].label.get_preferred_height(-1);
+        let [labelMinHeight, labelNaturalHeight] = this.icons[modelIndex]._label_bin.get_preferred_height(-1);
         let iconSpacing = iconPadding + iconBorder;
         let totalSpacing = this._list.spacing * (this._items.length - 1);
         if (this._separators.length)
@@ -1185,7 +1189,7 @@ AppSwitcher.prototype = {
 
         for(let i =  0; i < iconSizes.length; i++) {
             this._iconSize = iconSizes[i];
-            height = this._iconSize + iconNaturalHeight + iconVPadding;
+            height = this._iconSize + labelNaturalHeight + iconVPadding;
             let w = totalSpacing;
             if (this._altTabPopup._numPrimaryItems != this.icons.length) {
                 let width = this._iconSize + themeNode.get_horizontal_padding() + iconBorder;
@@ -1203,7 +1207,7 @@ AppSwitcher.prototype = {
 
         if (this._items.length == 1) {
             this._iconSize = iconSizes[0];
-            height = iconSizes[0] + iconNaturalHeight + iconVPadding;
+            height = iconSizes[0] + labelNaturalHeight + iconVPadding;
         }
 
         for(let i = 0; i < this.icons.length; i++) {
@@ -1240,15 +1244,16 @@ AppSwitcher.prototype = {
         // First, find the tallest item in the list
         let height = 0;
         for (let i = 0; i < this._items.length; i++) {
-            height = Math.max(height, this._items[i].allocation.y2);
+            height = Math.max(height, this._items[i].allocation.y2 - this._items[i].allocation.y1);
         }
 
         let childBox = new Clutter.ActorBox();
         let [arrowWidth, arrowHeight] = this._getArrowDimensions();
         let itemBox = this._items[index].allocation;
+
         childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
         childBox.x2 = childBox.x1 + arrowWidth;
-        childBox.y1 = height - arrowHeight * 2;
+        childBox.y1 = height + arrowHeight;
         childBox.y2 = childBox.y1 + arrowHeight;
         arrow.allocate(childBox, 0);
     },
@@ -1592,11 +1597,9 @@ AppIcon.prototype = {
         this.actor.add(this._label_bin);
 
         this.wsLabel = new St.Label();
-        this.wsLabel.clutter_text.line_wrap = true;
         this._wsLabel_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
         this._wsLabel_bin.add_actor(this.wsLabel);
         this.actor.add(this._wsLabel_bin);
-
         this.updateLabel();
     },
 
@@ -1635,6 +1638,7 @@ AppIcon.prototype = {
     },
 
     set_size: function(sizeIn, focused) {
+        this._initLabelHeight = this._initLabelHeight || this._label_bin.height;
         let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
         if (!this.showIcons || (
@@ -1660,7 +1664,8 @@ AppIcon.prototype = {
             this.icon = createApplicationIcon(this.app, size);
         }
         // Make some room for the window title.
-        this._label_bin.set_size(Math.floor(size * 1.2), Math.max(50, Math.floor(size/2)));
+        this._label_bin.width = Math.floor(size * 1.2);
+        this._label_bin.height = !g_settings.compactLabels ? Math.max(this._initLabelHeight * 2, Math.floor(size/2)) : this._initLabelHeight;
         if (this.ignored) {
             this.icon.opacity = 170;
         }
@@ -1827,6 +1832,11 @@ function init(metadata) {
             "displayOriginArrow",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "compact-labels",
+            "compactLabels",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -1835,6 +1845,7 @@ function init(metadata) {
         g_settings.vAlign = 'center';
         g_settings.displayThumbnailHeaders = true;
         g_settings.displayOriginArrow = true;
+        g_settings.compactLabels = false;
     }
 }
 

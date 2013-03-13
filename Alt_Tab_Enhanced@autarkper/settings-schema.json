@@ -33,5 +33,10 @@
     "type" : "checkbox",
     "default" : true,
     "description" : "Whether to display a small arrow, below the icon, to indicate the window you came from"
+ },
+ "compact-labels": {
+    "type": "checkbox",
+    "default": false,
+    "description": "Whether to display the window title in a single-row label"
  }
 }
