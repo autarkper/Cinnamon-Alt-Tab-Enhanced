@@ -133,11 +133,11 @@ const HELP_TEXT = [
     _("Ctrl+w: Close selected window. Use with care!"),
     _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("z: Zoom to see all windows at once without scrolling (toggle)"),
-    _("F4: Toggle single-line window-title labels on/off"),
+    _("F4: Switch between the most common Alt-Tab styles"),
     _("F5: Toggle between seeing all windows or only windows from the current workspace"),
     _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
-    _("F8: Switch between the most common Alt-Tab styles"),
+    _("F8: Toggle single-line window-title labels on/off"),
     _("F9: Switch between the different thumbnail-behind-icon styles (always, never, behind-identical-icons)"),
     _("F1: Show this quick-help screen"),
     "",
@@ -790,32 +790,40 @@ AltTabPopup.prototype = {
                     this._select(this._currentApp, true); // refresh
                 }
             } else if (keysym == Clutter.F4) {
-                g_settings.compactLabels = !g_settings.compactLabels;
-                this.refresh();
-            } else if (keysym == Clutter.F5) {
-                g_settings.allWorkspacesMode = !g_settings.allWorkspacesMode;
-                this.refresh();
-            } else if (keysym == Clutter.F6) {
-                let alignmentTypeIndex = g_aligmentTypes.indexOf(g_settings.vAlign);
-                let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
-                g_settings.vAlign = g_aligmentTypes[newIndex];
-                this.refresh();
-            } else if (keysym == Clutter.F7) {
-                if (g_settings.vAlign != 'center') {
-                    g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
-                    this._select(this._currentApp, true); // refresh
-                }
-            } else if (keysym == Clutter.F8) {
                 let index = g_alttabStyles.indexOf(g_vars.switcherStyle);
                 let newIndex = (index + 1 + g_alttabStyles.length) % g_alttabStyles.length;
                 g_vars.switcherStyle = g_alttabStyles[newIndex];
                 this._processSwitcherStyle();
                 this.refresh();
-            } else if (keysym == Clutter.F9) {
-                let index = g_thumbnailIconOptions.indexOf(g_settings.thumbnailsBehindIcons);
-                let newIndex = (index + 1 + g_thumbnailIconOptions.length) % g_thumbnailIconOptions.length;
-                g_settings.thumbnailsBehindIcons = g_thumbnailIconOptions[newIndex];
+            } else if (keysym == Clutter.F5) {
+                g_settings.allWorkspacesMode = !g_settings.allWorkspacesMode;
                 this.refresh();
+            } else if (keysym == Clutter.F6) {
+                if (this._iconsEnabled) {
+                    let alignmentTypeIndex = g_aligmentTypes.indexOf(g_settings.vAlign);
+                    let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
+                    g_settings.vAlign = g_aligmentTypes[newIndex];
+                    this.refresh();
+                }
+            } else if (keysym == Clutter.F7) {
+                if (this._iconsEnabled && this._thumbnailsEnabled) {
+                    if (g_settings.vAlign != 'center') {
+                        g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
+                        this._select(this._currentApp, true); // refresh
+                    }
+                }
+            } else if (keysym == Clutter.F8) {
+                if (this._iconsEnabled) {
+                    g_settings.compactLabels = !g_settings.compactLabels;
+                    this.refresh();
+                }
+            } else if (keysym == Clutter.F9) {
+                if (this._iconsEnabled) {
+                    let index = g_thumbnailIconOptions.indexOf(g_settings.thumbnailsBehindIcons);
+                    let newIndex = (index + 1 + g_thumbnailIconOptions.length) % g_thumbnailIconOptions.length;
+                    g_settings.thumbnailsBehindIcons = g_thumbnailIconOptions[newIndex];
+                    this.refresh();
+                }
             }
             return true;
         }
