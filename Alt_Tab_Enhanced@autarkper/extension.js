@@ -1461,6 +1461,21 @@ AppSwitcher.prototype = {
         this._leftArrow.opacity = this._leftGradient.opacity = scrollableLeft ? 255 : 0;
         this._scrollableRight = scrollableRight;
         this._rightArrow.opacity = this._rightGradient.opacity = scrollableRight ? 255: 0;
+        Mainloop.idle_add(Lang.bind(this, function() {
+            if (!this._clipBin.get_stage()) {return;}
+            if (this._scrollableLeft){
+                this._clipBin.lower(this._leftGradient);
+            }
+            else {
+                this._leftGradient.lower(this._clipBin);
+            }
+            if (this._scrollableRight){
+                this._clipBin.lower(this._rightGradient);
+            }
+            else {
+                this._rightGradient.lower(this._clipBin);
+            }
+        }));
     },
 
     _scrollTo: function(index, direction, scrollMax_, fast) {        
