@@ -300,7 +300,7 @@ AltTabPopup.prototype = {
 
     _indexOfWindow: function(metaWindow) {
         let index = -1;
-        if (!this._appIcons) {
+        if (!this._appSwitcher || !this._appIcons) {
             return index;
         }
         this._appIcons.some(function(ai, ix) {
