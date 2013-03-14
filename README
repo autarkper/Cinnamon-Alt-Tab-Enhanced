@@ -1,5 +1,5 @@
 This is an enhanced Alt-Tab for Cinnamon. It is packaged as an applet but it
-also works as an extension, replacing the built-in Alt-Tab,
+also works as an extension. It replaces the built-in Alt-Tab,
 expanding the feature set with multi-workspace capabilities, extended 
 mouse support, more configuration options, and other useful 
 features for the advanced user while working almost exactly like the built-in
