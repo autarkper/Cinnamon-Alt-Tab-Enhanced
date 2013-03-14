@@ -13,6 +13,7 @@ const Main = imports.ui.main;
 const ModalDialog = imports.ui.modalDialog;
 const Tweener = imports.ui.tweener;
 
+const PointerTracker = imports.misc.pointerTracker;
 const Util = imports.misc.util;
 const WindowUtils = imports.misc.windowUtils;
 
@@ -1402,7 +1403,15 @@ AppSwitcher.prototype = {
 
         let n = this._items.length;
         bbox.connect('clicked', Lang.bind(this, function() { this.emit('item-activated', n); }));
-        bbox.connect('motion-event', Lang.bind(this, function() {this.emit('hover', n);}));
+
+        // There may occur spurious motion events, so use a pointer tracker to verify that the pointer has moved.
+        // The detection is not completely fail-safe, due to the effects of scrolling, but it is better than nothing.
+        let pointerTracker = new PointerTracker.PointerTracker();
+        bbox.connect('motion-event', Lang.bind(this, function() {
+            if (pointerTracker.hasMoved()) {
+                this.emit('hover', n);
+            }
+        }));
         this._items.push(bbox);
     },
 
