@@ -1,18 +1,18 @@
 {
+ "all-workspaces-mode": {
+    "type" : "checkbox",
+    "default" : false,
+    "description" : "Display windows from all workspaces"
+ },
  "thumbnails-behind-icons": {
     "type" : "radiogroup",
-    "default" : "behind-identical",
+    "default" : "never",
     "options" : {
         "Never" : "never",
         "Always" : "always",
         "Behind identical icons" : "behind-identical"
     },
     "description" : "Display a thumbnail behind icons"
- },
- "all-workspaces-mode": {
-    "type" : "checkbox",
-    "default" : false,
-    "description" : "Display windows from all workspaces, or just windows from the active workspace"
  },
  "vertical-alignment": {
     "type" : "radiogroup",
@@ -31,12 +31,12 @@
  },
  "display-origin-arrow": {
     "type" : "checkbox",
-    "default" : true,
+    "default" : false,
     "description" : "Display a small arrow, below the icon, to indicate the window you came from"
  },
  "compact-labels": {
     "type": "checkbox",
-    "default": false,
+    "default": true,
     "description": "Display the window title in a single-row label"
  }
 }
