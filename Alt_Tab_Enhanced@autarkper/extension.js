@@ -557,7 +557,13 @@ AltTabPopup.prototype = {
         }
         this._appSwitcher.connect('item-activated', Lang.bind(this, this._appActivated));
         this._appSwitcher.connect('hover', Lang.bind(this, function(sender, index) {
-            this._select(index);
+            this._appSwitcher._noscroll = true;
+            try {
+                this._select(index);
+            }
+            finally {
+                this._appSwitcher._noscroll = false;
+            }
         }));
     },
     
@@ -1130,8 +1136,33 @@ AppSwitcher.prototype = {
         this._clipBin.child = this._list;
         this.actor.add_actor(this._clipBin);
 
-        this._leftGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-left', vertical: true});
-        this._rightGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-right', vertical: true});
+        this._leftGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-left', vertical: true, reactive: true});
+        this._leftGradient.connect('motion-event', Lang.bind(this, function() {
+            if (this.opacity != 0) {
+                Tweener.addTween(this._list, { anchor_x: 0,
+                    time: POPUP_SCROLL_TIME,
+                    transition: 'linear',
+                    onComplete: this.determineScrolling,
+                    onCompleteScope: this
+                });
+            }
+        }));
+
+        this._rightGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-right', vertical: true, reactive: true});
+        this._rightGradient.connect('motion-event', Lang.bind(this, function() {
+            if (this.opacity != 0) {
+                let padding = this.actor.get_theme_node().get_horizontal_padding();
+                let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
+                let x = this._items[this._items.length - 1].allocation.x2 - g_myMonitor.width + padding + parentPadding;
+                Tweener.addTween(this._list, { anchor_x: x,
+                    time: POPUP_SCROLL_TIME,
+                    transition: 'linear',
+                    onComplete: this.determineScrolling,
+                    onCompleteScope: this
+                });
+            }
+        }));
+
         this._rightGradient.style = this._leftGradient.style = "border-radius: 0";
         this.actor.add_actor(this._leftGradient);
         this.actor.add_actor(this._rightGradient);
@@ -1385,30 +1416,28 @@ AppSwitcher.prototype = {
     },
 
     highlightInner: function(index, justOutline) {
-        if (this._highlightTimeout) {
-            Mainloop.source_remove(this._highlightTimeout);
+        let prevIndex = this._highlighted;
+        // If previous index is negative, we are probably initializing, and we want
+        // to show as many of the current workspace's windows as possible.
+
+        let direction = prevIndex == -1 ? 1 : index - prevIndex;
+        if (this._highlighted != -1) {
+            this._items[this._highlighted].remove_style_pseudo_class('outlined');
+            this._items[this._highlighted].remove_style_pseudo_class('selected');
         }
-        this._highlightTimeout = Mainloop.timeout_add(25, Lang.bind(this, function() {
-            this._highlightTimeout = 0;
-
-            let prevIndex = this._highlighted;
-            // If previous index is negative, we are probably initializing, and we want
-            // to show as many of the current workspace's windows as possible.
-
-            let direction = prevIndex == -1 ? 1 : index - prevIndex;
-            if (this._highlighted != -1) {
-                this._items[this._highlighted].remove_style_pseudo_class('outlined');
-                this._items[this._highlighted].remove_style_pseudo_class('selected');
-            }
-            this._highlighted = index;
-            if (this._highlighted != -1) {
-                this._items[this._highlighted].add_style_pseudo_class(justOutline ? 'outlined' : 'selected');
-            }
+        this._highlighted = index;
+        if (this._highlighted != -1) {
+            this._items[this._highlighted].add_style_pseudo_class(justOutline ? 'outlined' : 'selected');
+        }
+        if (!this._noscroll) {
             // If we're close to either the left or the right edge, we want to scroll
             // the edge-most items into view.
-            let scrollMax = Math.min(5, Math.floor(this._items.length/4));
+            let scrollMax = Math.min(this._noscroll ? 1 : 5, Math.floor(this._items.length/4));
             this._scrollTo(index, direction, scrollMax, prevIndex == -1);
-        }));
+        }
+        else {
+            this.determineScrolling();
+        }
     },
 
     _getStagePosX: function(actor, offset) {
