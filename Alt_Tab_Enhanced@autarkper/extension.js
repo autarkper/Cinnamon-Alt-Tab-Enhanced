@@ -1137,7 +1137,7 @@ AppSwitcher.prototype = {
 
         this._leftGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-left', vertical: true, reactive: true});
         this._leftGradient.connect('motion-event', Lang.bind(this, function() {
-            if (this.opacity != 0) {
+            if (this._scrollableLeft) {
                 Tweener.addTween(this._list, { anchor_x: 0,
                     time: POPUP_SCROLL_TIME,
                     transition: 'linear',
@@ -1149,7 +1149,7 @@ AppSwitcher.prototype = {
 
         this._rightGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-right', vertical: true, reactive: true});
         this._rightGradient.connect('motion-event', Lang.bind(this, function() {
-            if (this.opacity != 0) {
+            if (this._scrollableRight) {
                 let padding = this.actor.get_theme_node().get_horizontal_padding();
                 let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
                 let x = this._items[this._items.length - 1].allocation.x2 - g_myMonitor.width + padding + parentPadding;
