@@ -7,12 +7,12 @@
         "Always" : "always",
         "Behind identical icons" : "behind-identical"
     },
-    "description" : "Whether to display a thumbnail behind icons"
+    "description" : "Display a thumbnail behind icons"
  },
  "all-workspaces-mode": {
     "type" : "checkbox",
     "default" : false,
-    "description" : "Whether to display windows from all workspaces, or just windows from the active workspace"
+    "description" : "Display windows from all workspaces, or just windows from the active workspace"
  },
  "vertical-alignment": {
     "type" : "radiogroup",
@@ -27,16 +27,16 @@
  "display-thumbnail-headers": {
     "type" : "checkbox",
     "default" : true,
-    "description" : "Whether to display thumbnail headers, showing the window icon and title"
+    "description" : "Display thumbnail headers, showing the window icon and title"
  },
  "display-origin-arrow": {
     "type" : "checkbox",
     "default" : true,
-    "description" : "Whether to display a small arrow, below the icon, to indicate the window you came from"
+    "description" : "Display a small arrow, below the icon, to indicate the window you came from"
  },
  "compact-labels": {
     "type": "checkbox",
     "default": false,
-    "description": "Whether to display the window title in a single-row label"
+    "description": "Display the window title in a single-row label"
  }
 }

@@ -8,6 +8,7 @@ const Cinnamon = imports.gi.Cinnamon;
 const Signals = imports.signals;
 const St = imports.gi.St;
 
+const Applet = imports.ui.applet;
 const Main = imports.ui.main;
 const ModalDialog = imports.ui.modalDialog;
 const Tweener = imports.ui.tweener;
@@ -535,7 +536,7 @@ AltTabPopup.prototype = {
         if (this._appIcons.length > 0) {
             // We delay showing the popup so that fast Alt+Tab users aren't
             // disturbed by the popup briefly flashing.
-            let timeout = Math.max(0, POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs));
+            let timeout = Math.max(0, this._persistent ? 0 : POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs));
             this._initialDelayTimeoutId = Mainloop.timeout_add(timeout,
                 Lang.bind(this, function () {
                     this._appSwitcher.actor.opacity = 255;
@@ -1917,4 +1918,44 @@ function enable() {
 function disable() {
     Meta.keybindings_set_custom_handler('switch-windows',
         Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+}
+
+// ----------------------------------
+
+function MyApplet() {
+    this._init.apply(this, arguments);
+}
+
+
+MyApplet.prototype = {
+    __proto__: Applet.IconApplet.prototype,
+
+    _init: function(metadata, orientation, panel_height, instanceId) {        
+        Applet.IconApplet.prototype._init.call(this, orientation, panel_height, instanceId);
+        this.path = metadata.path;
+    },
+
+    on_applet_added_to_panel: function() {
+        this.set_applet_icon_path(this.path + "/icon.png");
+        this.set_applet_tooltip("Alt-Tab Enhanced");
+        enable();
+    },
+
+    on_applet_removed_from_panel: function(event) {
+        disable();
+    },
+
+    on_applet_clicked: function(event) {
+        let tabPopup = new AltTabPopup();
+        tabPopup._persistent = true;
+        tabPopup.show(false, 'no-switch-windows');
+    },
+    
+    on_orientation_changed: function (orientation) {
+    }
+};
+
+function main(metadata, orientation, panel_height, instanceId) {
+    init(metadata);
+    return new MyApplet(metadata, orientation, panel_height, instanceId);
 }

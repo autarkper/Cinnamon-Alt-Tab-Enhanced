@@ -1,24 +1,34 @@
-This is an enhanced Alt-Tab for Cinnamon. It builds on the built-in Alt-Tab and
-expands the feature set with multi-workspace capabilities and other useful 
+This is an enhanced Alt-Tab for Cinnamon. It is packaged as an applet but it
+also works as an extension, replacing the built-in Alt-Tab,
+expanding the feature set with multi-workspace capabilities, extended 
+mouse support, more configuration options, and other useful 
 features for the advanced user while working almost exactly like the built-in
-version for the normal user. One of the features is a quick-help screen, accessed
+Alt-Tab for the normal user. One of the features is a quick-help screen, accessed
 by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and
 single-workspace mode, press F5.
 
-Alt-Tab Enhanced is one of the first extensions to use the new "applet settings"
-support that is a new feature of the upcoming Cinnamon 1.8. At present, there
-is no UI to change settings, but most of the different settings are changeable 
-via the use of hotkeys - consult the help screen for more information.
+Alt-Tab Enhanced is one of the first applets to use the new "applet settings"
+support that is a new feature of the upcoming Cinnamon 1.8. This means that
+you can change all settings via Cinnamon Settings, but most of the settings
+are also changeable via the use of hotkeys - consult the help screen
+for more information.
 
 Compatibility: From Cinnamon 1.7.2 and up.
 
 One-time installation:
-Copy the directory Alt_Tab_Enhanced@autarkper to ~/.local/share/cinnamon/extensions/
+Copy the directory Alt_Tab_Enhanced@autarkper to ~/.local/share/cinnamon/applets/
 
 Flexible installation:
-Make a soft link from Alt_Tab_Enhanced@autarkper in your git clone
-to ~/.local/share/cinnamon/extensions/
+Make a soft link from Alt_Tab_Enhanced@autarkper in your git clone to
+~/.local/share/cinnamon/applets/
 You will then have the latest version every time you update your local git branch.
 
-After installation, you will need to enable the extension in Cinnamon Settings,
-the Extensions tab.
+After installation, you will need to enable the applet in Cinnamon Settings,
+the Applets tab.
+
+Advanced tip: you can alternatively install this as an extension, to ~/.local/share/cinnamon/extensions/
+You will then lose the configuration UI and the panel icon, but as an extension
+it is easier to disable and enable.
+
+ Whether installed as an applet or an extension, your settings are stored in
+ ~/.cinnamon/configs/Alt_Tab_Enhanced\@autarkper
