@@ -1879,7 +1879,7 @@ function init(metadata) {
         // yes, we have local settings support!
         let settings = new Settings.ExtensionSettings(g_settings, metadata['uuid']);
 
-        settings.bindProperty(Settings.BindingDirection.IN,
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
             "thumbnails-behind-icons",
             "thumbnailsBehindIcons",
             function() {},
