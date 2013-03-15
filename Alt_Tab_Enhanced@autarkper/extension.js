@@ -167,8 +167,17 @@ function primaryModifier(mask) {
 }
 
 const g_aligmentTypes = ["top", "center", "bottom"];
-const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails"]; // the most usual ones ...
+const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails", ":dock"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
+
+function getSwitcherStyle() {
+    let oldstyle = g_settings["last-gsettings-switcher-style"];
+    g_vars.switcherStyle = global.settings.get_string("alttab-switcher-style");
+    g_vars.switcherStyleUpdated = oldstyle != g_vars.switcherStyle;
+    if (g_vars.switcherStyleUpdated) {
+        g_settings["last-gsettings-switcher-style"] = g_vars.switcherStyle;
+    }
+};
 
 var g_vars = Main._alttab_enhanced_vars;
 if (!g_vars) {
@@ -185,17 +194,10 @@ if (!g_vars) {
         }, this);
         g_vars.windowsOrdered.unshift(display.focus_window);
     });
-    function getSwitcherStyle() {
-        g_vars.switcherStyleUpdated = true;
-        g_vars.switcherStyle = global.settings.get_string("alttab-switcher-style");
-    };
     connect(global.settings, 'changed::alttab-switcher-style', getSwitcherStyle);
-    getSwitcherStyle();
-    g_vars.switcherStyleUpdated = false;
 
     // this object will be populated with our settings, if settings support is available
     g_vars.settings = {};
-
 }
 
 const g_settings = g_vars.settings;
@@ -270,33 +272,49 @@ AltTabPopup.prototype = {
         this._iconsEnabled = false;
         this._thumbnailsEnabled = false;
 
-        let styleSettings = g_vars.switcherStyle;
-        let features = styleSettings.split('+');
+        let styleSettingsMaster = g_settings.style;
+        let isSystemStyle = styleSettingsMaster == ":system";
+        let styleSettings = isSystemStyle ? g_vars.switcherStyle : styleSettingsMaster;
+
         let found = false;
-        for (let i in features) {
-            if (features[i] === 'icons') {
+        if (styleSettings.indexOf(":") < 0) {
+            let features = styleSettings.split('+');
+            for (let i in features) {
+                if (features[i] === 'icons') {
+                    this._iconsEnabled = true;
+                    found = true;
+                }
+                if (features[i] === 'preview') {
+                    this._previewEnabled = true;
+                    found = true;
+                }
+                if (features[i] === 'thumbnails') {
+                    this._thumbnailsEnabled = true;
+                    g_settings.vAlign = 'center';
+                    found = true;
+                }
+            }
+        }
+        else {
+            if (styleSettings == ":dock") {
                 this._iconsEnabled = true;
-                found = true;
-            }
-            if (features[i] === 'preview') {
-                this._previewEnabled = true;
-                found = true;
-            }
-            if (features[i] === 'thumbnails') {
                 this._thumbnailsEnabled = true;
-                found = true;
+                if (g_settings.vAlign == 'center') {
+                    g_settings.vAlign = 'bottom';
+                }
             }
         }
         if (!found) {
             this._iconsEnabled = true;
         }
+
         this._showThumbnails = this._thumbnailsEnabled;
-        if (g_vars.switcherStyleUpdated) {
+        if (g_vars.switcherStyleUpdated && isSystemStyle) {
             if (!this._thumbnailsEnabled) {
                 g_settings.vAlign = 'center';
             }
+            g_vars.switcherStyleUpdated = false;
         }
-        g_vars.switcherStyleUpdated = false;
     },
 
     _indexOfWindow: function(metaWindow) {
@@ -798,9 +816,9 @@ AltTabPopup.prototype = {
                     this._select(this._currentApp, true); // refresh
                 }
             } else if (keysym == Clutter.F4) {
-                let index = g_alttabStyles.indexOf(g_vars.switcherStyle);
+                let index = g_alttabStyles.indexOf(g_settings.style);
                 let newIndex = (index + 1 + g_alttabStyles.length) % g_alttabStyles.length;
-                g_vars.switcherStyle = g_alttabStyles[newIndex];
+                g_settings.style = g_alttabStyles[newIndex];
                 this._processSwitcherStyle();
                 this.refresh();
             } else if (keysym == Clutter.F5) {
@@ -1889,6 +1907,11 @@ function init(metadata) {
         let settings = new Settings.ExtensionSettings(g_settings, metadata['uuid']);
 
         settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "style",
+            "style",
+            function() {},
+            null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
             "thumbnails-behind-icons",
             "thumbnailsBehindIcons",
             function() {},
@@ -1918,6 +1941,11 @@ function init(metadata) {
             "compactLabels",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "last-gsettings-switcher-style",
+            "last-gsettings-switcher-style",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -1928,6 +1956,9 @@ function init(metadata) {
         g_settings.displayOriginArrow = true;
         g_settings.compactLabels = false;
     }
+
+    let oldstyle = g_settings["last-gsettings-switcher-style"];
+    getSwitcherStyle();
 }
 
 function enable() {

@@ -4,6 +4,18 @@
     "default" : false,
     "description" : "Display windows from all workspaces"
  },
+ "style": {
+    "type": "combobox",
+    "default": ":system",
+    "options" : {
+        "Use built-in Alt-Tab style" : ":system",
+        "In-place previews" : "icons+preview",
+        "Dock" : ":dock",
+        "Thumbnails" : "icons+thumbnails",
+        "Icons only" : "icons"
+    },
+    "description": "Select the general switcher style"
+ },
  "thumbnails-behind-icons": {
     "type" : "radiogroup",
     "default" : "never",
@@ -38,5 +50,9 @@
     "type": "checkbox",
     "default": true,
     "description": "Display the window title in a single-row label"
+ },
+ "last-gsettings-switcher-style": {
+    "type": "generic",
+    "default": ""
  }
 }
