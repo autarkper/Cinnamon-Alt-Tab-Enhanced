@@ -908,7 +908,8 @@ AltTabPopup.prototype = {
     },
 
     _clickedOutside : function(actor, event) {
-        this.destroy();
+        Mainloop.idle_add(Lang.bind(this, this.destroy));
+        return true;
     },
 
     _activateWindow : function(window) {
