@@ -166,6 +166,7 @@ function primaryModifier(mask) {
     return primary;
 }
 
+var g_uuid;
 const g_aligmentTypes = ["top", "center", "bottom"];
 const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails", ":dock"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
@@ -873,12 +874,12 @@ AltTabPopup.prototype = {
         let altTab = this;
         dialog.setButtons([
             {
-                label: _("Open Window Settings"),
+                label: _("Open Settings"),
                 focused: false,
                 action: function() {
                     altTab.destroy();
                     dialog.close();
-                    Util.spawnCommandLine("cinnamon-settings windows");
+                    Util.spawnCommandLine("cinnamon-settings applets " + g_uuid);
                 }
             },
             {
@@ -1902,6 +1903,7 @@ function _drawArrow(area, side) {
 }
 
 function init(metadata) {
+    g_uuid = metadata['uuid'];
     if (Settings) {
         // yes, we have local settings support!
         let settings = new Settings.ExtensionSettings(g_settings, metadata['uuid']);
