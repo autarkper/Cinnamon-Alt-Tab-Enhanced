@@ -11,6 +11,7 @@ const St = imports.gi.St;
 const Applet = imports.ui.applet;
 const Main = imports.ui.main;
 const ModalDialog = imports.ui.modalDialog;
+const PopupMenu = imports.ui.popupMenu;
 const Tweener = imports.ui.tweener;
 
 const PointerTracker = imports.misc.pointerTracker;
@@ -167,6 +168,10 @@ function primaryModifier(mask) {
 }
 
 var g_uuid;
+function openSettings() {
+    Util.spawnCommandLine("cinnamon-settings applets " + g_uuid);
+}
+
 const g_aligmentTypes = ["top", "center", "bottom"];
 const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails", ":dock"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
@@ -879,7 +884,7 @@ AltTabPopup.prototype = {
                 action: function() {
                     altTab.destroy();
                     dialog.close();
-                    Util.spawnCommandLine("cinnamon-settings applets " + g_uuid);
+                    openSettings();
                 }
             },
             {
@@ -1995,6 +2000,9 @@ MyApplet.prototype = {
     on_applet_added_to_panel: function() {
         this.set_applet_icon_path(this.path + "/icon.png");
         this.set_applet_tooltip("Alt-Tab Enhanced");
+        let item = new PopupMenu.PopupMenuItem(_("Settings"));
+        item.connect('activate', openSettings);
+        this._applet_context_menu.addMenuItem(item);
         enable();
     },
 
