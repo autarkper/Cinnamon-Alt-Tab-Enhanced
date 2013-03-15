@@ -8,23 +8,13 @@
     "type": "combobox",
     "default": ":system",
     "options" : {
-        "Use built-in Alt-Tab style" : ":system",
+        "Use built-in Alt-Tab's switcher-style setting" : ":system",
         "In-place previews" : "icons+preview",
         "Dock" : ":dock",
         "Thumbnails" : "icons+thumbnails",
         "Icons only" : "icons"
     },
     "description": "Select the general switcher style"
- },
- "thumbnails-behind-icons": {
-    "type" : "radiogroup",
-    "default" : "never",
-    "options" : {
-        "Never" : "never",
-        "Always" : "always",
-        "Behind identical icons" : "behind-identical"
-    },
-    "description" : "Display a thumbnail behind icons"
  },
  "vertical-alignment": {
     "type" : "radiogroup",
@@ -35,6 +25,16 @@
         "Bottom" : "bottom"
     },
     "description" : "Where to display the window switcher"
+ },
+ "thumbnails-behind-icons": {
+    "type" : "radiogroup",
+    "default" : "never",
+    "options" : {
+        "Never" : "never",
+        "Always" : "always",
+        "Behind identical icons" : "behind-identical"
+    },
+    "description" : "Display a thumbnail behind icons"
  },
  "display-thumbnail-headers": {
     "type" : "checkbox",
