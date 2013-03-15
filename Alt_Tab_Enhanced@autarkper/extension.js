@@ -1482,6 +1482,9 @@ AppSwitcher.prototype = {
     },
 
     determineScrolling: function() {
+        if (!this._items.length) {
+            return;
+        }
         let theme_node = this.actor.get_stage() ? this.actor.get_theme_node() : null;
         if (!theme_node) {return;}
 
