@@ -104,13 +104,12 @@ Connector.prototype = {
 
 const POPUP_APPICON_SIZE = 96;
 const POPUP_SCROLL_TIME = 0.10; // seconds
-const POPUP_DELAY_TIMEOUT = 150; // milliseconds
+const POPUP_DELAY_TIMEOUT = 110; // milliseconds
 
 const APP_ICON_HOVER_TIMEOUT = 200; // milliseconds
 
 const DISABLE_HOVER_TIMEOUT = 500; // milliseconds
 
-const THUMBNAIL_POPUP_TIME = 150; // milliseconds
 const THUMBNAIL_FADE_TIME = 0.1; // seconds
 
 const PREVIEW_DELAY_TIMEOUT = 180; // milliseconds
@@ -509,11 +508,8 @@ AltTabPopup.prototype = {
 
         this._createAppswitcher(windows);
         
-        // Need to force an allocation so we can figure out whether we
-        // need to scroll when selecting
         this._appSwitcher.actor.opacity = this._persistent ? 255 : 0;
         this.actor.show();
-        this.actor.get_allocation_box();
         
         if (!this._homeWindow) {
             this._homeWindow = currentWindow;
@@ -523,7 +519,6 @@ AltTabPopup.prototype = {
         if (this._selectedWindow) {
             forwardIndex = windows.indexOf(this._selectedWindow);
         }
-        let haveSelection = this._selectedWindow != null; // this._selectedWindow is modified by _select
 
         if (g_settings.allWorkspacesMode && g_settings.displayOriginArrow && !g_vars.globalFocusOrder) { // restricted feature
             this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
@@ -562,12 +557,18 @@ AltTabPopup.prototype = {
             if (this._appSwitcher.actor.opacity != 255) {
                 // We delay showing the popup so that fast Alt+Tab users aren't
                 // disturbed by the popup briefly flashing.
-                let timeout = Math.max(0, POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs));
-                this._initialDelayTimeoutId = Mainloop.timeout_add(timeout,
-                    Lang.bind(this, function () {
-                        this._appSwitcher.actor.opacity = 255;
-                        this._initialDelayTimeoutId = 0;
-                    }));
+                let timeout = POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs);
+global.logError(timeout);
+                if (timeout > 25) {
+                    this._initialDelayTimeoutId = Mainloop.timeout_add(Math.max(0, timeout),
+                        Lang.bind(this, function () {
+                            this._appSwitcher.actor.opacity = 255;
+                            this._initialDelayTimeoutId = 0;
+                        }));
+                }
+                else {
+                    this._appSwitcher.actor.opacity = 255;
+                }
             }
         }
         
