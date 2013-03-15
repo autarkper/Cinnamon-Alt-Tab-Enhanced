@@ -511,7 +511,7 @@ AltTabPopup.prototype = {
         
         // Need to force an allocation so we can figure out whether we
         // need to scroll when selecting
-        this._appSwitcher.actor.opacity = 0;
+        this._appSwitcher.actor.opacity = this._persistent ? 255 : 0;
         this.actor.show();
         this.actor.get_allocation_box();
         
@@ -559,14 +559,16 @@ AltTabPopup.prototype = {
         }
 
         if (this._appIcons.length > 0) {
-            // We delay showing the popup so that fast Alt+Tab users aren't
-            // disturbed by the popup briefly flashing.
-            let timeout = Math.max(0, this._persistent ? 0 : POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs));
-            this._initialDelayTimeoutId = Mainloop.timeout_add(timeout,
-                Lang.bind(this, function () {
-                    this._appSwitcher.actor.opacity = 255;
-                    this._initialDelayTimeoutId = 0;
-                }));
+            if (this._appSwitcher.actor.opacity != 255) {
+                // We delay showing the popup so that fast Alt+Tab users aren't
+                // disturbed by the popup briefly flashing.
+                let timeout = Math.max(0, POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs));
+                this._initialDelayTimeoutId = Mainloop.timeout_add(timeout,
+                    Lang.bind(this, function () {
+                        this._appSwitcher.actor.opacity = 255;
+                        this._initialDelayTimeoutId = 0;
+                    }));
+            }
         }
         
         return true;
