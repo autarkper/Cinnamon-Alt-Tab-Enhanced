@@ -356,7 +356,8 @@ AltTabPopup.prototype = {
                 this._homeWindow = null;
             }
             this._appSwitcher._removeIcon(index);
-            this._select(this._currentApp);
+            this._select(this._currentApp, true);
+            this.refresh();
         }
     },
 
