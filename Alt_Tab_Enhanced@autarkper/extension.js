@@ -271,6 +271,18 @@ function createApplicationIcon(app, size) {
         });
 }
 
+function getTabList(workspaceOpt, screenOpt) {
+    let screen = screenOpt || global.screen;
+    let display = screen.get_display();
+    let workspace = workspaceOpt || screen.get_active_workspace();
+
+    let allwindows = display.get_tab_list(Meta.TabList.NORMAL_ALL, screen,
+                                       workspace);
+    if (allwindows.length) {
+        return allwindows.filter(Main.isInteresting);
+    }
+    return [];
+}
 
 function AltTabPopup() {
     this._init();
@@ -315,9 +327,11 @@ AltTabPopup.prototype = {
         connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
 
         // remove zombies
-        g_vars.windowsToIgnore = g_vars.windowsToIgnore.filter(function(window) {
-            return window.get_workspace() != null;
-        });
+        if (g_vars.windowsToIgnore.length) {
+            g_vars.windowsToIgnore = g_vars.windowsToIgnore.filter(function(window) {
+                return window.get_workspace() != null;
+            });
+        }
 
         Main.uiGroup.add_actor(this.actor);
     },
@@ -438,7 +452,7 @@ AltTabPopup.prototype = {
         }
        
         // Find out the currently active window
-        let wsWindows = Main.getTabList();
+        let wsWindows = getTabList();
         let [currentWindow, forwardWindow, backwardWindow] = [(wsWindows.length > 0 ? wsWindows[0] : null), null, null];
 
         let windows = [];
@@ -447,8 +461,11 @@ AltTabPopup.prototype = {
 
         let activeWsIndex = global.screen.get_active_workspace_index();
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
-            let wlist = Main.getTabList(global.screen.get_workspace_by_index(i)).filter(function(window) {
-                // Main.getTabList will sometimes return duplicates. Happens with Skype chat windows marked urgent.
+            let wlist = getTabList(global.screen.get_workspace_by_index(i));
+            if (!wlist.length) {
+                continue;
+            }
+            wlist = wlist.filter(function(window) {
                 let seqno = window.get_stable_sequence();
                 if (registry[seqno]) {
                     return false;
