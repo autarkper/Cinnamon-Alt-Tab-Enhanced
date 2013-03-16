@@ -1281,7 +1281,7 @@ AppSwitcher.prototype = {
         // We just assume the whole screen here due to weirdness happing with the passed width
         let primary = g_myMonitor;
         let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
-        let availWidth = primary.width - parentPadding - this.actor.get_theme_node().get_horizontal_padding() * 2;
+        let availWidth = primary.width - parentPadding - this.actor.get_theme_node().get_horizontal_padding();
         let height = 0;
 
         for(let i =  0; i < iconSizes.length; i++) {
@@ -1294,10 +1294,10 @@ AppSwitcher.prototype = {
             }
             else {
                 for(let ii = 0; ii < this._altTabPopup._numPrimaryItems; ii++) {
-                    w += this.icons[ii].calculateSlotSize(this._iconSize) + iconSpacing;
+                    w += this.icons[ii].calculateSlotSize(this._iconSize) + iconSpacing * 2;
                 }
             }
-            if (w < availWidth) {
+            if (w <= availWidth) {
                     break;
             }
         }   
