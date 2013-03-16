@@ -171,6 +171,57 @@ function openSettings() {
     Util.spawnCommandLine("cinnamon-settings applets " + g_uuid);
 }
 
+var g_setup = {};
+function processSwitcherStyle() {
+    g_setup._previewEnabled = false;
+    g_setup._iconsEnabled = false;
+    g_setup._thumbnailsEnabled = false;
+
+    let styleSettingsMaster = g_settings.style;
+    let isSystemStyle = styleSettingsMaster == ":system";
+    let styleSettings = isSystemStyle ? g_vars.switcherStyle : styleSettingsMaster;
+
+    let found = false;
+    if (styleSettings.indexOf(":") < 0) {
+        let features = styleSettings.split('+');
+        for (let i in features) {
+            if (features[i] === 'icons') {
+                g_setup._iconsEnabled = true;
+                found = true;
+            }
+            if (features[i] === 'preview') {
+                g_setup._previewEnabled = true;
+                found = true;
+            }
+            if (features[i] === 'thumbnails') {
+                g_setup._thumbnailsEnabled = true;
+                g_settings.vAlign = 'center';
+                found = true;
+            }
+        }
+    }
+    else {
+        if (styleSettings == ":dock") {
+            g_setup._iconsEnabled = true;
+            g_setup._thumbnailsEnabled = true;
+            if (g_settings.vAlign == 'center') {
+                g_settings.vAlign = 'bottom';
+            }
+        }
+    }
+    if (!found) {
+        g_setup._iconsEnabled = true;
+    }
+
+    g_setup._showThumbnails = g_setup._thumbnailsEnabled;
+    if (g_vars.switcherStyleUpdated && isSystemStyle) {
+        if (!g_setup._thumbnailsEnabled) {
+            g_settings.vAlign = 'center';
+        }
+        g_vars.switcherStyleUpdated = false;
+    }
+}
+
 const g_aligmentTypes = ["top", "center", "bottom"];
 const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails", ":dock"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
@@ -182,6 +233,7 @@ function getSwitcherStyle() {
     if (g_vars.switcherStyleUpdated) {
         g_settings["last-gsettings-switcher-style"] = g_vars.switcherStyle;
     }
+    processSwitcherStyle();
 };
 
 var g_vars = Main._alttab_enhanced_vars;
@@ -268,58 +320,6 @@ AltTabPopup.prototype = {
         });
 
         Main.uiGroup.add_actor(this.actor);
-
-        this._processSwitcherStyle();
-    },
-
-    _processSwitcherStyle: function() {
-        this._previewEnabled = false;
-        this._iconsEnabled = false;
-        this._thumbnailsEnabled = false;
-
-        let styleSettingsMaster = g_settings.style;
-        let isSystemStyle = styleSettingsMaster == ":system";
-        let styleSettings = isSystemStyle ? g_vars.switcherStyle : styleSettingsMaster;
-
-        let found = false;
-        if (styleSettings.indexOf(":") < 0) {
-            let features = styleSettings.split('+');
-            for (let i in features) {
-                if (features[i] === 'icons') {
-                    this._iconsEnabled = true;
-                    found = true;
-                }
-                if (features[i] === 'preview') {
-                    this._previewEnabled = true;
-                    found = true;
-                }
-                if (features[i] === 'thumbnails') {
-                    this._thumbnailsEnabled = true;
-                    g_settings.vAlign = 'center';
-                    found = true;
-                }
-            }
-        }
-        else {
-            if (styleSettings == ":dock") {
-                this._iconsEnabled = true;
-                this._thumbnailsEnabled = true;
-                if (g_settings.vAlign == 'center') {
-                    g_settings.vAlign = 'bottom';
-                }
-            }
-        }
-        if (!found) {
-            this._iconsEnabled = true;
-        }
-
-        this._showThumbnails = this._thumbnailsEnabled;
-        if (g_vars.switcherStyleUpdated && isSystemStyle) {
-            if (!this._thumbnailsEnabled) {
-                g_settings.vAlign = 'center';
-            }
-            g_vars.switcherStyleUpdated = false;
-        }
     },
 
     _indexOfWindow: function(metaWindow) {
@@ -558,7 +558,6 @@ AltTabPopup.prototype = {
                 // We delay showing the popup so that fast Alt+Tab users aren't
                 // disturbed by the popup briefly flashing.
                 let timeout = POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs);
-global.logError(timeout);
                 if (timeout > 25) {
                     this._initialDelayTimeoutId = Mainloop.timeout_add(Math.max(0, timeout),
                         Lang.bind(this, function () {
@@ -579,9 +578,9 @@ global.logError(timeout);
         if (this._appSwitcher) {
             this._appSwitcher.actor.destroy();
         }
-        this._appSwitcher = new AppSwitcher(windows, this._showThumbnails, this._iconsEnabled, this);
+        this._appSwitcher = new AppSwitcher(windows, g_setup._showThumbnails, g_setup._iconsEnabled, this);
         this.actor.add_actor(this._appSwitcher.actor);
-        if (!this._iconsEnabled && !this._thumbnailsEnabled) {
+        if (!g_setup._iconsEnabled && !g_setup._thumbnailsEnabled) {
             this._appSwitcher.actor.hide();
         }
         this._appSwitcher.connect('item-activated', Lang.bind(this, this._appActivated));
@@ -828,32 +827,32 @@ global.logError(timeout);
                 let index = g_alttabStyles.indexOf(g_settings.style);
                 let newIndex = (index + 1 + g_alttabStyles.length) % g_alttabStyles.length;
                 g_settings.style = g_alttabStyles[newIndex];
-                this._processSwitcherStyle();
+                processSwitcherStyle();
                 this.refresh();
             } else if (keysym == Clutter.F5) {
                 g_settings.allWorkspacesMode = !g_settings.allWorkspacesMode;
                 this.refresh();
             } else if (keysym == Clutter.F6) {
-                if (this._iconsEnabled) {
+                if (g_setup._iconsEnabled) {
                     let alignmentTypeIndex = g_aligmentTypes.indexOf(g_settings.vAlign);
                     let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
                     g_settings.vAlign = g_aligmentTypes[newIndex];
                     this.refresh();
                 }
             } else if (keysym == Clutter.F7) {
-                if (this._iconsEnabled && this._thumbnailsEnabled) {
+                if (g_setup._iconsEnabled && g_setup._thumbnailsEnabled) {
                     if (g_settings.vAlign != 'center') {
                         g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
                         this._select(this._currentApp, true); // refresh
                     }
                 }
             } else if (keysym == Clutter.F8) {
-                if (this._iconsEnabled) {
+                if (g_setup._iconsEnabled) {
                     g_settings.compactLabels = !g_settings.compactLabels;
                     this.refresh();
                 }
             } else if (keysym == Clutter.F9) {
-                if (this._iconsEnabled) {
+                if (g_setup._iconsEnabled) {
                     let index = g_thumbnailIconOptions.indexOf(g_settings.thumbnailsBehindIcons);
                     let newIndex = (index + 1 + g_thumbnailIconOptions.length) % g_thumbnailIconOptions.length;
                     g_settings.thumbnailsBehindIcons = g_thumbnailIconOptions[newIndex];
@@ -991,10 +990,10 @@ global.logError(timeout);
     },
     
     _doWindowPreview: function() {
-        if (!this._previewEnabled || this._appIcons.length < 1 || this._currentApp < 0)
+        if (!g_setup._previewEnabled || this._appIcons.length < 1 || this._currentApp < 0)
         {
             this._clearPreview();
-            if (!this._previewEnabled && this._previewBackdrop) {
+            if (!g_setup._previewEnabled && this._previewBackdrop) {
                 this._previewBackdrop.destroy();
                 this._previewBackdrop = null;
             }
@@ -1094,7 +1093,7 @@ global.logError(timeout);
         this._appIcons[app].updateLabel();
         this._appSwitcher.highlight(app, false);
         this._doWindowPreview();
-        if (this._thumbnailsEnabled && this._iconsEnabled) {
+        if (g_setup._thumbnailsEnabled && g_setup._iconsEnabled) {
             this._destroyThumbnails();
             if (this._thumbnailTimeoutId) {
                 Mainloop.source_remove(this._thumbnailTimeoutId);
@@ -1112,7 +1111,7 @@ global.logError(timeout);
         if (!this._thumbnails) {
             return;
         }
-        if (!this._thumbnailsEnabled) {
+        if (!g_setup._thumbnailsEnabled) {
             this._thumbnails.actor.destroy();
             this._thumbnails = null;
             return;
@@ -1347,7 +1346,7 @@ AppSwitcher.prototype = {
         this.highlightInner(n, justOutline);
         this._prevApp = this._curApp = n;
  
-        if (this._curApp != -1 && this._altTabPopup._iconsEnabled) {
+        if (this._curApp != -1 && g_setup._iconsEnabled) {
             this.icons[this._curApp].set_size(this._iconSize, true);
         }
     },
@@ -1931,7 +1930,7 @@ function init(metadata, instanceId) {
         settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
             "style",
             "style",
-            function() {},
+            processSwitcherStyle,
             null);
         settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
             "thumbnails-behind-icons",
