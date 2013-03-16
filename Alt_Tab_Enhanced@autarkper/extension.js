@@ -536,6 +536,7 @@ AltTabPopup.prototype = {
         if (this._appIcons.length > 0 && currentIndex >= 0) {
             if (binding == 'no-switch-windows') {
                 this._select(currentIndex);
+                this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
                 this._appSwitcher._scrollTo(currentIndex, -1, 2, true);
             } else if (backward) {
                 this._select(backwardIndex);
