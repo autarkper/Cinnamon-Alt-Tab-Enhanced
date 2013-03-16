@@ -537,9 +537,6 @@ AltTabPopup.prototype = {
             forwardIndex = windows.indexOf(this._selectedWindow);
         }
 
-        if (g_settings.allWorkspacesMode && g_settings.displayOriginArrow && !g_vars.globalFocusOrder) { // restricted feature
-            this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
-        }
 
         // Make the initial selection
         if (this._appIcons.length > 0 && currentIndex >= 0) {
@@ -588,6 +585,9 @@ AltTabPopup.prototype = {
             }
         }
         
+        if (g_settings.allWorkspacesMode && g_settings.displayOriginArrow && !g_vars.globalFocusOrder) { // restricted feature
+            this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
+        }
         return true;
     },
 
