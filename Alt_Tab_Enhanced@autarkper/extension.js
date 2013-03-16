@@ -461,7 +461,7 @@ AltTabPopup.prototype = {
 
         let activeWsIndex = global.screen.get_active_workspace_index();
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
-            let wlist = getTabList(global.screen.get_workspace_by_index(i));
+            let wlist = i == activeWsIndex ? wsWindows : getTabList(global.screen.get_workspace_by_index(i));
             if (!wlist.length) {
                 continue;
             }
