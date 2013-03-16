@@ -514,8 +514,8 @@ AltTabPopup.prototype = {
 
         // Size the icon bar primarily to fit the windows of the current workspace, and a few more
         this._numPrimaryItems_Orig = Math.min(Math.max(2, wsWindows.length + 4), windows.length);
-        this._numPrimaryItems = this._numPrimaryItems_Orig;
-        this._zoomedOut = false;
+        this._numPrimaryItems = g_settings.zoom ? this._numPrimaryItems_Orig : windows.length;
+        this._zoomedOut = this._numPrimaryItems != this._numPrimaryItems_Orig;
 
         this._createAppswitcher(windows);
         
@@ -1964,6 +1964,11 @@ function init(metadata, instanceId) {
             "last-gsettings-switcher-style",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "zoom-on",
+            "zoom",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -1973,6 +1978,7 @@ function init(metadata, instanceId) {
         g_settings.displayThumbnailHeaders = true;
         g_settings.displayOriginArrow = true;
         g_settings.compactLabels = false;
+        g_settings.zoom = true;
     }
 
     let oldstyle = g_settings["last-gsettings-switcher-style"];

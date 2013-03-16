@@ -4,6 +4,13 @@
     "default" : false,
     "description" : "Display windows from all workspaces"
  },
+ "zoom-on": {
+    "type": "checkbox",
+    "default": true,
+    "dependency" : "all-workspaces-mode",
+    "indent": true,
+    "description": "Zoom in on the windows of the current workspace"
+ },
  "style": {
     "type": "combobox",
     "default": ":system",
