@@ -108,8 +108,6 @@ const POPUP_DELAY_TIMEOUT = 110; // milliseconds
 
 const APP_ICON_HOVER_TIMEOUT = 200; // milliseconds
 
-const DISABLE_HOVER_TIMEOUT = 500; // milliseconds
-
 const THUMBNAIL_FADE_TIME = 0.1; // seconds
 
 const PREVIEW_DELAY_TIMEOUT = 180; // milliseconds
@@ -310,10 +308,6 @@ AltTabPopup.prototype = {
         this._numPrimaryItems = 0;
 
         this.thumbnailsVisible = false;
-
-        // Initially disable hover so we ignore the enter-event if
-        // the switcher appears underneath the current pointer location
-        this._disableHover();
 
         let connector = new Connector();
         connector.tie(this.actor);
@@ -716,7 +710,6 @@ AltTabPopup.prototype = {
         let ctrlDown = event_state & Clutter.ModifierType.CONTROL_MASK;
         let action = global.display.get_keybinding_action(event.get_key_code(), event_state);
 
-        this._disableHover();
         const SCROLL_AMOUNT = 5;
 
         if (pressed) {
@@ -950,20 +943,6 @@ AltTabPopup.prototype = {
     _windowActivated : function(sender, window) {
         this._activateWindow(window);
         this.destroy();
-    },
-
-    _disableHover : function() {
-        this._mouseActive = false;
-
-        if (this._motionTimeoutId)
-            Mainloop.source_remove(this._motionTimeoutId);
-
-        this._motionTimeoutId = Mainloop.timeout_add(DISABLE_HOVER_TIMEOUT, Lang.bind(this, this._mouseTimedOut));
-    },
-
-    _mouseTimedOut : function() {
-        this._motionTimeoutId = 0;
-        this._mouseActive = true;
     },
 
     _finish : function() {
