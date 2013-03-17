@@ -11,6 +11,13 @@
     "indent": true,
     "description": "Zoom in on the windows of the current workspace"
  },
+ "display-origin-arrow": {
+    "type" : "checkbox",
+    "default" : false,
+    "dependency" : "all-workspaces-mode",
+    "indent": true,
+    "description" : "Display a small arrow, below the icon, to indicate the window you came from"
+ },
  "style": {
     "type": "combobox",
     "default": ":system",
@@ -47,11 +54,6 @@
     "type" : "checkbox",
     "default" : true,
     "description" : "Display thumbnail headers, showing the window icon and title"
- },
- "display-origin-arrow": {
-    "type" : "checkbox",
-    "default" : false,
-    "description" : "Display a small arrow, below the icon, to indicate the window you came from"
  },
  "compact-labels": {
     "type": "checkbox",
