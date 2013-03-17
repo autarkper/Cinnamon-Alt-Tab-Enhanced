@@ -1432,7 +1432,7 @@ AppSwitcher.prototype = {
         // There may occur spurious motion events, so use a pointer tracker to verify that the pointer has moved.
         // The detection is not completely fail-safe, due to the effects of scrolling, but it is better than nothing.
         let pointerTracker = new PointerTracker.PointerTracker();
-        bbox.connect('motion-event', Lang.bind(this, function() {
+        bbox.connect('enter-event', Lang.bind(this, function() {
             if (pointerTracker.hasMoved()) {
                 this.emit('hover', n);
             }
