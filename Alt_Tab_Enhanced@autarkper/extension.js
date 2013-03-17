@@ -1161,9 +1161,10 @@ AppSwitcher.prototype = {
         this._clipBin.child = this._list;
         this.actor.add_actor(this._clipBin);
 
+        let pointerTracker = new PointerTracker.PointerTracker();
         this._leftGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-left', vertical: true, reactive: true});
-        this._leftGradient.connect('motion-event', Lang.bind(this, function() {
-            if (this._scrollableLeft) {
+        this._leftGradient.connect('enter-event', Lang.bind(this, function() {
+            if (pointerTracker.hasMoved() && this._scrollableLeft) {
                 Tweener.addTween(this._list, { anchor_x: 0,
                     time: POPUP_SCROLL_TIME,
                     transition: 'linear',
@@ -1174,8 +1175,8 @@ AppSwitcher.prototype = {
         }));
 
         this._rightGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-right', vertical: true, reactive: true});
-        this._rightGradient.connect('motion-event', Lang.bind(this, function() {
-            if (this._scrollableRight) {
+        this._rightGradient.connect('enter-event', Lang.bind(this, function() {
+            if (pointerTracker.hasMoved() && this._scrollableRight) {
                 let padding = this.actor.get_theme_node().get_horizontal_padding();
                 let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
                 let x = this._items[this._items.length - 1].allocation.x2 - g_myMonitor.width + padding + parentPadding;
