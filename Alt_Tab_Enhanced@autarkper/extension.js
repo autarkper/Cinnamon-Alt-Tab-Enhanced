@@ -1921,11 +1921,12 @@ function _drawArrow(area, side) {
     cr.fill();
 }
 
-function init(metadata) {
+function init(metadata, instanceId) {
     g_uuid = metadata['uuid'];
     if (Settings) {
-        // yes, we have local settings support!
-        let settings = new Settings.ExtensionSettings(g_settings, metadata['uuid']);
+        let settings = instanceId
+            ? new Settings.AppletSettings(g_settings, metadata['uuid'], instanceId)
+            : new Settings.ExtensionSettings(g_settings, metadata['uuid']);
 
         settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
             "style",
@@ -2035,6 +2036,6 @@ MyApplet.prototype = {
 };
 
 function main(metadata, orientation, panel_height, instanceId) {
-    init(metadata);
+    init(metadata, instanceId);
     return new MyApplet(metadata, orientation, panel_height, instanceId);
 }
