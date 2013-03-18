@@ -1798,6 +1798,7 @@ ThumbnailHolder.prototype = {
             this.header.destroy_children();
         }
         if (window) {
+            let windowMonitorIndex = window.get_monitor();
             this.container = new St.Group();
             this.containerHolder.add_actor(this.container);
             this.container.opacity = 0;
@@ -1818,9 +1819,8 @@ ThumbnailHolder.prototype = {
                 if (global.screen.n_workspaces > 1) {
                     label2strings.push("[" + Main.getWorkspaceName(window.get_workspace().index()) + "]");
                 }
-                let windowMonitor = window.get_monitor();
-                if (windowMonitor != g_myMonitorIndex) {
-                    label2strings.push("(Monitor " + (windowMonitor + 1) + ")");
+                if (windowMonitorIndex != g_myMonitorIndex) {
+                    label2strings.push("(Monitor " + (windowMonitorIndex + 1) + ")");
                 }
                 if (label2strings.length) {
                     let label2 = new St.Label({text: label2strings.join(" ")});
@@ -1828,21 +1828,28 @@ ThumbnailHolder.prototype = {
                 }
             }
 
-            let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight;
-            let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1;
+            let hPadding = this.actor.get_theme_node().get_horizontal_padding();
+            let vPadding = this.actor.get_theme_node().get_vertical_padding();
+            let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight - vPadding;
+            let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1 - hPadding;
             this.container.set_size(binWidth, binHeight);
 
             let clones = WindowUtils.createWindowClone(window, 0, true, false);
             for (let j = 0; j < clones.length; j++) {
                 let clone = clones[j];
                 this.container.add_actor(clone.actor);
-                let scaleY = doScale ? binHeight/g_myMonitor.height : binHeight/clone.actor.height;
-                let scaleX = doScale ? binWidth/g_myMonitor.width : binWidth/clone.actor.width;
-                let scale = Math.min(scaleX, scaleY);
+                let windowMonitor = Main.layoutManager.monitors[windowMonitorIndex];
+                let scaleYa = doScale ? windowMonitor.height/binHeight : 1;
+                let scaleXa = doScale ? windowMonitor.width/binWidth : 1;
+                let scalea = Math.min(scaleXa, scaleYa);
+
+                let scaleY = doScale ? binHeight/windowMonitor.height : binHeight/clone.actor.height;
+                let scaleX = doScale ? binWidth/windowMonitor.width : binWidth/clone.actor.width;
+                let scale = Math.min(scaleX, scaleY); // / scalea;
 
                 let childBox = new Clutter.ActorBox();
-                childBox.x1 = Math.floor((binWidth-clone.actor.width*scale)/2);
-                childBox.y1 = Math.floor((binHeight-clone.actor.height*scale)/2);
+                childBox.x1 = Math.floor((hPadding + binWidth-clone.actor.width*scale)/2);
+                childBox.y1 = Math.floor((vPadding + binHeight-clone.actor.height*scale)/2);
                 childBox.x2 = childBox.x1 + clone.actor.width;
                 childBox.y2 = childBox.y1 + clone.actor.height;
                 clone.actor.allocate(childBox, 0);
