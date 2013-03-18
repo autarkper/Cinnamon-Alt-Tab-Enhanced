@@ -55,6 +55,17 @@
     "default" : true,
     "description" : "Display thumbnail headers, showing the window icon and title"
  },
+ "preferred-monitor": {
+    "type": "combobox",
+    "default": ":primary",
+    "options" : {
+        "Primary" : ":primary",
+        "Focus monitor" : ":focus",
+        "Bottom" : ":bottom",
+        "Top" : ":top"
+    },
+    "description": "Select your monitor preference"
+ },
  "compact-labels": {
     "type": "checkbox",
     "default": true,

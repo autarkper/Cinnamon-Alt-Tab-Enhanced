@@ -288,6 +288,23 @@ function AltTabPopup() {
 
 AltTabPopup.prototype = {
     _init : function() {
+        let mIndex;
+        switch (g_settings.preferredMonitor) {
+            case ":primary":
+                mIndex = "primaryMonitor"; break;
+            case ":top":
+                mIndex = "topMonitor"; break;
+            case ":bottom":
+                mIndex = "bottomMonitor"; break;
+            case ":focus":
+                mIndex = "focusMonitor"; break;
+            default:
+                mIndex = "primaryMonitor"; break;
+        }
+        g_myMonitorIndex = Main.layoutManager.monitors.indexOf(Main.layoutManager[mIndex]);
+        g_myMonitorIndex = g_myMonitorIndex >= 0 ? g_myMonitorIndex : 0;
+        g_myMonitor = Main.layoutManager.monitors[g_myMonitorIndex];
+
         this._loadTs = (new Date()).getTime();
         this.actor = new Cinnamon.GenericContainer({ name: 'altTabPopup',
                                                   reactive: true,
@@ -1962,6 +1979,11 @@ function init(metadata, instanceId) {
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+            "preferred-monitor",
+            "preferredMonitor",
+            function() {},
+            null);
+        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
             "last-gsettings-switcher-style",
             "last-gsettings-switcher-style",
             function() {},
@@ -1981,6 +2003,7 @@ function init(metadata, instanceId) {
         g_settings.displayOriginArrow = true;
         g_settings.compactLabels = false;
         g_settings.zoom = true;
+        g_settings.preferredMonitor = ":primary";
     }
 
     let oldstyle = g_settings["last-gsettings-switcher-style"];
