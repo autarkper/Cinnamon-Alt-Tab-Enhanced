@@ -403,7 +403,7 @@ AltTabPopup.prototype = {
             let spacing = this.actor.get_theme_node().get_length('spacing');
             let spacing2 = Math.floor(spacing/2);
             let thHeight = g_settings.vAlign == 'center'
-                ? primary.height - this._appSwitcher.actor.allocation.y2 - spacing
+                ? primary.height - (this._appSwitcher.actor.allocation.y2 - primary.y) - spacing
                 : primary.height - (this._appSwitcher.actor.allocation.y2 - this._appSwitcher.actor.allocation.y1) - spacing
                 ;
             let thWidth = Math.floor(thHeight * primary.width / primary.height) + leftPadding * 2;
