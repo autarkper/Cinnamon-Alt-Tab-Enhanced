@@ -1847,7 +1847,7 @@ ThumbnailHolder.prototype = {
             let displayHeaders = doScale && g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
             this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
             if (displayHeaders) {
-                headerHeight = Math.round(32 + this.headerPadding / 2);
+                headerHeight = 32;
                 let bin = new St.Group();
                 bin.add_actor(createApplicationIcon(app, headerHeight));
                 this.header.add(bin, { x_fill: false, y_fill: false, y_align: St.Align.START });
@@ -1870,7 +1870,7 @@ ThumbnailHolder.prototype = {
             }
 
             let hPadding = this.actor.get_theme_node().get_horizontal_padding();
-            let vPadding = this.actor.get_theme_node().get_vertical_padding();
+            let vPadding = this.actor.get_theme_node().get_vertical_padding() + this.headerPadding;
             let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight - vPadding;
             let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1 - hPadding;
             this.container.set_size(binWidth, binHeight);
