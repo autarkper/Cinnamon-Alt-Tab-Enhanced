@@ -1594,7 +1594,7 @@ AppSwitcher.prototype = {
         let separatorWidth = 0;
         if (this._separators.length) {
             let [sepMin, sepNat] = this._separators[0].get_preferred_width(forHeight);
-            separatorWidth = Math.max(1, this._separators.length - 1) * (sepNat + this._list.spacing);
+            separatorWidth = this._separators.length * (sepNat + this._list.spacing);
         }
 
         let totalSpacing = this._list.spacing * Math.max(1, (this._items.length - 1));
@@ -1618,7 +1618,7 @@ AppSwitcher.prototype = {
         if (this._separators.length) {
             let [sepMin, sepNat] = this._separators[0].get_preferred_width(childHeight);
             separatorWidth = sepNat;
-            totalSpacing += Math.max(1, this._separators.length - 1) * this._list.spacing;
+            totalSpacing += this._separators.length * this._list.spacing;
         }
 
         let childWidth = Math.floor(Math.max(0, box.x2 - box.x1 - totalSpacing - separatorWidth) / this._items.length);
