@@ -1867,10 +1867,15 @@ ThumbnailHolder.prototype = {
                 clone.actor.allocate(childBox, 0);
                 clone.actor.set_scale(scale, scale);
             }
-            Tweener.addTween(this.container, { opacity: 255,
-                time: THUMBNAIL_FADE_TIME * 3,
-                transition: 'easeOutQuad'
-            });
+            if (doScale) {
+                Tweener.addTween(this.container, { opacity: 255,
+                    time: THUMBNAIL_FADE_TIME * 3,
+                    transition: 'easeOutQuad'
+                });
+            }
+            else {
+                this.container.opacity = 255;
+            }
         }
 
         if (old_container) {
