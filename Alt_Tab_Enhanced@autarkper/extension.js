@@ -174,6 +174,7 @@ function processSwitcherStyle() {
     g_setup._previewEnabled = false;
     g_setup._iconsEnabled = false;
     g_setup._thumbnailsEnabled = false;
+    g_setup._previewThumbnails = false;
 
     let styleSettingsMaster = g_settings.style;
     let isSystemStyle = styleSettingsMaster == ":system";
@@ -205,6 +206,11 @@ function processSwitcherStyle() {
             if (g_settings.vAlign == 'center') {
                 g_settings.vAlign = 'bottom';
             }
+        }
+        if (styleSettings == ":preview-thumbnails") {
+            g_setup._iconsEnabled = true;
+            g_setup._previewEnabled = true;
+            g_setup._previewThumbnails = true;
         }
     }
     if (!found) {
@@ -1023,16 +1029,37 @@ AltTabPopup.prototype = {
             let window = this._appIcons[this._currentApp].window;
             let app = this._appIcons[this._currentApp].app;
 
-            let th = new ThumbnailHolder();
-            let previewClones = th.actor;
-            this.actor.add_actor(previewClones);
-            let r = window.get_compositor_private();
-            childBox.x1 = r.x;
-            childBox.x2 = r.x + r.width;
-            childBox.y1 = r.y;
-            childBox.y2 = r.y + r.height;
-            previewClones.allocate(childBox, 0);
-            th.addClones(window, app, false);
+            let previewClones = null;
+            let [x1, y1] = [0, 0];
+            if (!g_setup._previewThumbnails) {
+                previewClones = new St.Group();
+                this.actor.add_actor(previewClones);
+                let clones = WindowUtils.createWindowClone(window, null, true, false);
+                for (let i = 0; i < clones.length; i++) {
+                    let clone = clones[i];
+                    previewClones.add_actor(clone.actor);
+                    let [width, height] = clone.actor.get_size();
+                    childBox.x1 = clone.x;
+                    childBox.x2 = clone.x + width;
+                    childBox.y1 = clone.y;
+                    childBox.y2 = clone.y + height;
+                    clone.actor.allocate(childBox, 0);
+                }
+                [x1, y1] = [clones[0].x, clones[0].y];
+            }
+            else {
+                let th = new ThumbnailHolder();
+                previewClones = th.actor;
+                this.actor.add_actor(previewClones);
+                let r = window.get_compositor_private();
+                childBox.x1 = r.x;
+                childBox.x2 = r.x + r.width;
+                childBox.y1 = r.y;
+                childBox.y2 = r.y + r.height;
+                previewClones.allocate(childBox, 0);
+                th.addClones(window, app, false);
+                [x1, y1] = [previewClones.x, previewClones.y];
+            }
 
             previewClones.lower(this._appSwitcher.actor);
             if (window.minimized) {
@@ -1042,9 +1069,9 @@ AltTabPopup.prototype = {
             let icon = app ? app.create_icon_texture(size) : null;
             if (icon) {
                 previewClones.add_actor(icon);
-                let x1 = childBox.x1 = previewClones.x;
+                childBox.x1 = x1;
                 childBox.x2 = x1 + size;
-                let y1 = childBox.y1 = previewClones.y;
+                childBox.y1 = y1;
                 childBox.y2 = y1 + size;
                 icon.allocate(childBox, 0);
             }
