@@ -1876,14 +1876,14 @@ ThumbnailHolder.prototype = {
             this.container.set_size(binWidth, binHeight);
 
             let clones = WindowUtils.createWindowClone(window, 0, true, false);
+            let windowMonitor = Main.layoutManager.monitors[windowMonitorIndex];
+            let scaleY = doScale ? binHeight/windowMonitor.height : binHeight/clones[0].actor.height;
+            let scaleX = doScale ? binWidth/windowMonitor.width : binWidth/clones[0].actor.width;
+            let scale = Math.min(scaleX, scaleY);
+
             for (let j = 0; j < clones.length; j++) {
                 let clone = clones[j];
                 this.container.add_actor(clone.actor);
-                let windowMonitor = Main.layoutManager.monitors[windowMonitorIndex];
-
-                let scaleY = doScale ? binHeight/windowMonitor.height : binHeight/clone.actor.height;
-                let scaleX = doScale ? binWidth/windowMonitor.width : binWidth/clone.actor.width;
-                let scale = Math.min(scaleX, scaleY);
 
                 let childBox = new Clutter.ActorBox();
                 childBox.x1 = Math.floor((hPadding + binWidth-clone.actor.width*scale)/2);
