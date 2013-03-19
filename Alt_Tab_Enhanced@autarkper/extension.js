@@ -409,6 +409,7 @@ AltTabPopup.prototype = {
         // We select a size based on an icon size that does not overflow the screen
         let [childMinHeight, childNaturalHeight] = this._appSwitcher.actor.get_preferred_height(primary.width - hPadding);
         let [childMinWidth, childNaturalWidth] = this._appSwitcher.actor.get_preferred_width(childNaturalHeight);
+        childNaturalWidth = Math.max(childNaturalWidth, primary.width/8);
         childBox.x1 = Math.max(primary.x + leftPadding, primary.x + Math.floor((primary.width - childNaturalWidth) / 2));
         childBox.x2 = Math.min(primary.x + primary.width - rightPadding, childBox.x1 + childNaturalWidth);
         childBox.y1 = primary.y + Math.floor(
@@ -580,21 +581,19 @@ AltTabPopup.prototype = {
             }
         }
 
-        if (this._appIcons.length > 0) {
-            if (this._appSwitcher.actor.opacity != 255) {
-                // We delay showing the popup so that fast Alt+Tab users aren't
-                // disturbed by the popup briefly flashing.
-                let timeout = POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs);
-                if (timeout > 25) {
-                    this._initialDelayTimeoutId = Mainloop.timeout_add(Math.max(0, timeout),
-                        Lang.bind(this, function () {
-                            this._appSwitcher.actor.opacity = 255;
-                            this._initialDelayTimeoutId = 0;
-                        }));
-                }
-                else {
-                    this._appSwitcher.actor.opacity = 255;
-                }
+        if (this._appSwitcher.actor.opacity != 255) {
+            // We delay showing the popup so that fast Alt+Tab users aren't
+            // disturbed by the popup briefly flashing.
+            let timeout = POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs);
+            if (timeout > 25) {
+                this._initialDelayTimeoutId = Mainloop.timeout_add(Math.max(0, timeout),
+                    Lang.bind(this, function () {
+                        this._appSwitcher.actor.opacity = 255;
+                        this._initialDelayTimeoutId = 0;
+                    }));
+            }
+            else {
+                this._appSwitcher.actor.opacity = 255;
             }
         }
         
