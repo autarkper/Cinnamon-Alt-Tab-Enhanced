@@ -1795,7 +1795,7 @@ function ThumbnailHolder() {
 ThumbnailHolder.prototype = {
     _init : function() {
         this.headerPadding = 4;
-        this.actor = new St.Group({ style_class: 'switcher-list', reactive: true });
+        this.actor = new St.Group({ style_class: 'switcher-list', style: 'padding: 4px;', reactive: true });
         let layout = this.layout = new St.BoxLayout({vertical: true, y_align: St.Align.START });
         this.actor.add_actor(layout);
         let header = this.header = new St.BoxLayout({vertical: false});
@@ -1821,7 +1821,7 @@ ThumbnailHolder.prototype = {
             let displayHeaders = doScale && g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
             this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
             if (displayHeaders) {
-                headerHeight = 32 + this.headerPadding;
+                headerHeight = Math.round(32 + this.headerPadding / 2);
                 let bin = new St.Group();
                 bin.add_actor(createApplicationIcon(app, headerHeight));
                 this.header.add(bin, { x_fill: false, y_fill: false, y_align: St.Align.START });
@@ -1854,13 +1854,10 @@ ThumbnailHolder.prototype = {
                 let clone = clones[j];
                 this.container.add_actor(clone.actor);
                 let windowMonitor = Main.layoutManager.monitors[windowMonitorIndex];
-                let scaleYa = doScale ? windowMonitor.height/binHeight : 1;
-                let scaleXa = doScale ? windowMonitor.width/binWidth : 1;
-                let scalea = Math.min(scaleXa, scaleYa);
 
                 let scaleY = doScale ? binHeight/windowMonitor.height : binHeight/clone.actor.height;
                 let scaleX = doScale ? binWidth/windowMonitor.width : binWidth/clone.actor.width;
-                let scale = Math.min(scaleX, scaleY); // / scalea;
+                let scale = Math.min(scaleX, scaleY);
 
                 let childBox = new Clutter.ActorBox();
                 childBox.x1 = Math.floor((hPadding + binWidth-clone.actor.width*scale)/2);
