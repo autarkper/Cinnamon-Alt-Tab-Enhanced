@@ -1079,6 +1079,10 @@ AltTabPopup.prototype = {
 
             this._clearPreview();
             this._previewClones = previewClones;
+            this._previewClones.reactive = true;
+            this._previewClones.connect('button-release-event', Lang.bind(this, function() {
+                this._activateWindow(window);}
+            ));
 
             if (this._previewBackdrop) {return;}
 
