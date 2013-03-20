@@ -615,6 +615,94 @@ AltTabPopup.prototype = {
         return true;
     },
 
+    _showWindowContextMenu: function(appIcon) {
+        this._persistent = true;
+        let mm = new PopupMenu.PopupMenuManager(this);
+        let orientation = g_settings.vAlign == 'top' ? St.Side.TOP : St.Side.BOTTOM;
+        let menu = new Applet.AppletPopupMenu({actor: appIcon.actor}, orientation)
+        mm.addMenu(menu);
+
+        let mw = appIcon.window;
+        let items = [];
+
+        let itemCloseWindow = new PopupMenu.PopupMenuItem(_("Close window"));
+        itemCloseWindow.connect('activate', Lang.bind(this, function(actor, event){
+            mw.delete(global.get_current_time());
+        }));
+        items.push(itemCloseWindow);
+
+        let itemMinimizeWindow = new PopupMenu.PopupMenuItem(mw.minimized ? _("Restore") : _("Minimize"));
+        itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
+            mw.minimized ? mw.unminimize() : mw.minimize();
+            this._select(this._currentApp, true); // refresh
+        }));
+        items.push(itemMinimizeWindow);
+
+        if (Main.layoutManager.monitors.length > 1) {
+            let monitorItems = [];
+            let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Monitors"));
+            Main.layoutManager.monitors.forEach(function(monitor, index) {
+                if (index !== mw.get_monitor()) {
+                    let item = new PopupMenu.PopupMenuItem(
+                        _("Move to monitor %d").format(index + 1));
+                    item.connect('activate', Lang.bind(this, function() {
+                        mw.move_to_monitor(index);
+                        this._select(this._currentApp, true); // refresh
+                    }));
+                    if (Main.layoutManager.monitors.length > 2) {
+                        submenu.menu.addMenuItem(item);
+                    } else {
+                        monitorItems.push(item);
+                    }
+                }
+            }, this);
+            if (!monitorItems.length) {
+                monitorItems.push(submenu);
+            }
+            monitorItems.push(new PopupMenu.PopupSeparatorMenuItem());
+            items = monitorItems.concat(items);
+        }
+
+        if (global.screen.n_workspaces > 1) {
+            let wsItems = [];
+            let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Workspaces"));
+            for (let i = 0; i < global.screen.n_workspaces; ++i) {
+                if (i != mw.get_workspace().index()) {
+                    let item = new PopupMenu.PopupMenuItem(
+                        _("Move to workspace %d").format(i + 1));
+                    let index = i;
+                    item.connect('activate', Lang.bind(this, function() {
+                        mw.change_workspace(global.screen.get_workspace_by_index(index));
+                    }));
+                    if (global.screen.n_workspaces > 2) {
+                        submenu.menu.addMenuItem(item);
+                    } else {
+                        wsItems.push(item);
+                    }
+                }
+            }
+            if (!wsItems.length) {
+                wsItems.push(submenu);
+            }
+            wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
+            items = wsItems.concat(items);
+        };
+
+        items.forEach(function(item) {
+            menu.addMenuItem(item);
+        }, this);
+
+        menu.connect('open-state-changed', Lang.bind(this, function(sender, opened) {
+            this._menuActive = opened;
+            if (!opened) {
+                if (this.actor) {
+                    global.stage.set_key_focus(this.actor);
+                }
+            }
+        }));
+        menu.open();
+    },
+
     _createAppswitcher: function(windows) {
         if (this._appSwitcher) {
             this._appSwitcher.actor.destroy();
@@ -625,6 +713,10 @@ AltTabPopup.prototype = {
             this._appSwitcher.actor.hide();
         }
         this._appSwitcher.connect('item-activated', Lang.bind(this, this._appActivated));
+        this._appSwitcher.connect('item-context-menu', Lang.bind(this, function(sender, n) {
+            this._select(n, false);
+            this._showWindowContextMenu(this._appIcons[n]);
+        }));
         this._appSwitcher.connect('hover', Lang.bind(this, function(sender, index) {
             this._appSwitcher._noscroll = true;
             try {
@@ -810,8 +902,10 @@ AltTabPopup.prototype = {
             if (false) {
             } else if (keysym == Clutter.F1) {
                 this._showHelp();
-            } else if (keysym == Clutter.KEY_space && !this._persistent) {
-                this._persistent = true;
+            } else if (keysym == Clutter.KEY_space) {
+                if (this._currentApp > -1) {
+                    this._showWindowContextMenu(this._appIcons[this._currentApp]);
+                }
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
             } else if (keysym == Clutter.h) { // toggle hide
@@ -950,7 +1044,9 @@ AltTabPopup.prototype = {
     },
 
     _clickedOutside : function(actor, event) {
-        Mainloop.idle_add(Lang.bind(this, this.destroy));
+        if (!this._menuActive) {
+            Mainloop.idle_add(Lang.bind(this, this.destroy));
+        }
         return true;
     },
 
@@ -1481,7 +1577,14 @@ AppSwitcher.prototype = {
         this._list.add_actor(bbox);
 
         let n = this._items.length;
-        bbox.connect('clicked', Lang.bind(this, function() { this.emit('item-activated', n); }));
+        bbox.connect('button-release-event', Lang.bind(this, function(actor, event) {
+            if (event.get_button()==1) {
+                this.emit('item-activated', n);
+            }
+            if (event.get_button()==3) {
+                this.emit('item-context-menu', n);
+            }
+        }));
 
         // There may occur spurious motion events, so use a pointer tracker to verify that the pointer has moved.
         // The detection is not completely fail-safe, due to the effects of scrolling, but it is better than nothing.
