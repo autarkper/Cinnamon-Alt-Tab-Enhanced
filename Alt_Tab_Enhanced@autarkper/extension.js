@@ -1870,8 +1870,9 @@ ThumbnailHolder.prototype = {
             }
 
             let hPadding = this.actor.get_theme_node().get_horizontal_padding();
+            let vBorder = this.actor.get_theme_node().get_border_width(St.Side.TOP) * 2;
             let vPadding = this.actor.get_theme_node().get_vertical_padding() + this.headerPadding;
-            let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight - vPadding;
+            let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight - vPadding - vBorder;
             let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1 - hPadding;
             this.container.set_size(binWidth, binHeight);
 
