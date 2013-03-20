@@ -1973,52 +1973,52 @@ function init(metadata, instanceId) {
             ? new Settings.AppletSettings(g_settings, metadata['uuid'], instanceId)
             : new Settings.ExtensionSettings(g_settings, metadata['uuid']);
 
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "style",
             "style",
             processSwitcherStyle,
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "thumbnails-behind-icons",
             "thumbnailsBehindIcons",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "all-workspaces-mode",
             "allWorkspacesMode",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "vertical-alignment",
             "vAlign",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "display-thumbnail-headers",
             "displayThumbnailHeaders",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "display-origin-arrow",
             "displayOriginArrow",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "compact-labels",
             "compactLabels",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "preferred-monitor",
             "preferredMonitor",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "last-gsettings-switcher-style",
             "last-gsettings-switcher-style",
             function() {},
             null);
-        settings.bindProperty(Settings.BindingDirection.BIDIRECTIONAL,
+        settings.bindProperty(Settings.BindingDirection.IN,
             "zoom-on",
             "zoom",
             function() {},
