@@ -649,7 +649,7 @@ AltTabPopup.prototype = {
         this.actor.connect('key-press-event', Lang.bind(this, this._keyPressReleaseEvent, KeyState.PRESSED));
         this.actor.connect('key-release-event', Lang.bind(this, this._keyPressReleaseEvent, KeyState.RELEASED));
 
-        this.actor.connect('button-press-event', Lang.bind(this, this._clickedOutside));
+        this.actor.connect('button-release-event', Lang.bind(this, this._clickedOutside));
         this.actor.connect('scroll-event', Lang.bind(this, this._onScroll));
         return true;
     },
