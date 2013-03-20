@@ -227,7 +227,7 @@ function processSwitcherStyle() {
 }
 
 const g_aligmentTypes = ["top", "center", "bottom"];
-const g_alttabStyles = ["icons+preview", "icons", "icons+thumbnails", ":dock"]; // the most usual ones ...
+const g_alttabStyles = ["icons+preview", ":preview-thumbnails", "icons", "icons+thumbnails", ":dock"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
 
 function getSwitcherStyle() {
