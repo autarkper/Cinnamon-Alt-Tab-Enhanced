@@ -339,6 +339,11 @@ AltTabPopup.prototype = {
                 connector.addConnection(workspace, 'window-removed', Lang.bind(this, function(ws, metaWindow) {
                     this._removeWindow(metaWindow);
                 }));
+                connector.addConnection(workspace, 'window-added', Lang.bind(this, function(ws, metaWindow) {
+                    Mainloop.idle_add(Lang.bind(this, function() {
+                        this.refresh();
+                    }));
+                }));
         }
         connector.addConnection(global.display, 'window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention));
         connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
