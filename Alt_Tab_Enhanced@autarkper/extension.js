@@ -1586,12 +1586,27 @@ AppSwitcher.prototype = {
             }
         }));
 
+        this._hoverTimeout = null;
         // There may occur spurious motion events, so use a pointer tracker to verify that the pointer has moved.
         // The detection is not completely fail-safe, due to the effects of scrolling, but it is better than nothing.
         let pointerTracker = new PointerTracker.PointerTracker();
         bbox.connect('enter-event', Lang.bind(this, function() {
             if (pointerTracker.hasMoved()) {
-                this.emit('hover', n);
+                if (this._hoverTimeout) {
+                    Mainloop.source_remove(this._hoverTimeout);
+                }
+                this._hoverTimeout = Mainloop.timeout_add(125, Lang.bind(this, function() {
+                    this._hoverTimeout = null;
+                        this.emit('hover', n);
+                }));
+            }
+        }));
+        bbox.connect('leave-event', Lang.bind(this, function() {
+            if (pointerTracker.hasMoved()) {
+                if (this._hoverTimeout) {
+                    Mainloop.source_remove(this._hoverTimeout);
+                    this._hoverTimeout = null;
+                }
             }
         }));
         this._items.push(bbox);
