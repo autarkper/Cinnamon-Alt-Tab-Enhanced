@@ -419,10 +419,11 @@ AltTabPopup.prototype = {
         childBox.x1 = Math.max(primary.x + leftPadding, primary.x + Math.floor((primary.width - childNaturalWidth) / 2));
         childBox.x2 = Math.min(primary.x + primary.width - rightPadding, childBox.x1 + childNaturalWidth);
         childBox.y1 = primary.y + Math.floor(
-            g_settings.vAlign == 'center' ? (primary.height - childNaturalHeight) / 2
-                : g_settings.vAlign == 'top' ? primary.x
-                    : primary.height - childNaturalHeight
-            );
+            g_settings.vAlign == 'center'
+                ? (primary.height - childNaturalHeight) / 2
+                : g_settings.vAlign == 'top'
+                    ? 0
+                    : primary.height - childNaturalHeight);
         childBox.y2 = childBox.y1 + childNaturalHeight;
         this._appSwitcher.actor.allocate(childBox, flags);
 
