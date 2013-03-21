@@ -164,6 +164,12 @@ function primaryModifier(mask) {
     return primary;
 }
 
+let g_monitorOverride = null;
+let g_vAlignOverride = null;
+function getVerticalAlignment() {
+    return g_vAlignOverride || g_settings.vAlign;
+}
+
 var g_uuid;
 function openSettings() {
     Util.spawnCommandLine("cinnamon-settings applets " + g_uuid);
@@ -294,20 +300,24 @@ function AltTabPopup() {
 
 AltTabPopup.prototype = {
     _init : function() {
-        let mIndex;
-        switch (g_settings.preferredMonitor) {
-            case ":primary":
-                mIndex = "primaryMonitor"; break;
-            case ":top":
-                mIndex = "topMonitor"; break;
-            case ":bottom":
-                mIndex = "bottomMonitor"; break;
-            case ":focus":
-                mIndex = "focusMonitor"; break;
-            default:
-                mIndex = "primaryMonitor"; break;
+        if (!g_monitorOverride) {
+            let mIndex;
+            switch (g_settings.preferredMonitor) {
+                case ":primary":
+                    mIndex = "primaryMonitor"; break;
+                case ":top":
+                    mIndex = "topMonitor"; break;
+                case ":bottom":
+                    mIndex = "bottomMonitor"; break;
+                case ":focus":
+                    mIndex = "focusMonitor"; break;
+                default:
+                    mIndex = "primaryMonitor"; break;
+            }
+            g_myMonitorIndex = Main.layoutManager.monitors.indexOf(Main.layoutManager[mIndex]);
+        } else {
+            g_myMonitorIndex = Main.layoutManager.monitors.indexOf(g_monitorOverride);
         }
-        g_myMonitorIndex = Main.layoutManager.monitors.indexOf(Main.layoutManager[mIndex]);
         g_myMonitorIndex = g_myMonitorIndex >= 0 ? g_myMonitorIndex : 0;
         g_myMonitor = Main.layoutManager.monitors[g_myMonitorIndex];
 
@@ -423,10 +433,11 @@ AltTabPopup.prototype = {
         childNaturalWidth = Math.max(childNaturalWidth, primary.width/8);
         childBox.x1 = Math.max(primary.x + leftPadding, primary.x + Math.floor((primary.width - childNaturalWidth) / 2));
         childBox.x2 = Math.min(primary.x + primary.width - rightPadding, childBox.x1 + childNaturalWidth);
+        let vAlignment = getVerticalAlignment();
         childBox.y1 = primary.y + Math.floor(
-            g_settings.vAlign == 'center'
+            vAlignment == 'center'
                 ? (primary.height - childNaturalHeight) / 2
-                : g_settings.vAlign == 'top'
+                : vAlignment == 'top'
                     ? 0
                     : primary.height - childNaturalHeight);
         childBox.y2 = childBox.y1 + childNaturalHeight;
@@ -441,7 +452,7 @@ AltTabPopup.prototype = {
             let thumbnailCenter = posX + icon.width / 2;
             let spacing = this.actor.get_theme_node().get_length('spacing');
             let spacing2 = Math.floor(spacing/2);
-            let thHeight = g_settings.vAlign == 'center'
+            let thHeight = vAlignment == 'center'
                 ? primary.height - (this._appSwitcher.actor.allocation.y2 - primary.y) - spacing
                 : primary.height - (this._appSwitcher.actor.allocation.y2 - this._appSwitcher.actor.allocation.y1) - spacing
                 ;
@@ -449,7 +460,7 @@ AltTabPopup.prototype = {
 
             childBox.x1 = primary.x + Math.floor((primary.width - thWidth)/2);
             childBox.x2 = childBox.x1 +  thWidth;
-            childBox.y1 = g_settings.vAlign == 'bottom'
+            childBox.y1 = vAlignment == 'bottom'
                 ? this._appSwitcher.actor.allocation.y1 - thHeight - spacing2
                 : this._appSwitcher.actor.allocation.y2 + spacing2
                 ;
@@ -618,7 +629,7 @@ AltTabPopup.prototype = {
     _showWindowContextMenu: function(appIcon) {
         this._persistent = true;
         let mm = new PopupMenu.PopupMenuManager(this);
-        let orientation = g_settings.vAlign == 'top' ? St.Side.TOP : St.Side.BOTTOM;
+        let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
         let menu = new Applet.AppletPopupMenu({actor: appIcon.actor}, orientation)
         mm.addMenu(menu);
 
@@ -968,14 +979,15 @@ AltTabPopup.prototype = {
                 this.refresh();
             } else if (keysym == Clutter.F6) {
                 if (g_setup._iconsEnabled) {
-                    let alignmentTypeIndex = g_aligmentTypes.indexOf(g_settings.vAlign);
+                    let alignmentTypeIndex = g_aligmentTypes.indexOf(getVerticalAlignment());
                     let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
                     g_settings.vAlign = g_aligmentTypes[newIndex];
+                    g_vAlignOverride = null;
                     this.refresh();
                 }
             } else if (keysym == Clutter.F7) {
                 if (g_setup._iconsEnabled && g_setup._thumbnailsEnabled) {
-                    if (g_settings.vAlign != 'center') {
+                    if (getVerticalAlignment() != 'center') {
                         g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
                         this._select(this._currentApp, true); // refresh
                     }
@@ -1102,6 +1114,8 @@ AltTabPopup.prototype = {
             Mainloop.source_remove(this._initialDelayTimeoutId);
         if (this._displayPreviewTimeoutId)
             Mainloop.source_remove(this._displayPreviewTimeoutId);
+        g_vAlignOverride = null;
+        g_monitorOverride = null;
     },
     
     _clearPreview: function() {
@@ -1972,7 +1986,7 @@ ThumbnailHolder.prototype = {
             this.containerHolder.add_actor(this.container);
             this.container.opacity = 0;
             let headerHeight = 0;
-            let displayHeaders = doScale && g_settings.displayThumbnailHeaders && g_settings.vAlign != 'center';
+            let displayHeaders = doScale && g_settings.displayThumbnailHeaders && getVerticalAlignment() != 'center';
             this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
             if (displayHeaders) {
                 headerHeight = 32;
@@ -2191,7 +2205,8 @@ function MyApplet() {
 MyApplet.prototype = {
     __proto__: Applet.IconApplet.prototype,
 
-    _init: function(metadata, orientation, panel_height, instanceId) {        
+    _init: function(metadata, orientation, panel_height, instanceId) {
+        this.orientation = orientation;
         Applet.IconApplet.prototype._init.call(this, orientation, panel_height, instanceId);
         this.path = metadata.path;
     },
@@ -2210,12 +2225,15 @@ MyApplet.prototype = {
     },
 
     on_applet_clicked: function(event) {
+        g_vAlignOverride = this.orientation == St.Side.BOTTOM ? 'bottom' : 'top';
+        g_monitorOverride = Main.layoutManager.findMonitorForActor(this.actor);
         let tabPopup = new AltTabPopup();
         tabPopup._persistent = true;
         tabPopup.show(false, 'no-switch-windows');
     },
     
     on_orientation_changed: function (orientation) {
+        this.orientation = orientation;
     }
 };
 
