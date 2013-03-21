@@ -682,9 +682,10 @@ AltTabPopup.prototype = {
             items = monitorItems.concat(items);
         }
 
-        if (global.screen.n_workspaces > 1) {
+        if (true) {
             let wsItems = [];
             let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Workspaces"));
+            let submenuCount = 0;
             for (let i = 0; i < global.screen.n_workspaces; ++i) {
                 if (i != mw.get_workspace().index()) {
                     let item = new PopupMenu.PopupMenuItem(
@@ -695,13 +696,21 @@ AltTabPopup.prototype = {
                     }));
                     if (global.screen.n_workspaces > 2) {
                         submenu.menu.addMenuItem(item);
+                        ++submenuCount;
                     } else {
                         wsItems.push(item);
                     }
                 }
             }
-            if (!wsItems.length) {
+            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
+            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event){
+                Main.moveWindowToNewWorkspace(mw, false);
+            }));
+            if (submenuCount) {
+                submenu.menu.addMenuItem(itemMoveToNewWorkspace);
                 wsItems.push(submenu);
+            } else {
+                wsItems.push(itemMoveToNewWorkspace);
             }
             wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
             items = wsItems.concat(items);
