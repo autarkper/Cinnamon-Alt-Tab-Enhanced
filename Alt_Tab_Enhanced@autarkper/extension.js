@@ -344,19 +344,27 @@ AltTabPopup.prototype = {
 
         let connector = new Connector();
         connector.tie(this.actor);
+
+        let connectToWorkspace = Lang.bind(this, function(workspace) {
+            connector.addConnection(workspace, 'window-removed', Lang.bind(this, function(ws, metaWindow) {
+                this._removeWindow(metaWindow);
+            }));
+            connector.addConnection(workspace, 'window-added', Lang.bind(this, function(ws, metaWindow) {
+                Mainloop.idle_add(Lang.bind(this, function() {
+                    this.refresh();
+                }));
+            }));
+        });
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
             let workspace = global.screen.get_workspace_by_index(i);
-                connector.addConnection(workspace, 'window-removed', Lang.bind(this, function(ws, metaWindow) {
-                    this._removeWindow(metaWindow);
-                }));
-                connector.addConnection(workspace, 'window-added', Lang.bind(this, function(ws, metaWindow) {
-                    Mainloop.idle_add(Lang.bind(this, function() {
-                        this.refresh();
-                    }));
-                }));
+            connectToWorkspace(workspace);
         }
         connector.addConnection(global.display, 'window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention));
         connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
+        connector.addConnection(global.screen, 'workspace-added', Lang.bind(this, function(screen, index) {
+            let workspace = global.screen.get_workspace_by_index(index);
+            connectToWorkspace(workspace);
+        }));
 
         // remove zombies
         if (g_vars.windowsToIgnore.length) {
