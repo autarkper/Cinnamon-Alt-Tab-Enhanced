@@ -581,7 +581,6 @@ AltTabPopup.prototype = {
             forwardIndex = windows.indexOf(this._selectedWindow);
         }
 
-
         // Make the initial selection
         if (this._appIcons.length > 0 && currentIndex >= 0) {
             if (binding == 'no-switch-windows') {
@@ -1392,6 +1391,9 @@ AppSwitcher.prototype = {
         this._list.connect('get-preferred-height', Lang.bind(this, this._getPreferredHeight));
         this._list.connect('allocate', Lang.bind(this, this._allocate));
 
+        this._label = new St.Label({text: Main.getWorkspaceName(global.screen.get_active_workspace_index())});
+        this.actor.add_actor(this._label);
+
         this._clipBin = new St.Bin({style_class: 'cbin'});
         this._clipBin.child = this._list;
         this.actor.add_actor(this._clipBin);
@@ -1472,7 +1474,7 @@ AppSwitcher.prototype = {
         for (let i = lastWsIndex + 1; g_settings.allWorkspacesMode && i < global.screen.n_workspaces; ++i) {
             this.addSeparator();
         }
-
+        this._label.visible = this.icons.length == 0;
         this._prevApp = this._curApp = -1;
         this._iconSize = 0;
         this._altTabPopup = altTabPopup;
@@ -1622,8 +1624,14 @@ AppSwitcher.prototype = {
 
         let childBox = new Clutter.ActorBox();
         let scrollable = this._minSize > box.x2 - box.x1;
-
         this._clipBin.allocate(box, flags);
+
+        let label_extra = 4;
+        childBox.x1 = ((this.actor.allocation.x2 - this.actor.allocation.x1) - this._label.width - label_extra) / 2;
+        childBox.x2 = childBox.x1 + this._label.width + label_extra;
+        childBox.y1 = ((this.actor.allocation.y2 - this.actor.allocation.y1) - this._label.height - label_extra) / 2;
+        childBox.y2 = childBox.y1 + this._label.height + label_extra;
+        this._label.allocate(childBox, flags);
 
         childBox.x1 = 0;
         childBox.y1 = 0;
