@@ -1374,12 +1374,16 @@ function AppSwitcher() {
 
 AppSwitcher.prototype = {
     _init : function(windows, showThumbnails, showIcons, altTabPopup) {
-        this.actor = new Cinnamon.GenericContainer({ style_class: 'switcher-list' });
+        this.actor = new Cinnamon.GenericContainer({ style_class: 'switcher-list', reactive: true });
         this.actor.connect('get-preferred-width', Lang.bind(this, this._getPreferredWidth));
         this.actor.connect('get-preferred-height', Lang.bind(this, this._getPreferredHeight));
         this.actor.connect('allocate', Lang.bind(this, this._allocateTop));
         this.actor.connect('destroy', Lang.bind(this, function() {
             if (this._highlightTimeout) {Mainloop.source_remove(this._highlightTimeout);}
+        }));
+        this.actor.connect('button-release-event', Lang.bind(this, function() {
+            // reserved for future use
+            return true;
         }));
 
         // Here we use a GenericContainer so that we can force all the
