@@ -1062,6 +1062,19 @@ AltTabPopup.prototype = {
                     g_settings.thumbnailsBehindIcons = g_thumbnailIconOptions[newIndex];
                     this.refresh();
                 }
+            } else if (ctrlDown) {
+                let index = keysym - 48; // convert '0' to 0, etc
+                if (index >= 0 && index <= 10) {
+                    let nextIndex = (index == 0
+                        ? global.screen.n_workspaces
+                        : Math.min(index, global.screen.n_workspaces)
+                        ) - 1;
+                    if (nextIndex != global.screen.get_active_workspace_index()) {
+                        global.screen.get_workspace_by_index(nextIndex).activate(global.get_current_time());
+                        Main.wm.showWorkspaceOSD();
+                        this.refresh();
+                    }
+                }
             }
             return true;
         }
