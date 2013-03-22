@@ -829,7 +829,7 @@ AltTabPopup.prototype = {
             return 0;
         });
 
-        let switchWorkspace = Lang.bind(this, function(direction) {
+        let skipWorkspace = Lang.bind(this, function(direction) {
             if (this._currentApp < 0) {
                 return false;
             }
@@ -852,6 +852,24 @@ AltTabPopup.prototype = {
                 return true;
             }
             return false;
+        });
+
+        let switchWorkspace = Lang.bind(this, function(direction) {
+            if (g_settings.allWorkspacesMode) {
+                return skipWorkspace(direction);
+            }
+            if (global.screen.n_workspaces < 2) {
+                return false;
+            }
+            let current = global.screen.get_active_workspace_index();
+            let nextIndex = (global.screen.n_workspaces + current + direction) % global.screen.n_workspaces;
+            global.screen.get_workspace_by_index(nextIndex).activate(global.get_current_time());
+            if (current == global.screen.get_active_workspace_index()) {
+                return false;
+            }
+            Main.wm.showWorkspaceOSD();
+            this.refresh('no-switch-windows');
+            return true;
         });
 
         let keysym = event.get_key_symbol();
