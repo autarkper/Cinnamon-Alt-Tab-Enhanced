@@ -127,7 +127,7 @@ const HELP_TEXT = [
     _("End: Select last window"),
     _("Ctrl+Right arrow: Skip right"),
     _("Ctrl+Left arrow: Skip left"),
-    _("Ctrl+Space: Enter \"persistent mode\", in which Alt-Tab will remain open until actively closed"),
+    _("Ctrl+Space, Right-click: Open context menu for the selected window"),
     _("m: Move selected window to next monitor"),
     _("n: Minimize selected window"),
     _("Ctrl+w: Close selected window. Use with care!"),
@@ -726,6 +726,7 @@ AltTabPopup.prototype = {
                 }
             }));
             if (submenuCount) {
+                submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
                 submenu.menu.addMenuItem(itemMoveToNewWorkspace);
                 wsItems.push(submenu);
             } else {

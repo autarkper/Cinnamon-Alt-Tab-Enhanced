@@ -1,16 +1,16 @@
-This is an enhanced Alt-Tab for Cinnamon. It is packaged as an applet but it
-also works as an extension. It replaces the built-in Alt-Tab,
-expanding the feature set with multi-workspace capabilities, extended 
-mouse support, more configuration options, and other useful 
+This is an enhanced Alt-Tab for Cinnamon. It replaces the built-in Alt-Tab,
+expanding the feature set with multi-workspace capabilities, bigger thumbnails,
+flexible choice of screen position and preferred monitor, extended 
+mouse support, context menus, more configuration options, and other useful 
 features for the advanced user while working almost exactly like the built-in
-Alt-Tab for the normal user. One of the features is a quick-help screen, accessed
+Alt-Tab for casual use. One of the features is a quick-help screen, accessed
 by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and
 single-workspace mode, press F5.
 
 Alt-Tab Enhanced is one of the first applets to use the new "applet settings"
 support that is a new feature of the upcoming Cinnamon 1.8. This means that
 you can change all settings via Cinnamon Settings, but most of the settings
-are also changeable via the use of hotkeys - consult the help screen
+are also changeable on a temporary basis via the use of hotkeys - consult the help screen
 for more information.
 
 Compatibility: From Cinnamon 1.7.2 and up.
@@ -26,9 +26,5 @@ You will then have the latest version every time you update your local git branc
 After installation, you will need to enable the applet in Cinnamon Settings,
 the Applets tab.
 
-Advanced tip: you can alternatively install this as an extension, to ~/.local/share/cinnamon/extensions/
-You will then lose the configuration UI and the panel icon, but as an extension
-it is easier to disable and enable.
-
- Whether installed as an applet or an extension, your settings are stored in
+Your settings are stored in
  ~/.cinnamon/configs/Alt_Tab_Enhanced\@autarkper
