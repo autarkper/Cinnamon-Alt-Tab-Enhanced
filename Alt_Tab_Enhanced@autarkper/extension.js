@@ -2275,7 +2275,7 @@ MyApplet.prototype = {
     on_applet_added_to_panel: function() {
         this.set_applet_icon_path(this.path + "/icon.png");
         this.set_applet_tooltip("Alt-Tab Enhanced");
-        let item = new PopupMenu.PopupMenuItem(_("Settings"));
+        let item = new PopupMenu.PopupMenuItem(_("Alt-Tab Enhanced Settings"));
         item.connect('activate', openSettings);
         this._applet_context_menu.addMenuItem(item);
         enable();
