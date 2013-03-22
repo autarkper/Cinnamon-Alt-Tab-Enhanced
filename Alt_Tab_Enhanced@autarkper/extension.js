@@ -702,9 +702,21 @@ AltTabPopup.prototype = {
                     }
                 }
             }
-            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
-            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event){
+            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new, temporary workspace"));
+            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
+                let lastWsIndex = global.screen.n_workspaces - 1;
                 Main.moveWindowToNewWorkspace(mw, false);
+                let lastWsIndexNew = global.screen.n_workspaces - 1;
+                if (lastWsIndexNew > lastWsIndex) {
+                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
+                    ws.connect('window-removed', function() {
+                        if (!getTabList(ws).filter(function(window) {
+                            return !window.is_on_all_workspaces();
+                        }, this).length) {
+                            Main._removeWorkspace(ws);
+                        }
+                    });
+                }
             }));
             if (submenuCount) {
                 submenu.menu.addMenuItem(itemMoveToNewWorkspace);
