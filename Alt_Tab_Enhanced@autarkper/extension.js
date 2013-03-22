@@ -18,6 +18,9 @@ const PointerTracker = imports.misc.pointerTracker;
 const Util = imports.misc.util;
 const WindowUtils = imports.misc.windowUtils;
 
+const AppletManager = imports.ui.appletManager;
+const MessageTray = imports.ui.messageTray;
+
 var Settings = null;
 try {
     Settings = imports.ui.settings; // requires Cinnamon 1.7.2 or later
@@ -2247,6 +2250,11 @@ function init(metadata, instanceId) {
             "zoom",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.IN,
+            "urgent-notifications",
+            "urgentNotifications",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -2264,6 +2272,7 @@ function init(metadata, instanceId) {
     getSwitcherStyle();
 }
 
+let attentionConnector = new Connector();
 function enable() {
     Meta.keybindings_set_custom_handler('switch-windows', function(display, screen, window, binding) {
         let tabPopup = new AltTabPopup();
@@ -2271,11 +2280,147 @@ function enable() {
         let backwards = modifiers & Meta.VirtualModifier.SHIFT_MASK;
         tabPopup.show(backwards, binding.get_name(), binding.get_mask());
     });
+    attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
+    attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
 }
 
 function disable() {
     Meta.keybindings_set_custom_handler('switch-windows',
         Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    attentionConnector.destroy();
+}
+
+let g_appletActor = null;
+let g_urgentCount = 0;
+
+// ----------------------------------
+function _onWindowDemandsAttention(display, window, urgent) {
+    if (window.get_window_type() == Meta.WindowType.DESKTOP) {
+        // this seems to happen after monitor setups has changed
+        return;
+    }
+    if (window._mtSource) {
+        return;
+    }
+    let notification = {destroy: function() {}, connect: function () {} };
+    let button = null;
+
+    if (g_settings.urgentNotifications && Main.messageTray) {
+        let source = window._mtSource = new MessageTray.Source(window.title);
+        window._mtSource.connect('destroy', Lang.bind(this, function() {
+            delete window._mtSource;
+        }));
+        Main.messageTray.add(source);
+
+        let wsIndex = window.get_workspace().index();
+        let wsText = (wsIndex != global.screen.get_active_workspace_index()) ?
+            _(" on workspace %s").format(Main.getWorkspaceName(wsIndex)) :
+            "";
+        let reason = urgent ?
+            _("Window marked urgent") :
+            _("Window demanding attention");
+        let text = reason + wsText;
+        let tracker = Cinnamon.WindowTracker.get_default();
+        const size = 64;
+
+        let icon = new St.Group();
+        let clones = WindowUtils.createWindowClone(window, size, true, true);
+        for (i in clones) {
+            let clone = clones[i];
+            icon.add_actor(clone.actor);
+            clone.actor.set_position(clone.x, clone.y);
+        }
+        let [width, height] = clones[0].actor.get_size();
+        clones[0].actor.set_position(Math.floor((size - width)/2), 0);
+
+        let app = tracker.get_window_app(window);
+        let isize = Math.ceil(size*(3/4));
+        let icon2 = app ? app.create_icon_texture(isize) : null;
+        if (icon2) {
+            icon.add_actor(icon2);
+            icon2.set_position(Math.floor((size - isize)/2), size - isize);
+        }
+        notification = new MessageTray.Notification(source, window.title, text,
+                                                            { icon: icon });
+        // CRITICAL makes the notification stay up until closed.
+        // HIGH urgency makes the notification go away after a while, possibly ending up in the message tray.
+        let urgency = AppletManager.get_role_provider_exists(AppletManager.Roles.NOTIFICATIONS)
+            ? MessageTray.Urgency.HIGH
+            : MessageTray.Urgency.CRITICAL;
+        notification.setUrgency(urgency);
+        notification.setTransient(true);
+        button = new St.Button({ can_focus: true, label: _("Ignore") });
+        button.add_style_class_name('notification-button');
+        notification.addActor(button);
+        source.notify(notification);
+    }
+
+    let wDestroyId = null;
+    let timeoutId = null;
+    let wFocusId;
+
+    let cleanup = function(destroy) {
+        if (destroy) {
+            notification.destroy();
+        }
+        wDestroyId.disconnect();
+        wFocusId.disconnect();
+        if (timeoutId) {
+            Mainloop.source_remove(timeoutId);
+        }
+        window = null;
+        notification = null;
+
+        // the counting is not particularly accurate, but at least it should tend
+        // towards zero
+        --g_urgentCount;
+        if (g_urgentCount <= 0) {
+            g_urgentCount = 0;
+            if (g_appletActor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+                g_appletActor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+            }
+        }
+    };
+
+    const TIMEOUT = 3000;
+    let timerFunction = function() {
+        timeoutId = null;
+        let is_alerting = window.is_demanding_attention() || window.is_urgent();
+        if (!is_alerting || display.focus_window == window) {
+            cleanup(true);
+            return;
+        }
+        timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
+    };
+    timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
+
+    wDestroyId = connect(window.get_compositor_private(), 'destroy', function() {
+        cleanup(true);
+    });
+
+    wFocusId = connect(display, 'notify::focus-window', function(display) {
+        if (display.focus_window == window) {
+            cleanup(true);
+        }
+    });
+    notification.connect('clicked', function() {
+        Main.activateWindow(window);
+    });
+
+    notification.connect('destroy', function() {
+        cleanup(false);
+    });
+    if (button) {
+        button.connect('clicked', function() {
+            window.unset_demands_attention();
+            cleanup(true);
+        });
+    }
+
+    ++g_urgentCount;
+    if (!g_appletActor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+        g_appletActor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+    }
 }
 
 // ----------------------------------
@@ -2300,11 +2445,13 @@ MyApplet.prototype = {
         let item = new PopupMenu.PopupMenuItem(_("Alt-Tab Enhanced Settings"));
         item.connect('activate', openSettings);
         this._applet_context_menu.addMenuItem(item);
+        g_appletActor = this.actor;
         enable();
     },
 
     on_applet_removed_from_panel: function(event) {
         disable();
+        g_appletActor = null;
     },
 
     on_applet_clicked: function(event) {

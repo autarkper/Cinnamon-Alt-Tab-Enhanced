@@ -72,6 +72,12 @@
     "default": true,
     "description": "Display the window title in a single-row label"
  },
+ "seppe": {"type": "separator"},
+ "urgent-notifications": {
+    "type": "checkbox",
+    "default": true,
+    "description": "Use notifications to bring attention to attention-seeking windows"
+ },
  "last-gsettings-switcher-style": {
     "type": "generic",
     "default": ""
