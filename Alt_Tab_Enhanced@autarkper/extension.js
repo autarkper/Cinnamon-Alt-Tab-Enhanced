@@ -1432,6 +1432,9 @@ AppSwitcher.prototype = {
             }
             this._addIcon(icon);
         }, this);
+        for (let i = lastWsIndex + 1; g_settings.allWorkspacesMode && i < global.screen.n_workspaces; ++i) {
+            this.addSeparator();
+        }
 
         this._prevApp = this._curApp = -1;
         this._iconSize = 0;
