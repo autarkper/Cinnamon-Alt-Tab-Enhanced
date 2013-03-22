@@ -599,6 +599,8 @@ AltTabPopup.prototype = {
                     this._appSwitcher._scrollTo(forwardIndex, -1, 2, true);
                 }
             }
+        } else {
+            this._clearPreview();
         }
         // There's a race condition; if the user released Alt before
         // we got the grab, then we won't be notified. (See
