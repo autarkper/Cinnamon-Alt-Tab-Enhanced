@@ -493,6 +493,7 @@ AltTabPopup.prototype = {
     },
 
     refresh : function(binding, backward) {
+        if (!this.actor) {return false;} // asynchronous death
         if (this._appSwitcher) {
             this._destroyThumbnails();
             this._appSwitcher.actor.destroy();
