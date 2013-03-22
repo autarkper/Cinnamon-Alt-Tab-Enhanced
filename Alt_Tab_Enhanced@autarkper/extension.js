@@ -637,7 +637,12 @@ AltTabPopup.prototype = {
     },
 
     _showWindowContextMenu: function(appIcon) {
+        // Make alt-tab stay on screen after the menu has been exited.
+        // This avoids unpleasant surprises after some actions, minimize in particular,
+        // which might otherwise have no lasting effect if the minimized window is
+        // immediately activated.
         this._persistent = true;
+
         let mm = new PopupMenu.PopupMenuManager(this);
         let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
         let menu = new Applet.AppletPopupMenu({actor: appIcon.actor}, orientation)
@@ -890,6 +895,7 @@ AltTabPopup.prototype = {
         let event_state = Cinnamon.get_event_state(event);
         let backwards = event_state & Clutter.ModifierType.SHIFT_MASK;
         let ctrlDown = event_state & Clutter.ModifierType.CONTROL_MASK;
+        let altDown = event_state & Clutter.ModifierType.MOD1_MASK;
         let action = global.display.get_keybinding_action(event.get_key_code(), event_state);
 
         const SCROLL_AMOUNT = 5;
@@ -905,6 +911,9 @@ AltTabPopup.prototype = {
                 this.destroy();
             } else if (keysym == Clutter.Tab) {
                 this._select(this._nextApp(nowrap));
+            } else if (keysym == Clutter.Alt_L  ) {
+                // This is to exit persistent mode after a menu has been open.
+                this._persistent = false;
             } else if (keysym == Clutter.ISO_Left_Tab) {
                 this._select(this._previousApp(nowrap));
             } else if (keysym == Clutter.Home || keysym == Clutter.KP_Home) {
