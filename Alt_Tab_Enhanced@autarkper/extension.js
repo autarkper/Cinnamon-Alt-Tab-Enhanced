@@ -911,6 +911,10 @@ AltTabPopup.prototype = {
             let nowrap = ms_diff < 100;
 
             if (false) {
+            } else if (keysym == Clutter.Menu) {
+                if (this._currentApp > -1) {
+                    this._showWindowContextMenu(this._appIcons[this._currentApp]);
+                }
             } else if (keysym == Clutter.Escape) {
                 this.destroy();
             } else if (keysym == Clutter.Tab) {
@@ -976,9 +980,7 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.F1) {
                 this._showHelp();
             } else if (keysym == Clutter.KEY_space) {
-                if (this._currentApp > -1) {
-                    this._showWindowContextMenu(this._appIcons[this._currentApp]);
-                }
+                // unused
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
             } else if (keysym == Clutter.h) { // toggle hide
