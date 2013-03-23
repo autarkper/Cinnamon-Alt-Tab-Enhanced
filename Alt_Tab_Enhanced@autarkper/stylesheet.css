@@ -1,0 +1,7 @@
+:outlined {
+	background: rgba(0,255,255,0.33);
+}
+:selected {
+	background: rgba(255,255,255,0.33);
+	border: 2px solid rgba(85,85,85,0.0);
+}

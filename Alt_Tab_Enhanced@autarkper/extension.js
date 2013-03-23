@@ -167,6 +167,8 @@ function primaryModifier(mask) {
     return primary;
 }
 
+let g_selection = [];
+
 let g_monitorOverride = null;
 let g_vAlignOverride = null;
 function getVerticalAlignment() {
@@ -525,7 +527,7 @@ AltTabPopup.prototype = {
             if (i != activeWsIndex) {
                 wlist = wlist.filter(function(window) {
                     // We don't want duplicates. Ignored windows from other workspaces are not welcome.
-                    return !window.is_on_all_workspaces() && (!g_vars.globalFocusOrder || g_vars.windowsToIgnore.indexOf(window) < 0);
+                    return !window.is_on_all_workspaces() && (!g_vars.globalFocusOrder || window._alttab_ignored);
                 }, this);
             }
             if (g_settings.allWorkspacesMode || i == activeWsIndex) {
@@ -546,7 +548,7 @@ AltTabPopup.prototype = {
                 if (minimizedDiff) {
                     return minimizedDiff;
                 }
-                let ignoredDiff = (g_vars.windowsToIgnore.indexOf(a) < 0 ? 0 : 1) - (g_vars.windowsToIgnore.indexOf(b) < 0 ? 0 : 1);
+                let ignoredDiff = (!a._alttab_ignored ? 0 : 1) - (!b._alttab_ignored ? 0 : 1)
                 if (ignoredDiff) {
                     return ignoredDiff;
                 }
@@ -586,7 +588,7 @@ AltTabPopup.prototype = {
         }
 
         // Make the initial selection
-        if (this._appIcons.length > 0 && currentIndex >= 0) {
+        if (this._appIcons.length > 0 && (currentIndex >= 0 || forwardIndex >= 0)) {
             if (binding == 'no-switch-windows') {
                 this._select(currentIndex);
                 this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
@@ -639,22 +641,10 @@ AltTabPopup.prototype = {
         return true;
     },
 
-    _showWindowContextMenu: function(appIcon) {
-        // Make alt-tab stay on screen after the menu has been exited.
-        // This avoids unpleasant surprises after some actions, minimize in particular,
-        // which might otherwise have no lasting effect if the minimized window is
-        // immediately activated.
-        this._persistent = true;
-
-        let mm = new PopupMenu.PopupMenuManager(this);
-        let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
-        let menu = new Applet.AppletPopupMenu({actor: appIcon.actor}, orientation)
-        mm.addMenu(menu);
-
-        let mw = appIcon.window;
+    _populateSingleWindowContextMenu: function(selection) {
+        let mw = selection[0];
         let items = [];
-
-        let itemCloseWindow = new PopupMenu.PopupMenuItem(_("Close window"));
+        let itemCloseWindow = new PopupMenu.PopupMenuItem(_("Close"));
         itemCloseWindow.connect('activate', Lang.bind(this, function(actor, event){
             mw.delete(global.get_current_time());
         }));
@@ -663,7 +653,6 @@ AltTabPopup.prototype = {
         let itemMinimizeWindow = new PopupMenu.PopupMenuItem(mw.minimized ? _("Restore") : _("Minimize"));
         itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
             mw.minimized ? mw.unminimize() : mw.minimize();
-            this._select(this._currentApp, true); // refresh
         }));
         items.push(itemMinimizeWindow);
 
@@ -676,7 +665,6 @@ AltTabPopup.prototype = {
                         _("Move to monitor %d").format(index + 1));
                     item.connect('activate', Lang.bind(this, function() {
                         mw.move_to_monitor(index);
-                        this._select(this._currentApp, true); // refresh
                     }));
                     if (Main.layoutManager.monitors.length > 2) {
                         submenu.menu.addMenuItem(item);
@@ -712,8 +700,8 @@ AltTabPopup.prototype = {
                     }
                 }
             }
-            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new, temporary workspace"));
-            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
+            let itemMoveToTempWorkspace = new PopupMenu.PopupMenuItem(_("Move to a temporary workspace"));
+            itemMoveToTempWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
                 let lastWsIndex = global.screen.n_workspaces - 1;
                 Main.moveWindowToNewWorkspace(mw, false);
                 let lastWsIndexNew = global.screen.n_workspaces - 1;
@@ -728,16 +716,248 @@ AltTabPopup.prototype = {
                     });
                 }
             }));
+            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
+            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
+                let lastWsIndex = global.screen.n_workspaces - 1;
+                Main._addWorkspace();
+                let lastWsIndexNew = global.screen.n_workspaces - 1;
+                if (lastWsIndexNew > lastWsIndex) {
+                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
+                    mw.change_workspace(ws);
+                }
+            }));
             if (submenuCount) {
                 submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+                submenu.menu.addMenuItem(itemMoveToTempWorkspace);
                 submenu.menu.addMenuItem(itemMoveToNewWorkspace);
                 wsItems.push(submenu);
             } else {
+                wsItems.push(itemMoveToTempWorkspace);
                 wsItems.push(itemMoveToNewWorkspace);
             }
             wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
             items = wsItems.concat(items);
         };
+        return items;
+    },
+
+    _multiMoveMonitor: function(selection, index) {
+        selection.forEach(function(mw) {
+            if (mw.monitor() != index) {
+                mw.move_to_monitor(index);
+            }
+        });
+        this._select(this._currentApp, true); // refresh
+    },
+
+    _multiClose: function(selection) {
+        selection.forEach(function(mw) {
+            mw.delete(global.get_current_time());
+        });
+        this._select(this._currentApp, true); // refresh
+    },
+
+    _multiRestore: function(selection) {
+        selection.forEach(function(mw) {
+            if (mw.minimized) {mw.unminimize();}
+        });
+        this._select(this._currentApp, true); // refresh
+    },
+
+    _multiIgnore: function(selection) {
+        let allIgnored = (selection.filter(function(mw) {return mw._alttab_ignored;}).length == selection.length);
+        selection.forEach(function(mw) {
+            let iconIndex = this._indexOfWindow(mw);
+            if (allIgnored || mw._alttab_ignored) {
+                mw._alttab_ignored = false;
+            }
+            else {
+                mw._alttab_ignored = true;
+            }
+            this._select(iconIndex, true); // refresh
+        }, this);
+    },
+
+    _multiMinimize: function(selection) {
+        let allMinimized = (selection.filter(function(mw) {return mw.minimized;}).length == selection.length);
+        selection.forEach(function(mw) {
+            if (allMinimized) {mw.unminimize();}
+            else if (!mw.minimized) {mw.minimize();}
+        });
+        this._select(this._currentApp, true); // refresh
+    },
+
+    _populateMultiWindowContextMenu: function(selection) {
+        let items = [];
+
+        let itemCloseWindow = new PopupMenu.PopupMenuItem(_("Close"));
+        itemCloseWindow.connect('activate', Lang.bind(this, function(actor, event){
+            selection.forEach(function(mw) {
+                mw.delete(global.get_current_time());
+            });
+        }));
+        items.push(itemCloseWindow);
+
+        if (selection.filter(function(mw) {return !mw.minimized;}).length) {
+            let itemMinimizeWindow = new PopupMenu.PopupMenuItem(_("Minimize"));
+            itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
+                this._multiMinimize(selection);
+            }));
+            items.push(itemMinimizeWindow);
+        }
+
+        if (selection.filter(function(mw) {return mw.minimized;}).length) {
+            let itemRestoreWindow = new PopupMenu.PopupMenuItem(_("Restore"));
+            itemRestoreWindow.connect('activate', Lang.bind(this, function(actor, event){
+                this._multiRestore(selection);
+            }));
+            items.push(itemRestoreWindow);
+        }
+
+        let itemUnselectAll = new PopupMenu.PopupMenuItem(_("Unselect all"));
+        itemUnselectAll.connect('activate', Lang.bind(this, function(actor, event){
+            g_selection = [];
+        }));
+        items.push(new PopupMenu.PopupSeparatorMenuItem());
+        items.push(itemUnselectAll);
+
+        if (Main.layoutManager.monitors.length > 1) {
+            let monitorItems = [];
+            let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Monitors"));
+            Main.layoutManager.monitors.forEach(function(monitor, index) {
+                if (selection.filter(function(mw) {return mw.get_monitor() != index;}).length) {
+                    let item = new PopupMenu.PopupMenuItem(
+                        _("Move to monitor %d").format(index + 1));
+                    item.connect('activate', Lang.bind(this, function() {
+                        this._multiMoveMonitor(selection, index);
+                    }));
+                    if (Main.layoutManager.monitors.length > 2) {
+                        submenu.menu.addMenuItem(item);
+                    } else {
+                        monitorItems.push(item);
+                    }
+                }
+            }, this);
+            if (!monitorItems.length) {
+                monitorItems.push(submenu);
+            }
+            monitorItems.push(new PopupMenu.PopupSeparatorMenuItem());
+            items = monitorItems.concat(items);
+        }
+
+        if (true) {
+            let wsItems = [];
+            let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Workspaces"));
+            let submenuCount = 0;
+            for (let i = 0; i < global.screen.n_workspaces; ++i) {
+                if (selection.filter(function(mw) {return mw.get_workspace().index() != i;}).length) {
+                    let item = new PopupMenu.PopupMenuItem(
+                        _("Move to workspace %d").format(i + 1));
+                    let index = i;
+                    item.connect('activate', Lang.bind(this, function() {
+                        selection.forEach(function(mw) {
+                            if (mw.get_workspace().index() != index) {
+                                mw.change_workspace(global.screen.get_workspace_by_index(index));
+                            }
+                        });
+                    }));
+                    if (false && global.screen.n_workspaces > 2) {
+                        // these menu items don't show up, don't know why
+                        submenu.menu.addMenuItem(item);
+                        ++submenuCount;
+                    } else {
+                        wsItems.push(item);
+                    }
+                }
+            }
+            let itemMoveToTempWorkspace = new PopupMenu.PopupMenuItem(_("Move to a temporary workspace"));
+            itemMoveToTempWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
+                let lastWsIndex = global.screen.n_workspaces - 1;
+                let selection2 = selection.slice();
+                let firstMw = selection2.shift();
+                Main.moveWindowToNewWorkspace(firstMw, false);
+                let lastWsIndexNew = global.screen.n_workspaces - 1;
+                if (lastWsIndexNew > lastWsIndex) {
+                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
+                    selection2.forEach(function(mw) {
+                        mw.change_workspace(ws);
+                    });
+                    ws.connect('window-removed', function() {
+                        if (!getTabList(ws).filter(function(window) {
+                            return !window.is_on_all_workspaces();
+                        }, this).length) {
+                            Main._removeWorkspace(ws);
+                        }
+                    });
+                }
+            }));
+            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
+            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
+                let lastWsIndex = global.screen.n_workspaces - 1;
+                Main._addWorkspace();
+                let lastWsIndexNew = global.screen.n_workspaces - 1;
+                if (lastWsIndexNew > lastWsIndex) {
+                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
+                    selection.forEach(function(mw) {
+                        mw.change_workspace(ws);
+                    });
+                }
+            }));
+            if (submenuCount) {
+                submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+                submenu.menu.addMenuItem(itemMoveToTempWorkspace);
+                submenu.menu.addMenuItem(itemMoveToNewWorkspace);
+                wsItems.push(submenu);
+            } else {
+                wsItems.push(itemMoveToTempWorkspace);
+                wsItems.push(itemMoveToNewWorkspace);
+            }
+            wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
+            items = wsItems.concat(items);
+        };
+        return items;
+    },
+
+    _modifySelection: function(insel, n, options) {
+        if (n < 0) {
+            return [];
+        }
+        let selection = insel.filter(function(window) {return !!window.get_workspace();} );
+        let appIcon = this._appIcons[n];
+        let index = selection.indexOf(appIcon.window);
+        if (index < 0) {
+            if (selection.length && options && options.mustExist) {
+                return [];
+            }
+            if (!(options && options.noAdd)) {
+                selection.push(appIcon.window);
+            }
+        } else if (options && options.removeIfPresent) {
+            selection.splice(index, 1);
+        }
+        return selection;
+    },
+
+    _showWindowContextMenu: function(n) {
+        // Make alt-tab stay on screen after the menu has been exited.
+        // This avoids unpleasant surprises after some actions, minimize in particular,
+        // which might otherwise have no lasting effect if the minimized window is
+        // immediately activated.
+        this._persistent = true;
+
+        if (g_selection.length && g_selection.indexOf(this._appIcons[n].window) < 0) {
+            g_selection = [];
+            this._select(n, true);
+        }
+        let appIcon = this._appIcons[n];
+        let selection = g_selection.length ? g_selection : this._modifySelection(g_selection, n);
+
+        let mm = new PopupMenu.PopupMenuManager(this);
+        let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
+        let menu = new Applet.AppletPopupMenu({actor: selection.length < 2 && appIcon ? appIcon.actor : this._appSwitcher.actor}, orientation)
+        mm.addMenu(menu);
+
+        let items = (selection.length > 1 ? this._populateMultiWindowContextMenu : this._populateSingleWindowContextMenu).apply(this, [selection]);
 
         items.forEach(function(item) {
             menu.addMenuItem(item);
@@ -746,6 +966,7 @@ AltTabPopup.prototype = {
         menu.connect('open-state-changed', Lang.bind(this, function(sender, opened) {
             this._menuActive = opened;
             if (!opened) {
+                this._select(this._currentApp, true); // refresh
                 if (this.actor) {
                     global.stage.set_key_focus(this.actor);
                 }
@@ -765,8 +986,7 @@ AltTabPopup.prototype = {
         }
         this._appSwitcher.connect('item-activated', Lang.bind(this, this._appActivated));
         this._appSwitcher.connect('item-context-menu', Lang.bind(this, function(sender, n) {
-            this._select(n, false);
-            this._showWindowContextMenu(this._appIcons[n]);
+            this._showWindowContextMenu(n);
         }));
         this._appSwitcher.connect('hover', Lang.bind(this, function(sender, index) {
             this._appSwitcher._noscroll = true;
@@ -891,13 +1111,13 @@ AltTabPopup.prototype = {
                 return false;
             }
             Main.wm.showWorkspaceOSD();
-            this.refresh('no-switch-windows');
+            this.refresh();
             return true;
         });
 
         let keysym = event.get_key_symbol();
         let event_state = Cinnamon.get_event_state(event);
-        let backwards = event_state & Clutter.ModifierType.SHIFT_MASK;
+        let shiftDown = event_state & Clutter.ModifierType.SHIFT_MASK;
         let ctrlDown = event_state & Clutter.ModifierType.CONTROL_MASK;
         let altDown = event_state & Clutter.ModifierType.MOD1_MASK;
         let action = global.display.get_keybinding_action(event.get_key_code(), event_state);
@@ -911,9 +1131,18 @@ AltTabPopup.prototype = {
             let nowrap = ms_diff < 100;
 
             if (false) {
+            } else if (ctrlDown && (keysym == Clutter.a || keysym == Clutter.A)) {
+                if (g_selection.length) {
+                    g_selection = [];
+                } else {
+                    g_selection = this._appIcons.map(function(icon) {
+                        return icon.window;
+                    });
+                }
+                this._select(this._currentApp, true); // refresh
             } else if (keysym == Clutter.Menu) {
-                if (this._currentApp > -1) {
-                    this._showWindowContextMenu(this._appIcons[this._currentApp]);
+                if (this._currentApp > -1 || g_selection.length) {
+                    this._showWindowContextMenu(this._currentApp);
                 }
             } else if (keysym == Clutter.Escape) {
                 this.destroy();
@@ -954,21 +1183,30 @@ AltTabPopup.prototype = {
                     (action == Meta.KeyBindingAction.WORKSPACE_DOWN ? Main.overview : Main.expo).show();
                 });
             } else if (action == Meta.KeyBindingAction.SWITCH_GROUP || action == Meta.KeyBindingAction.SWITCH_WINDOWS) {
-                this._select(backwards ? this._previousApp(nowrap) : this._nextApp(nowrap));
+                this._select(shiftDown ? this._previousApp(nowrap) : this._nextApp(nowrap));
             } else {
+                let removeOptions = {removeIfPresent: true, noAdd: true};
                 if (keysym == Clutter.Left) {
-                    if (ctrlDown) {
+                    if (ctrlDown && !shiftDown) {
                         if (switchWorkspace(-1)) {
                             return false;
                         }
                     }
+                    else if (shiftDown) {
+                        g_selection = this._modifySelection(g_selection, this._currentApp, ctrlDown ? removeOptions : null);
+                        g_selection = this._modifySelection(g_selection, this._previousApp(nowrap), ctrlDown ? removeOptions : null);
+                    }    
                     this._select(this._previousApp(nowrap));
                 }
                 else if (keysym == Clutter.Right) {
-                    if (ctrlDown) {
+                    if (ctrlDown && !shiftDown) {
                         if (switchWorkspace(1)) {
                             return false;
                         }
+                    }
+                    else if (shiftDown) {
+                        g_selection = this._modifySelection(g_selection, this._currentApp, ctrlDown ? removeOptions : null);
+                        g_selection = this._modifySelection(g_selection, this._nextApp(nowrap), ctrlDown ? removeOptions : null);
                     }
                     this._select(this._nextApp(nowrap));
                 }
@@ -980,7 +1218,16 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.F1) {
                 this._showHelp();
             } else if (keysym == Clutter.KEY_space) {
-                // unused
+                if (this._currentApp >= 0) {
+                    let window = this._appIcons[this._currentApp].window;
+                    let index = g_selection.indexOf(window);
+                    if (index < 0) {
+                        g_selection.push(window);
+                    } else {
+                        g_selection.splice(index, 1);
+                    }
+                    this._select(this._currentApp, true); // refresh
+                }
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
             } else if (keysym == Clutter.h) { // toggle hide
@@ -1001,22 +1248,9 @@ AltTabPopup.prototype = {
                     this.refresh();
                 }
             } else if (keysym == Clutter.w && ctrlDown) {
-                if (this._currentApp >= 0) {
-                    this._appIcons[this._currentApp].window.delete(global.get_current_time());
-                }
+                this._multiClose(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.i && ctrlDown) {
-                if (this._currentApp >= 0) {
-                    let index = g_vars.windowsToIgnore.indexOf(this._appIcons[this._currentApp].window);
-                    if (index< 0) {
-                        this._appIcons[this._currentApp].ignored = true;
-                        g_vars.windowsToIgnore.push(this._appIcons[this._currentApp].window);
-                    }
-                    else {
-                        g_vars.windowsToIgnore.splice(index, 1);
-                        this._appIcons[this._currentApp].ignored = false;
-                    }
-                    this._select(this._currentApp, true); // refresh
-                }
+                this._multiIgnore(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.m && !ctrlDown) {
                 let monitorCount = Main.layoutManager.monitors.length;
                 if (this._currentApp >= 0 && monitorCount > 1) {
@@ -1027,11 +1261,7 @@ AltTabPopup.prototype = {
                     this._select(this._currentApp, true); // refresh
                 }
             } else if (keysym == Clutter.n && !ctrlDown) {
-                if (this._currentApp >= 0) {
-                    let window = this._appIcons[this._currentApp].window;
-                    (window.minimized ? window.unminimize : window.minimize).call(window, global.get_current_time());
-                    this._select(this._currentApp, true); // refresh
-                }
+                this._multiMinimize(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.F4) {
                 let index = g_alttabStyles.indexOf(g_settings.style);
                 let newIndex = (index + 1 + g_alttabStyles.length) % g_alttabStyles.length;
@@ -1193,6 +1423,7 @@ AltTabPopup.prototype = {
             Mainloop.source_remove(this._displayPreviewTimeoutId);
         g_vAlignOverride = null;
         g_monitorOverride = null;
+        g_selection = [];
     },
     
     _clearPreview: function() {
@@ -1328,8 +1559,7 @@ AltTabPopup.prototype = {
             return;
         }
 
-        this._appIcons[app].updateLabel();
-        this._appSwitcher.highlight(app, false);
+        this._appSwitcher.highlight(app);
         this._doWindowPreview();
         if (g_setup._thumbnailsEnabled && g_setup._iconsEnabled) {
             this._destroyThumbnails();
@@ -1587,12 +1817,28 @@ AppSwitcher.prototype = {
         arrow.allocate(childBox, 0);
     },
 
-    highlight : function(n, justOutline) {
+    highlight : function(n) {
         if (this._prevApp != -1) {
             this.icons[this._prevApp].set_size(this._iconSize);
         }
 
-        this.highlightInner(n, justOutline);
+        let prevIndex = this._highlighted;
+        this.updateSelectionHighlight(n);
+        this._highlighted = n;
+
+        if (!this._noscroll) {
+            // If previous index is negative, we are probably initializing, and we want
+            // to show as many of the current workspace's windows as possible.
+            let direction = prevIndex == -1 ? 1 : n - prevIndex;
+            // If we're close to either the left or the right edge, we want to scroll
+            // the edge-most items into view.
+            let scrollMax = Math.min(this._noscroll ? 1 : 5, Math.floor(this._items.length/4));
+            this._scrollTo(n, direction, scrollMax, prevIndex == -1);
+        }
+        else {
+            this.determineScrolling();
+        }
+
         this._prevApp = this._curApp = n;
  
         if (this._curApp != -1 && g_setup._iconsEnabled) {
@@ -1685,8 +1931,24 @@ AppSwitcher.prototype = {
 
         let n = this._items.length;
         bbox.connect('button-release-event', Lang.bind(this, function(actor, event) {
+            let shiftDown = Cinnamon.get_event_state(event) & Clutter.ModifierType.SHIFT_MASK;
+            let ctrlDown = Cinnamon.get_event_state(event) & Clutter.ModifierType.CONTROL_MASK;
             if (event.get_button()==1) {
-                this.emit('item-activated', n);
+                if (!ctrlDown && !shiftDown) {
+                    this.emit('item-activated', n);
+                } else if (ctrlDown && !shiftDown) {
+                    g_selection = this._altTabPopup._modifySelection(g_selection, n, {removeIfPresent:true});
+                    this.updateSelectionHighlight(n);
+                } else if (!ctrlDown && shiftDown) {
+                    let num = Math.abs(n - this._curApp) + 1;
+                    let start = Math.min(n, this._curApp);
+                    for (let i = 0; i < num; ++i) {
+                        g_selection = this._altTabPopup._modifySelection(g_selection, start + i);
+                    }
+                    if (num) {
+                        this._altTabPopup._select(n, true);
+                    }
+                }
             }
             if (event.get_button()==3) {
                 this.emit('item-context-menu', n);
@@ -1697,14 +1959,16 @@ AppSwitcher.prototype = {
         // There may occur spurious motion events, so use a pointer tracker to verify that the pointer has moved.
         // The detection is not completely fail-safe, due to the effects of scrolling, but it is better than nothing.
         let pointerTracker = new PointerTracker.PointerTracker();
-        bbox.connect('enter-event', Lang.bind(this, function() {
-            if (pointerTracker.hasMoved()) {
+        bbox.connect('enter-event', Lang.bind(this, function(actor, event) {
+            let [x, y, mods] = global.get_pointer();
+            let shiftDown = mods & Clutter.ModifierType.SHIFT_MASK;
+            if (pointerTracker.hasMoved() && !shiftDown) {
                 if (this._hoverTimeout) {
                     Mainloop.source_remove(this._hoverTimeout);
                 }
                 this._hoverTimeout = Mainloop.timeout_add(125, Lang.bind(this, function() {
                     this._hoverTimeout = null;
-                        this.emit('hover', n);
+                    this.emit('hover', n);
                 }));
             }
         }));
@@ -1727,29 +1991,22 @@ AppSwitcher.prototype = {
         }
     },
 
-    highlightInner: function(index, justOutline) {
-        let prevIndex = this._highlighted;
-        // If previous index is negative, we are probably initializing, and we want
-        // to show as many of the current workspace's windows as possible.
-
-        let direction = prevIndex == -1 ? 1 : index - prevIndex;
-        if (this._highlighted != -1) {
-            this._items[this._highlighted].remove_style_pseudo_class('outlined');
-            this._items[this._highlighted].remove_style_pseudo_class('selected');
-        }
-        this._highlighted = index;
-        if (this._highlighted != -1) {
-            this._items[this._highlighted].add_style_pseudo_class(justOutline ? 'outlined' : 'selected');
-        }
-        if (!this._noscroll) {
-            // If we're close to either the left or the right edge, we want to scroll
-            // the edge-most items into view.
-            let scrollMax = Math.min(this._noscroll ? 1 : 5, Math.floor(this._items.length/4));
-            this._scrollTo(index, direction, scrollMax, prevIndex == -1);
-        }
-        else {
-            this.determineScrolling();
-        }
+    updateSelectionHighlight: function(index) {
+        this._items.forEach(function(item, i) {
+            let outliner = this.icons[i].actor;
+            if (i == this._highlighted) {
+                item.remove_style_pseudo_class('selected');
+            }
+            if (g_selection.indexOf(this.icons[i].window) < 0) {
+                outliner.remove_style_pseudo_class('outlined');
+            } else {
+                outliner.add_style_pseudo_class('outlined');
+            }
+            if (i == index) {
+                item.add_style_pseudo_class('selected');
+            }
+            this.icons[i].updateLabel();
+        }, this);
     },
 
     _getStagePosX: function(actor, offset) {
@@ -1941,7 +2198,6 @@ function AppIcon() {
 AppIcon.prototype = {
     _init: function(window, showThumbnail, showIcons) {
         this.window = window;
-        this.ignored = g_vars.windowsToIgnore.indexOf(window) >= 0;
         this.showThumbnail = showThumbnail;
         this.showIcons = showIcons;
         let tracker = Cinnamon.WindowTracker.get_default();
@@ -2034,7 +2290,7 @@ AppIcon.prototype = {
         // Make some room for the window title.
         this._label_bin.width = Math.floor(size * 1.2);
         this._label_bin.height = !g_settings.compactLabels ? Math.max(this._initLabelHeight * 2, Math.floor(size/2)) : this._initLabelHeight;
-        if (this.ignored) {
+        if (this.window._alttab_ignored) {
             this.icon.opacity = 170;
         }
         this._iconBin.child = this.icon;
