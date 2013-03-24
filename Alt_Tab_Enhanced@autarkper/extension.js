@@ -528,8 +528,8 @@ AltTabPopup.prototype = {
 
             if (i != activeWsIndex) {
                 wlist = wlist.filter(function(window) {
-                    // We don't want duplicates. Ignored windows from other workspaces are not welcome.
-                    return !window.is_on_all_workspaces() && (!g_vars.globalFocusOrder || window._alttab_ignored);
+                    // We don't want duplicates.
+                    return !window.is_on_all_workspaces();
                 }, this);
             }
             if (g_settings.allWorkspacesMode || i == activeWsIndex) {
