@@ -502,14 +502,13 @@ AltTabPopup.prototype = {
             this._destroyThumbnails();
             this._appSwitcher.actor.destroy();
         }
-       
-        let registry = {};
+
+        let stamp = new Date().getTime();
         let filterDuplicates = function(window) {
-            let seqno = window.get_stable_sequence();
             try {
-                return !registry[seqno];
+                return window._alttab_stamp != stamp;
             } finally {
-                registry[seqno] = true;
+                window._alttab_stamp = stamp;
             }
         };
 
