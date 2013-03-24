@@ -2213,7 +2213,7 @@ AppIcon.prototype = {
         }));
         this.icon = null;
 
-        this._iconBin = new St.Bin();
+        this._iconBin = new St.Bin({style_class: 'icon-bin'});
         this.actor.add(this._iconBin, { x_fill: false, y_fill: false, y_align: St.Align.END } );
 
         this.label = new St.Label();
