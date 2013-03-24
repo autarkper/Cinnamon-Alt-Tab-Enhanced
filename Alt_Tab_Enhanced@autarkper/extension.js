@@ -568,6 +568,12 @@ AltTabPopup.prototype = {
         this._numPrimaryItems = g_settings.zoom ? this._numPrimaryItems_Orig : windows.length;
         this._zoomedOut = this._numPrimaryItems != this._numPrimaryItems_Orig;
 
+        if (g_selection.length) {
+            // must not have a hidden selection
+            g_selection = g_selection.filter(function(window) {
+                return windows.indexOf(window) >= 0;
+            });
+        }
         this._createAppswitcher(windows);
         
         this._appSwitcher.actor.opacity = this._persistent ? 255 : 0;
