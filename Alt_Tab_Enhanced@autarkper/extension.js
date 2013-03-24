@@ -863,8 +863,7 @@ AltTabPopup.prototype = {
                             }
                         });
                     }));
-                    if (false && global.screen.n_workspaces > 2) {
-                        // these menu items don't show up, don't know why
+                    if (global.screen.n_workspaces > 2) {
                         submenu.menu.addMenuItem(item);
                         ++submenuCount;
                     } else {
@@ -956,7 +955,8 @@ AltTabPopup.prototype = {
 
         let mm = new PopupMenu.PopupMenuManager(this);
         let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
-        let menu = new Applet.AppletPopupMenu({actor: selection.length < 2 && appIcon ? appIcon.actor : this._appSwitcher.actor}, orientation)
+        let menu = new Applet.AppletPopupMenu({actor: appIcon.actor}, orientation);
+        menu._arrowAlignment = selection.length > 1 ? 1.0 : 0.0; // differentiate, give visual clue
         mm.addMenu(menu);
 
         let items = (selection.length > 1 ? this._populateMultiWindowContextMenu : this._populateSingleWindowContextMenu).apply(this, [selection]);
