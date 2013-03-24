@@ -503,34 +503,28 @@ AltTabPopup.prototype = {
             this._appSwitcher.actor.destroy();
         }
        
+        let registry = {};
+        let filterDuplicates = function(window) {
+            let seqno = window.get_stable_sequence();
+            try {
+                return !registry[seqno];
+            } finally {
+                registry[seqno] = true;
+            }
+        };
+
         // Find out the currently active window
-        let wsWindows = getTabList();
+        let wsWindows = getTabList().filter(filterDuplicates);
         let [currentWindow, forwardWindow, backwardWindow] = [(wsWindows.length > 0 ? wsWindows[0] : null), null, null];
 
         let windows = [];
         let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
-        let registry = {};
 
         let activeWsIndex = global.screen.get_active_workspace_index();
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
-            let wlist = i == activeWsIndex ? wsWindows : getTabList(global.screen.get_workspace_by_index(i));
+            let wlist = i == activeWsIndex ? wsWindows : getTabList(global.screen.get_workspace_by_index(i)).filter(filterDuplicates);
             if (!wlist.length) {
                 continue;
-            }
-            wlist = wlist.filter(function(window) {
-                let seqno = window.get_stable_sequence();
-                if (registry[seqno]) {
-                    return false;
-                }
-                registry[seqno] = true;
-                return true;
-            }, this);
-
-            if (i != activeWsIndex) {
-                wlist = wlist.filter(function(window) {
-                    // We don't want duplicates.
-                    return !window.is_on_all_workspaces();
-                }, this);
             }
             if (g_settings.allWorkspacesMode || i == activeWsIndex) {
                 windows = windows.concat(wlist);
@@ -1698,7 +1692,7 @@ AppSwitcher.prototype = {
         this.icons = [];
         let lastWsIndex = 0;
         workspaceIcons.forEach(function(icon) {
-            let wsIndex = icon.window.get_workspace().index();
+            let wsIndex = (icon.window.is_on_all_workspaces() ? activeWorkspace : icon.window.get_workspace()).index();
             for (let i = wsIndex - lastWsIndex; g_settings.allWorkspacesMode && i > 0; --i) {
                 this.addSeparator();
                 lastWsIndex = wsIndex;
