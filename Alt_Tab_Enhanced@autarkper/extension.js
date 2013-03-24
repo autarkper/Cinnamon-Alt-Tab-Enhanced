@@ -1220,16 +1220,8 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.F1) {
                 this._showHelp();
             } else if (keysym == Clutter.KEY_space) {
-                if (this._currentApp >= 0) {
-                    let window = this._appIcons[this._currentApp].window;
-                    let index = g_selection.indexOf(window);
-                    if (index < 0) {
-                        g_selection.push(window);
-                    } else {
-                        g_selection.splice(index, 1);
-                    }
-                    this._select(this._currentApp, true); // refresh
-                }
+                g_selection = this._modifySelection(g_selection, this._currentApp, {removeIfPresent: true});
+                this._select(this._currentApp, true); // refresh
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
             } else if (keysym == Clutter.h) { // toggle hide
