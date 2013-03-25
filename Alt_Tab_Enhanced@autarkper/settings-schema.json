@@ -65,6 +65,7 @@
     "default": ":primary",
     "options" : {
         "Primary" : ":primary",
+        "Secondary" : ":secondary",
         "Focus monitor" : ":focus",
         "Bottom" : ":bottom",
         "Top" : ":top"

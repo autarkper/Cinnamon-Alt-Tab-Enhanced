@@ -311,10 +311,15 @@ AltTabPopup.prototype = {
                     mIndex = "bottomMonitor"; break;
                 case ":focus":
                     mIndex = "focusMonitor"; break;
+                case ":secondary":
+                    g_myMonitorIndex = Math.min(1, Main.layoutManager.monitors.length - 1);
+                    mIndex = null; break;
                 default:
                     mIndex = "primaryMonitor"; break;
             }
-            g_myMonitorIndex = Main.layoutManager.monitors.indexOf(Main.layoutManager[mIndex]);
+            if (mIndex) {
+                g_myMonitorIndex = Main.layoutManager.monitors.indexOf(Main.layoutManager[mIndex]);
+            }
         } else {
             g_myMonitorIndex = Main.layoutManager.monitors.indexOf(g_monitorOverride);
         }
