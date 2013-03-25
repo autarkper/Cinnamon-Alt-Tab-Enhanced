@@ -1459,9 +1459,15 @@ AltTabPopup.prototype = {
         if (!g_setup._previewEnabled || this._appIcons.length < 1 || this._currentApp < 0)
         {
             this._clearPreview();
-            if (!g_setup._previewEnabled && this._previewBackdrop) {
-                this._previewBackdrop.destroy();
-                this._previewBackdrop = null;
+            if (!g_setup._previewEnabled) {
+                if (this._previewBackdrop) {
+                    this._previewBackdrop.destroy();
+                    this._previewBackdrop = null;
+                }
+                if (this._dimmer) {
+                    this._dimmer.destroy();
+                    this._dimmer = null;
+                }
             }
             return;
         }
@@ -1529,24 +1535,27 @@ AltTabPopup.prototype = {
                 this._activateWindow(window);}
             ));
 
-            if (this._previewBackdrop) {return;}
+            childBox.x1 = this.actor.x;
+            childBox.x2 = this.actor.x + this.actor.width;
+            childBox.y1 = this.actor.y;
+            childBox.y2 = this.actor.y + this.actor.height;
 
-            let backdrop = Meta.BackgroundActor.new_for_screen(global.screen);
-            if (!backdrop) {
-                backdrop = this._previewBackdrop = new St.Bin();
-                backdrop.style = "background-color: rgba(0,0,0,0.9)";
+            if (!this._dimmer) {
+                let dimmer = this._dimmer = new St.Bin();
+                dimmer.style = "background-color: rgba(0,0,0,%f)".format(g_settings.backgroundDimFactor);
+                this.actor.add_actor(dimmer);
+                dimmer.lower(this._appSwitcher.actor);
+                dimmer.lower(previewClones);
+                dimmer.allocate(childBox, 0);
             }
 
-            if (backdrop) {
-                this._previewBackdrop = backdrop;
-                this.actor.add_actor(backdrop);
-                backdrop.lower(this._appSwitcher.actor);
-                backdrop.lower(previewClones);
-                childBox.x1 = this.actor.x;
-                childBox.x2 = this.actor.x + this.actor.width;
-                childBox.y1 = this.actor.y;
-                childBox.y2 = this.actor.y + this.actor.height;
-                backdrop.allocate(childBox, 0);
+            if (!this._previewBackdrop) {                
+                let backdrop = g_settings.backgroundImageEnabled ? Meta.BackgroundActor.new_for_screen(global.screen) : null;
+                if (backdrop) {
+                    this._previewBackdrop = backdrop;
+                    this.actor.add_actor(backdrop);
+                    backdrop.lower(this._dimmer);
+                }
             }
         }; // showPreview
 
@@ -2536,6 +2545,16 @@ function init(metadata, instanceId) {
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
+            "background-image-enabled",
+            "backgroundImageEnabled",
+            function() {},
+            null);
+        settings.bindProperty(Settings.BindingDirection.IN,
+            "background-dim-factor",
+            "backgroundDimFactor",
+            function() {},
+            null);
+        settings.bindProperty(Settings.BindingDirection.IN,
             "urgent-notifications",
             "urgentNotifications",
             function() {},
@@ -2551,6 +2570,8 @@ function init(metadata, instanceId) {
         g_settings.compactLabels = false;
         g_settings.zoom = true;
         g_settings.preferredMonitor = ":primary";
+        g_settings.backgroundImageEnabled = true;
+        g_settings.backgroundDimFactor = 0.7;
     }
 
     let oldstyle = g_settings["last-gsettings-switcher-style"];
