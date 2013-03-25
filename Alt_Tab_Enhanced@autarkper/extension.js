@@ -568,12 +568,6 @@ AltTabPopup.prototype = {
         this._numPrimaryItems = g_settings.zoom ? this._numPrimaryItems_Orig : windows.length;
         this._zoomedOut = this._numPrimaryItems != this._numPrimaryItems_Orig;
 
-        if (g_selection.length) {
-            // must not have a hidden selection
-            g_selection = g_selection.filter(function(window) {
-                return windows.indexOf(window) >= 0;
-            });
-        }
         this._createAppswitcher(windows);
         
         this._appSwitcher.actor.opacity = this._persistent ? 255 : 0;
@@ -584,7 +578,11 @@ AltTabPopup.prototype = {
         }
 
         // if we are refreshing after already being shown, retain current selection, if possible
-        if (this._selectedWindow) {
+        if (g_selection.length) {
+            let isel = this._selectedWindow ? g_selection.indexOf(this._selectedWindow) : -1;
+            forwardIndex = windows.indexOf(isel >= 0 ? this._selectedWindow : g_selection[0]);
+        }
+        else if (this._selectedWindow) {
             forwardIndex = windows.indexOf(this._selectedWindow);
         }
 
@@ -740,6 +738,28 @@ AltTabPopup.prototype = {
             items = wsItems.concat(items);
         };
         return items;
+    },
+
+    _multiMoveWorkspace: function(selin, direction) {
+        if (!selin.length) {return;}
+        // If all windows belong to the same workspace, all are moved left or right.
+        // Otherwise, only move some windows, left or right, so they all end up on the same workspace.
+
+        let selection = selin.slice();
+        selection.sort(function(a, b) {return a.get_workspace().index() < b.get_workspace().index();});
+        let current = selection[direction > 0 ? selection.length - 1 : 0].get_workspace().index();
+        let nextIndex = direction > 0
+            ? (current > selection[0].get_workspace().index() 
+                ? current
+                : Math.min(current + direction, global.screen.n_workspaces - 1))
+            : (current < selection[selection.length - 1].get_workspace().index()
+                ? current
+                : Math.max(current + direction, 0));
+        selection.forEach(function(mw) {
+            if (direction > 0 ? mw.get_workspace().index() < nextIndex : mw.get_workspace().index() > nextIndex) {
+                mw.change_workspace(global.screen.get_workspace_by_index(nextIndex));
+            }
+        });
     },
 
     _multiMoveMonitor: function(selection, index) {
@@ -1242,6 +1262,10 @@ AltTabPopup.prototype = {
                 }
             } else if (keysym == Clutter.w && ctrlDown) {
                 this._multiClose(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
+            } else if (keysym == Clutter.less) {
+                this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), -1);
+            } else if (keysym == Clutter.greater) {
+                this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), 1);
             } else if (keysym == Clutter.i && ctrlDown) {
                 this._multiIgnore(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.m && !ctrlDown) {
@@ -1263,6 +1287,10 @@ AltTabPopup.prototype = {
                 this.refresh();
             } else if (keysym == Clutter.F5) {
                 g_settings.allWorkspacesMode = !g_settings.allWorkspacesMode;
+                if (!g_settings.allWorkspacesMode) {
+                    // must not have a hidden selection
+                    g_selection = [];
+                }
                 this.refresh();
             } else if (keysym == Clutter.F6) {
                 if (g_setup._iconsEnabled) {
