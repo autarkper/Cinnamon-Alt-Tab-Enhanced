@@ -32,7 +32,7 @@
     "description": "Select the general switcher style"
  },
  "vertical-alignment": {
-    "type" : "radiogroup",
+    "type" : "combobox",
     "default" : "center",
     "options" : {
         "Top" : "top",
@@ -42,7 +42,7 @@
     "description" : "Where to display the window switcher"
  },
  "thumbnails-behind-icons": {
-    "type" : "radiogroup",
+    "type" : "combobox",
     "default" : "never",
     "options" : {
         "Never" : "never",
@@ -55,6 +55,11 @@
     "type" : "checkbox",
     "default" : true,
     "description" : "Display thumbnail headers, showing the window icon and title"
+ },
+ "compact-labels": {
+    "type": "checkbox",
+    "default": true,
+    "description": "Display the window title in a single-row label"
  },
  "preferred-monitor": {
     "type": "combobox",
@@ -79,11 +84,6 @@
     "max" : 1.0,
     "step" : 0.1,
     "description": "Select the background dim factor"
- },
- "compact-labels": {
-    "type": "checkbox",
-    "default": true,
-    "description": "Display the window title in a single-row label"
  },
  "seppe": {"type": "separator"},
  "urgent-notifications": {
