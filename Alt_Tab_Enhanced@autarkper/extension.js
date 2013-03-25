@@ -762,10 +762,17 @@ AltTabPopup.prototype = {
         });
     },
 
-    _multiMoveMonitor: function(selection, index) {
+    _multiMoveMonitor: function(selin, index) {
+        if (!selin.length) {return;}
+        let monitorCount = Main.layoutManager.monitors.length;
+        if (monitorCount < 2) {return;}
+
+        let selection = selin.slice();
+        selection.sort(function(a, b) {return a.get_monitor() < b.get_monitor();});
+        let target = index === undefined ? (selection[0].get_monitor() + monitorCount + 1) % monitorCount : index;
         selection.forEach(function(mw) {
-            if (mw.monitor() != index) {
-                mw.move_to_monitor(index);
+            if (mw.get_monitor() != target) {
+                mw.move_to_monitor(target);
             }
         });
         this._select(this._currentApp, true); // refresh
@@ -1269,14 +1276,8 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.i && ctrlDown) {
                 this._multiIgnore(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.m && !ctrlDown) {
-                let monitorCount = Main.layoutManager.monitors.length;
-                if (this._currentApp >= 0 && monitorCount > 1) {
-                    let window = this._appIcons[this._currentApp].window;
-                    let index = window.get_monitor();
-                    let newIndex = (index + monitorCount + 1) % monitorCount;
-                    window.move_to_monitor(newIndex);
-                    this._select(this._currentApp, true); // refresh
-                }
+                this._multiMoveMonitor(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
+                this._select(this._currentApp, true); // refresh
             } else if (keysym == Clutter.n && !ctrlDown) {
                 this._multiMinimize(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.F4) {
