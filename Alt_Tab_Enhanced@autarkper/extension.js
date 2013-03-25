@@ -652,6 +652,32 @@ AltTabPopup.prototype = {
         }));
         items.push(itemMinimizeWindow);
 
+        if (true) {
+            let emptyWorkspaces = [];
+            for (let i = 0; i < global.screen.n_workspaces; ++i) {
+                if (!Main.hasDefaultWorkspaceName(i)) {
+                    continue;
+                }
+                let ws = global.screen.get_workspace_by_index(i);
+                if (getTabList(ws).filter(function(window) {
+                    return !window.is_on_all_workspaces();
+                }).length == 0) {
+                    emptyWorkspaces.push(ws);
+                }
+            }
+            if (emptyWorkspaces.length > 0) {
+                let item = new PopupMenu.PopupMenuItem(_("Prune workspaces"));
+                item.connect('activate', Lang.bind(this, function(actor, event){
+                    emptyWorkspaces.forEach(function(ws) {
+                        Main._removeWorkspace(ws);
+                    });
+                    this.refresh();
+                }));
+                items.push(new PopupMenu.PopupSeparatorMenuItem());
+                items.push(item);
+            }
+        }
+
         if (Main.layoutManager.monitors.length > 1) {
             let monitorItems = [];
             let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Monitor-move"));
