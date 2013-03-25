@@ -67,8 +67,7 @@
         "Primary" : ":primary",
         "Secondary" : ":secondary",
         "Focus monitor" : ":focus",
-        "Bottom" : ":bottom",
-        "Top" : ":top"
+        "Bottom" : ":bottom"
     },
     "description": "Select your monitor preference"
  },

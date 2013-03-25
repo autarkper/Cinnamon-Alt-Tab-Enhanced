@@ -305,8 +305,6 @@ AltTabPopup.prototype = {
             switch (g_settings.preferredMonitor) {
                 case ":primary":
                     mIndex = "primaryMonitor"; break;
-                case ":top":
-                    mIndex = "topMonitor"; break;
                 case ":bottom":
                     mIndex = "bottomMonitor"; break;
                 case ":focus":
