@@ -25,7 +25,6 @@
         "Use built-in Alt-Tab's switcher-style setting" : ":system",
         "In-place previews" : "icons+preview",
         "In-place thumbnails" : ":preview-thumbnails",
-        "Dock" : ":dock",
         "Thumbnails" : "icons+thumbnails",
         "Icons only" : "icons"
     },

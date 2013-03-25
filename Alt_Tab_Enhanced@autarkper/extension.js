@@ -213,13 +213,6 @@ function processSwitcherStyle() {
         }
     }
     else {
-        if (styleSettings == ":dock") {
-            g_setup._iconsEnabled = true;
-            g_setup._thumbnailsEnabled = true;
-            if (g_settings.vAlign == 'center') {
-                g_settings.vAlign = 'bottom';
-            }
-        }
         if (styleSettings == ":preview-thumbnails") {
             g_setup._iconsEnabled = true;
             g_setup._previewEnabled = true;
@@ -240,7 +233,7 @@ function processSwitcherStyle() {
 }
 
 const g_aligmentTypes = ["top", "center", "bottom"];
-const g_alttabStyles = ["icons+preview", ":preview-thumbnails", "icons", "icons+thumbnails", ":dock"]; // the most usual ones ...
+const g_alttabStyles = ["icons+preview", ":preview-thumbnails", "icons", "icons+thumbnails"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
 
 function getSwitcherStyle() {
