@@ -1814,11 +1814,14 @@ AppSwitcher.prototype = {
         // using the current index + 1 leads to jumping when scrolling backwards
         let modelIndex = (this._curApp + this._items.length + 2) % this._items.length;
 
+        // find the tallest item
+        let labelNaturalHeight = 0;
+        this.icons.forEach(function(appIcon) {labelNaturalHeight = Math.max(labelNaturalHeight, appIcon._label_bin.get_preferred_height(-1)[1]);});
+
         let themeNode = this._items[modelIndex].get_theme_node();
         let iconPadding = themeNode.get_horizontal_padding();
         let iconVPadding = themeNode.get_vertical_padding();
         let iconBorder = themeNode.get_border_width(St.Side.LEFT) + themeNode.get_border_width(St.Side.RIGHT);
-        let [labelMinHeight, labelNaturalHeight] = this.icons[modelIndex]._label_bin.get_preferred_height(-1);
         let iconSpacing = iconPadding + iconBorder;
         let totalSpacing = this._list.spacing * (this._items.length - 1);
         if (this._separators.length)
@@ -1954,7 +1957,7 @@ AppSwitcher.prototype = {
 
     _addIcon : function(appIcon) {
         this.icons.push(appIcon);
-        this.addItem(appIcon.actor, appIcon.label);
+        this.addItem(appIcon.actor);
         appIcon._checkAttention();
     },
 
