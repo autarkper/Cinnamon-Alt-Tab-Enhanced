@@ -1171,8 +1171,8 @@ AltTabPopup.prototype = {
         let shiftDown = event_state & Clutter.ModifierType.SHIFT_MASK;
         let ctrlDown = event_state & Clutter.ModifierType.CONTROL_MASK;
         let altDown = event_state & Clutter.ModifierType.MOD1_MASK;
+        let superDown = event_state & Clutter.ModifierType.MOD4_MASK;
         let action = global.display.get_keybinding_action(event.get_key_code(), event_state);
-
         const SCROLL_AMOUNT = 5;
 
         if (pressed) {
@@ -1238,18 +1238,25 @@ AltTabPopup.prototype = {
             } else {
                 let removeOptions = {removeIfPresent: true, noAdd: true};
                 if (keysym == Clutter.Left) {
+                    if (superDown) {
+                        this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), -1);
+                        return true;
+                    }
                     if (ctrlDown && !shiftDown) {
                         if (switchWorkspace(-1)) {
                             return false;
                         }
-                    }
-                    else if (shiftDown) {
+                    } else if (shiftDown) {
                         g_selection = this._modifySelection(g_selection, this._currentApp, ctrlDown ? removeOptions : null);
                         g_selection = this._modifySelection(g_selection, this._previousApp(nowrap), ctrlDown ? removeOptions : null);
                     }    
                     this._select(this._previousApp(nowrap));
                 }
                 else if (keysym == Clutter.Right) {
+                    if (superDown) {
+                        this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), 1);
+                        return true;
+                    }
                     if (ctrlDown && !shiftDown) {
                         if (switchWorkspace(1)) {
                             return false;
@@ -1269,7 +1276,11 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.F1) {
                 this._showHelp();
             } else if (keysym == Clutter.KEY_space) {
-                g_selection = this._modifySelection(g_selection, this._currentApp, {removeIfPresent: true});
+                if (superDown) {
+                    g_selection = [this._selectedWindow];
+                } else {
+                    g_selection = this._modifySelection(g_selection, this._currentApp, {removeIfPresent: true});
+                }
                 this._select(this._currentApp, true); // refresh
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
