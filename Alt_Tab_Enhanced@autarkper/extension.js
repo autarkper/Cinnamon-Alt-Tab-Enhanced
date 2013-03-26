@@ -295,6 +295,14 @@ function getTabList(workspaceOpt, screenOpt) {
     return [];
 }
 
+function isEmptyWorkspace(ws) {
+    return getTabList(ws).filter(function(window) {
+        return !window.is_on_all_workspaces();
+    }).length == 0;
+}
+
+// -------------------------------------------------------------------------
+
 function AltTabPopup() {
     this._init();
 }
@@ -659,9 +667,7 @@ AltTabPopup.prototype = {
                     continue;
                 }
                 let ws = global.screen.get_workspace_by_index(i);
-                if (getTabList(ws).filter(function(window) {
-                    return !window.is_on_all_workspaces();
-                }).length == 0) {
+                if (isEmptyWorkspace(ws)) {
                     emptyWorkspaces.push(ws);
                 }
             }
@@ -724,43 +730,78 @@ AltTabPopup.prototype = {
             }
             let itemMoveToTempWorkspace = new PopupMenu.PopupMenuItem(_("Move to a temporary workspace"));
             itemMoveToTempWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                let lastWsIndex = global.screen.n_workspaces - 1;
-                Main.moveWindowToNewWorkspace(mw, false);
-                let lastWsIndexNew = global.screen.n_workspaces - 1;
-                if (lastWsIndexNew > lastWsIndex) {
-                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
-                    ws.connect('window-removed', function() {
-                        if (!getTabList(ws).filter(function(window) {
-                            return !window.is_on_all_workspaces();
-                        }, this).length) {
-                            Main._removeWorkspace(ws);
-                        }
-                    });
-                }
+                this._multiChangeToTemporaryWorkspace(selection);
             }));
             let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
             itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                let lastWsIndex = global.screen.n_workspaces - 1;
-                Main._addWorkspace();
-                let lastWsIndexNew = global.screen.n_workspaces - 1;
-                if (lastWsIndexNew > lastWsIndex) {
-                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
-                    mw.change_workspace(ws);
-                }
+                this._multiChangeToNewWorkspace(selection);
+            }));
+            let itemMoveToEmptyWorkspace = new PopupMenu.PopupMenuItem(_("Move to an empty workspace"));
+            itemMoveToEmptyWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
+                this._multiChangeToEmptyWorkspace(selection);
             }));
             if (submenuCount) {
                 submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
                 submenu.menu.addMenuItem(itemMoveToTempWorkspace);
                 submenu.menu.addMenuItem(itemMoveToNewWorkspace);
+                submenu.menu.addMenuItem(itemMoveToEmptyWorkspace);
                 wsItems.push(submenu);
             } else {
+                wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
                 wsItems.push(itemMoveToTempWorkspace);
                 wsItems.push(itemMoveToNewWorkspace);
+                wsItems.push(itemMoveToEmptyWorkspace);
             }
             wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
             items = wsItems.concat(items);
         };
         return items;
+    },
+
+    _multiChangeToTemporaryWorkspace: function(selection) {
+        let lastWsIndex = global.screen.n_workspaces - 1;
+        let selection2 = selection.slice();
+        let firstMw = selection2.shift();
+        Main.moveWindowToNewWorkspace(firstMw, false);
+        let lastWsIndexNew = global.screen.n_workspaces - 1;
+        if (lastWsIndexNew > lastWsIndex) {
+            let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
+            selection2.forEach(function(mw) {
+                mw.change_workspace(ws);
+            });
+            ws.connect('window-removed', function() {
+                if (!getTabList(ws).filter(function(window) {
+                    return !window.is_on_all_workspaces();
+                }, this).length) {
+                    Main._removeWorkspace(ws);
+                }
+            });
+        }
+    },
+
+    _multiChangeToNewWorkspace: function(selection) {
+        let lastWsIndex = global.screen.n_workspaces - 1;
+        Main._addWorkspace();
+        let lastWsIndexNew = global.screen.n_workspaces - 1;
+        if (lastWsIndexNew > lastWsIndex) {
+            let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
+            selection.forEach(function(mw) {
+                mw.change_workspace(ws);
+            });
+        }
+    },
+
+    _multiChangeToEmptyWorkspace: function(selection) {
+        for (let i = 0; i < global.screen.n_workspaces; ++i) {
+            let ws = global.screen.get_workspace_by_index(i);
+            if (isEmptyWorkspace(ws)) {
+                selection.forEach(function(mw) {
+                    mw.change_workspace(ws);
+                });
+                return;
+            }
+        }
+        this._multiChangeToNewWorkspace(selection);
     },
 
     _multiMoveWorkspace: function(selin, direction) {
@@ -922,45 +963,27 @@ AltTabPopup.prototype = {
             }
             let itemMoveToTempWorkspace = new PopupMenu.PopupMenuItem(_("Move to a temporary workspace"));
             itemMoveToTempWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                let lastWsIndex = global.screen.n_workspaces - 1;
-                let selection2 = selection.slice();
-                let firstMw = selection2.shift();
-                Main.moveWindowToNewWorkspace(firstMw, false);
-                let lastWsIndexNew = global.screen.n_workspaces - 1;
-                if (lastWsIndexNew > lastWsIndex) {
-                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
-                    selection2.forEach(function(mw) {
-                        mw.change_workspace(ws);
-                    });
-                    ws.connect('window-removed', function() {
-                        if (!getTabList(ws).filter(function(window) {
-                            return !window.is_on_all_workspaces();
-                        }, this).length) {
-                            Main._removeWorkspace(ws);
-                        }
-                    });
-                }
+                this._multiChangeToTemporaryWorkspace(selection);
             }));
             let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
             itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                let lastWsIndex = global.screen.n_workspaces - 1;
-                Main._addWorkspace();
-                let lastWsIndexNew = global.screen.n_workspaces - 1;
-                if (lastWsIndexNew > lastWsIndex) {
-                    let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
-                    selection.forEach(function(mw) {
-                        mw.change_workspace(ws);
-                    });
-                }
+                this._multiChangeToNewWorkspace(selection);
+            }));
+            let itemMoveToEmptyWorkspace = new PopupMenu.PopupMenuItem(_("Move to an empty workspace"));
+            itemMoveToEmptyWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
+                this._multiChangeToEmptyWorkspace(selection);
             }));
             if (submenuCount) {
                 submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
                 submenu.menu.addMenuItem(itemMoveToTempWorkspace);
                 submenu.menu.addMenuItem(itemMoveToNewWorkspace);
+                submenu.menu.addMenuItem(itemMoveToEmptyWorkspace);
                 wsItems.push(submenu);
             } else {
+                wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
                 wsItems.push(itemMoveToTempWorkspace);
                 wsItems.push(itemMoveToNewWorkspace);
+                wsItems.push(itemMoveToEmptyWorkspace);
             }
             wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
             items = wsItems.concat(items);
