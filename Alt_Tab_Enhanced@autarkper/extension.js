@@ -728,10 +728,6 @@ AltTabPopup.prototype = {
                     }
                 }
             }
-            let itemMoveToTempWorkspace = new PopupMenu.PopupMenuItem(_("Move to a temporary workspace"));
-            itemMoveToTempWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                this._multiChangeToTemporaryWorkspace(selection);
-            }));
             let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
             itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
                 this._multiChangeToNewWorkspace(selection);
@@ -742,13 +738,11 @@ AltTabPopup.prototype = {
             }));
             if (submenuCount) {
                 submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-                submenu.menu.addMenuItem(itemMoveToTempWorkspace);
                 submenu.menu.addMenuItem(itemMoveToNewWorkspace);
                 submenu.menu.addMenuItem(itemMoveToEmptyWorkspace);
                 wsItems.push(submenu);
             } else {
                 wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
-                wsItems.push(itemMoveToTempWorkspace);
                 wsItems.push(itemMoveToNewWorkspace);
                 wsItems.push(itemMoveToEmptyWorkspace);
             }
@@ -801,7 +795,7 @@ AltTabPopup.prototype = {
                 return;
             }
         }
-        this._multiChangeToNewWorkspace(selection);
+        this._multiChangeToTemporaryWorkspace(selection);
     },
 
     _multiMoveWorkspace: function(selin, direction) {
@@ -961,10 +955,6 @@ AltTabPopup.prototype = {
                     }
                 }
             }
-            let itemMoveToTempWorkspace = new PopupMenu.PopupMenuItem(_("Move to a temporary workspace"));
-            itemMoveToTempWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                this._multiChangeToTemporaryWorkspace(selection);
-            }));
             let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
             itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
                 this._multiChangeToNewWorkspace(selection);
@@ -975,13 +965,11 @@ AltTabPopup.prototype = {
             }));
             if (submenuCount) {
                 submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-                submenu.menu.addMenuItem(itemMoveToTempWorkspace);
                 submenu.menu.addMenuItem(itemMoveToNewWorkspace);
                 submenu.menu.addMenuItem(itemMoveToEmptyWorkspace);
                 wsItems.push(submenu);
             } else {
                 wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
-                wsItems.push(itemMoveToTempWorkspace);
                 wsItems.push(itemMoveToNewWorkspace);
                 wsItems.push(itemMoveToEmptyWorkspace);
             }
