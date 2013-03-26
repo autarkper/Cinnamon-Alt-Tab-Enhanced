@@ -2069,7 +2069,7 @@ AppSwitcher.prototype = {
 
     addSeparator: function () {
         if (!g_vars.globalFocusOrder) {
-            let box = new St.Bin({ style_class: 'separator' });
+            let box = new St.Bin({ style_class: 'separatore' });
             this._separators.push(box);
             this._list.add_actor(box);
         }
