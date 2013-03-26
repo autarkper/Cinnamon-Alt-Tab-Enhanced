@@ -645,113 +645,6 @@ AltTabPopup.prototype = {
         return true;
     },
 
-    _populateSingleWindowContextMenu: function(selection) {
-        let mw = selection[0];
-        let items = [];
-        let itemCloseWindow = new PopupMenu.PopupMenuItem(_("Close"));
-        itemCloseWindow.connect('activate', Lang.bind(this, function(actor, event){
-            mw.delete(global.get_current_time());
-        }));
-        items.push(itemCloseWindow);
-
-        let itemMinimizeWindow = new PopupMenu.PopupMenuItem(mw.minimized ? _("Restore") : _("Minimize"));
-        itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
-            mw.minimized ? mw.unminimize() : mw.minimize();
-        }));
-        items.push(itemMinimizeWindow);
-
-        if (true) {
-            let emptyWorkspaces = [];
-            for (let i = 0; i < global.screen.n_workspaces; ++i) {
-                if (!Main.hasDefaultWorkspaceName(i)) {
-                    continue;
-                }
-                let ws = global.screen.get_workspace_by_index(i);
-                if (isEmptyWorkspace(ws)) {
-                    emptyWorkspaces.push(ws);
-                }
-            }
-            if (emptyWorkspaces.length > 0) {
-                let item = new PopupMenu.PopupMenuItem(_("Prune workspaces"));
-                item.connect('activate', Lang.bind(this, function(actor, event){
-                    emptyWorkspaces.forEach(function(ws) {
-                        Main._removeWorkspace(ws);
-                    });
-                    this.refresh();
-                }));
-                items.push(new PopupMenu.PopupSeparatorMenuItem());
-                items.push(item);
-            }
-        }
-
-        if (Main.layoutManager.monitors.length > 1) {
-            let monitorItems = [];
-            let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Monitor-move"));
-            Main.layoutManager.monitors.forEach(function(monitor, index) {
-                if (index !== mw.get_monitor()) {
-                    let item = new PopupMenu.PopupMenuItem(
-                        _("Move to monitor %d").format(index + 1));
-                    item.connect('activate', Lang.bind(this, function() {
-                        mw.move_to_monitor(index);
-                    }));
-                    if (Main.layoutManager.monitors.length > 2) {
-                        submenu.menu.addMenuItem(item);
-                    } else {
-                        monitorItems.push(item);
-                    }
-                }
-            }, this);
-            if (!monitorItems.length) {
-                monitorItems.push(submenu);
-            }
-            monitorItems.push(new PopupMenu.PopupSeparatorMenuItem());
-            items = monitorItems.concat(items);
-        }
-
-        if (true) {
-            let wsItems = [];
-            let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Workspace-move"));
-            let submenuCount = 0;
-            for (let i = 0; i < global.screen.n_workspaces; ++i) {
-                if (i != mw.get_workspace().index()) {
-                    let item = new PopupMenu.PopupMenuItem(
-                        _("Move to workspace %d").format(i + 1));
-                    let index = i;
-                    item.connect('activate', Lang.bind(this, function() {
-                        mw.change_workspace(global.screen.get_workspace_by_index(index));
-                    }));
-                    if (global.screen.n_workspaces > 2) {
-                        submenu.menu.addMenuItem(item);
-                        ++submenuCount;
-                    } else {
-                        wsItems.push(item);
-                    }
-                }
-            }
-            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
-            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                this._multiChangeToNewWorkspace(selection);
-            }));
-            let itemMoveToEmptyWorkspace = new PopupMenu.PopupMenuItem(_("Move to an empty workspace"));
-            itemMoveToEmptyWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                this._multiChangeToEmptyWorkspace(selection);
-            }));
-            if (submenuCount) {
-                submenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-                submenu.menu.addMenuItem(itemMoveToNewWorkspace);
-                submenu.menu.addMenuItem(itemMoveToEmptyWorkspace);
-                wsItems.push(submenu);
-            } else {
-                wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
-                wsItems.push(itemMoveToNewWorkspace);
-                wsItems.push(itemMoveToEmptyWorkspace);
-            }
-            wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
-            items = wsItems.concat(items);
-        };
-        return items;
-    },
-
     _multiChangeToTemporaryWorkspace: function(selection) {
         let lastWsIndex = global.screen.n_workspaces - 1;
         let selection2 = selection.slice();
@@ -873,9 +766,9 @@ AltTabPopup.prototype = {
         this._select(this._currentApp, true); // refresh
     },
 
-    _populateMultiWindowContextMenu: function(selection) {
+    _populateCommonWindowContextMenuItems: function(selection) {
         let items = [];
-
+        
         let itemCloseWindow = new PopupMenu.PopupMenuItem(_("Close"));
         itemCloseWindow.connect('activate', Lang.bind(this, function(actor, event){
             selection.forEach(function(mw) {
@@ -884,28 +777,43 @@ AltTabPopup.prototype = {
         }));
         items.push(itemCloseWindow);
 
-        if (selection.filter(function(mw) {return !mw.minimized;}).length) {
-            let itemMinimizeWindow = new PopupMenu.PopupMenuItem(_("Minimize"));
-            itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
-                this._multiMinimize(selection);
-            }));
-            items.push(itemMinimizeWindow);
-        }
-
-        if (selection.filter(function(mw) {return mw.minimized;}).length) {
-            let itemRestoreWindow = new PopupMenu.PopupMenuItem(_("Restore"));
-            itemRestoreWindow.connect('activate', Lang.bind(this, function(actor, event){
-                this._multiRestore(selection);
-            }));
-            items.push(itemRestoreWindow);
-        }
-
-        let itemUnselectAll = new PopupMenu.PopupMenuItem(_("Unselect all"));
-        itemUnselectAll.connect('activate', Lang.bind(this, function(actor, event){
-            g_selection = [];
+        let minimize = selection.filter(function(mw) {return mw.minimized;}).length < selection.length;
+        let itemMinimizeWindow = new PopupMenu.PopupMenuItem(minimize ? _("Minimize") : _("Restore"));
+        itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
+            (minimize ? this._multiMinimize : this._multiRestore).call(this, selection);
         }));
-        items.push(new PopupMenu.PopupSeparatorMenuItem());
-        items.push(itemUnselectAll);
+        items.push(itemMinimizeWindow);
+
+        if (selection.length > 1) {
+            let itemUnselectAll = new PopupMenu.PopupMenuItem(_("Unselect all"));
+            itemUnselectAll.connect('activate', Lang.bind(this, function(actor, event){
+                g_selection = [];
+            }));
+            items.push(new PopupMenu.PopupSeparatorMenuItem());
+            items.push(itemUnselectAll);
+        } else {
+            let emptyWorkspaces = [];
+            for (let i = 0; i < global.screen.n_workspaces; ++i) {
+                if (!Main.hasDefaultWorkspaceName(i)) {
+                    continue;
+                }
+                let ws = global.screen.get_workspace_by_index(i);
+                if (isEmptyWorkspace(ws)) {
+                    emptyWorkspaces.push(ws);
+                }
+            }
+            if (emptyWorkspaces.length > 0) {
+                let item = new PopupMenu.PopupMenuItem(_("Prune workspaces"));
+                item.connect('activate', Lang.bind(this, function(actor, event){
+                    emptyWorkspaces.forEach(function(ws) {
+                        Main._removeWorkspace(ws);
+                    });
+                    this.refresh();
+                }));
+                items.push(new PopupMenu.PopupSeparatorMenuItem());
+                items.push(item);
+            }
+        }
 
         if (Main.layoutManager.monitors.length > 1) {
             let monitorItems = [];
@@ -975,7 +883,7 @@ AltTabPopup.prototype = {
             }
             wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
             items = wsItems.concat(items);
-        };
+        }
         return items;
     },
 
@@ -1019,7 +927,7 @@ AltTabPopup.prototype = {
         menu._arrowAlignment = selection.length > 1 ? 1.0 : 0.0; // differentiate, give visual clue
         mm.addMenu(menu);
 
-        let items = (selection.length > 1 ? this._populateMultiWindowContextMenu : this._populateSingleWindowContextMenu).apply(this, [selection]);
+        let items = this._populateCommonWindowContextMenuItems(selection);
 
         items.forEach(function(item) {
             menu.addMenuItem(item);
