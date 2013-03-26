@@ -134,7 +134,7 @@ const HELP_TEXT = [
     _("Menu key, Right-click: Open context menu for the selected windows"),
     _("m: Move selected windows to next monitor"),
     _("n: Minimize selected windows"),
-    _(">/<: Move selected windows to the next workspace right/left"),
+    _("Super+Left/Right arrow: Move selected windows to the next workspace right/left"),
     _("Ctrl+w: Close selected windows. Use with care!"),
     _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("Ctrl+a: Select/Unselect all windows at once"),
@@ -1303,10 +1303,6 @@ AltTabPopup.prototype = {
                 }
             } else if (keysym == Clutter.w && ctrlDown) {
                 this._multiClose(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
-            } else if (keysym == Clutter.less) {
-                this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), -1);
-            } else if (keysym == Clutter.greater) {
-                this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), 1);
             } else if (keysym == Clutter.i && ctrlDown) {
                 this._multiIgnore(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.m && !ctrlDown) {
