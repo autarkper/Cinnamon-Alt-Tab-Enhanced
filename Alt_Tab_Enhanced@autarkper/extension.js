@@ -208,7 +208,6 @@ function processSwitcherStyle() {
             }
             if (features[i] === 'thumbnails') {
                 g_setup._thumbnailsEnabled = true;
-                g_settings.vAlign = 'center';
                 found = true;
             }
         }
