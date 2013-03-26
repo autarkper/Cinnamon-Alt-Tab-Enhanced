@@ -845,8 +845,7 @@ AltTabPopup.prototype = {
             let submenuCount = 0;
             for (let i = 0; i < global.screen.n_workspaces; ++i) {
                 if (selection.filter(function(mw) {return mw.get_workspace().index() != i;}).length) {
-                    let item = new PopupMenu.PopupMenuItem(
-                        _("Move to workspace %d").format(i + 1));
+                    let item = new PopupMenu.PopupMenuItem(_("Move to %s").format(Main.getWorkspaceName(i)));
                     let index = i;
                     item.connect('activate', Lang.bind(this, function() {
                         selection.forEach(function(mw) {
