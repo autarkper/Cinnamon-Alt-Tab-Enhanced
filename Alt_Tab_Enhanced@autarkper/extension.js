@@ -1546,9 +1546,11 @@ AltTabPopup.prototype = {
             }
             this._thumbnailTimeoutId = Mainloop.timeout_add(
                 this.thumbnailOnce ? PREVIEW_DELAY_TIMEOUT : PREVIEW_DELAY_TIMEOUT/2, Lang.bind(this, function() {
-                    this._thumbnailTimeoutId = null;
-                    this.thumbnailOnce = true;
-                    this._createThumbnails();
+                    if (this._currentApp >= 0) { 
+                        this._thumbnailTimeoutId = null;
+                        this.thumbnailOnce = true;
+                        this._createThumbnails();
+                    }
             }));
         }
     },
@@ -1775,17 +1777,20 @@ AppSwitcher.prototype = {
             return;
         }
 
-        let arrow = this[id] = new St.DrawingArea({ style_class: 'switcher-arrow' });
-        arrow.connect('repaint', Lang.bind(this, function() {
-            _drawArrow(arrow, direction);
-        }));
-        this._list.add_actor(arrow);
-
         // First, find the tallest item in the list
         let height = 0;
         for (let i = 0; i < this._items.length; i++) {
             height = Math.max(height, this._items[i].allocation.y2 - this._items[i].allocation.y1);
         }
+        if (height == 0) {
+            return;
+        }
+
+        let arrow = this[id] = new St.DrawingArea({ style_class: 'switcher-arrow' });
+        arrow.connect('repaint', Lang.bind(this, function() {
+            _drawArrow(arrow, direction);
+        }));
+        this._list.add_actor(arrow);
 
         let childBox = new Clutter.ActorBox();
         let [arrowWidth, arrowHeight] = this._getArrowDimensions();
