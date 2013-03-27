@@ -30,10 +30,12 @@
           <filterchain><striplinebreaks/></filterchain>
         </loadfile>
         <echo>${package-date}</echo>
+        <echo>${user.home}</echo>
 
         <copy todir="${output}/${src}">
             <fileset dir="${src}" excludes="extension.js"/>
         </copy>
+        <copy file="README" todir="${output}/${src}"/>
 
         <replaceregexp byline="true">
             <regexp pattern="(&quot;version&quot;\s*:\s*)&quot;.*&quot;"/>
@@ -50,13 +52,16 @@
             </fileset>
         </replaceregexp>
 
-        <zip destfile="${zip}"
-           basedir="${output}"
-        />
+        <zip destfile="${zip}" basedir="${output}" />
     </target>
  
+    <target name="install" depends="compile">
+        <unzip src="${zip}" dest="${user.home}/.local/share/cinnamon/applets" overwrite="true" />
+    </target>
+
     <target name="clean">
         <delete dir="${output}"/>
+        <delete file="${zip}"/>
     </target>
  
     <target name="create" depends="clean">

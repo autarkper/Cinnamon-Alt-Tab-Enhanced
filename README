@@ -15,16 +15,5 @@ for more information.
 
 Compatibility: From Cinnamon 1.7.2 and up.
 
-One-time installation:
-Copy the directory Alt_Tab_Enhanced@autarkper to ~/.local/share/cinnamon/applets/
-
-Flexible installation:
-Make a soft link from Alt_Tab_Enhanced@autarkper in your git clone to
-~/.local/share/cinnamon/applets/
-You will then have the latest version every time you update your local git branch.
-
-After installation, you will need to enable the applet in Cinnamon Settings,
-the Applets tab.
-
 Your settings are stored in
  ~/.cinnamon/configs/Alt_Tab_Enhanced\@autarkper
