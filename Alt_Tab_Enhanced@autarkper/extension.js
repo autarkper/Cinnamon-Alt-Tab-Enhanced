@@ -120,6 +120,8 @@ const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
 
 const iconSizes = [80, 72, 64, 56, 48, 40, 32, 24];
 
+var g_version = "unknown";
+
 const HELP_TEXT = [
     "",
     _("Escape: Close Alt-Tab and return to the currently active window"),
@@ -1291,7 +1293,7 @@ AltTabPopup.prototype = {
         this._persistent = true;
         let dialog = new ModalDialog.ModalDialog();
 
-        let label = new St.Label({text: _("Alt-Tab Quick Help")});
+        let label = new St.Label({text: _("Alt-Tab Quick Help (version %s)").format(g_version)});
         let bin = new St.Bin();
         bin.child = label;
         dialog.contentLayout.add(bin);
@@ -2444,6 +2446,8 @@ function _drawArrow(area, side) {
 
 function init(metadata, instanceId) {
     g_uuid = metadata['uuid'];
+    let version = metadata['version'];
+    g_version = version ? '"' + version + '"' : "unknown";
     if (Settings) {
         let settings = instanceId
             ? new Settings.AppletSettings(g_settings, metadata['uuid'], instanceId)

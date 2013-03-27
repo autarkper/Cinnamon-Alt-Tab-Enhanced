@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<project name="fxgateway" basedir="." default="compile">
+    <property name="src" value="Alt_Tab_Enhanced@autarkper"/>
+    <property name="output" value="/tmp/alt-tab-release"/>
+    <property name="zip" value="/tmp/Alt-Tab-Enhanced.zip"/>
+
+    <target name="compile" depends="create">
+        <tempfile property="tag-output" deleteonexit="true"/>
+        <exec executable="git" output="${tag-output}">
+            <arg value="tag"/>
+            <arg value="-l"/>
+            <arg value="--contains"/>
+            <arg value="HEAD"/>
+        </exec>
+        <tempfile property="tag-output2" deleteonexit="true"/>
+        <exec executable="tail" output="${tag-output2}">
+            <arg value="-1"/>
+            <arg value="${tag-output}"/>
+        </exec>
+        <loadfile property="last-tag" srcFile="${tag-output2}">
+          <filterchain><striplinebreaks/></filterchain>
+        </loadfile>
+        <echo>${last-tag}</echo>
+
+        <tempfile property="date-output" deleteonexit="true"/>
+        <exec executable="date" output="${date-output}">
+            <arg value="--rfc-3339=seconds"/>
+        </exec>
+        <loadfile property="package-date" srcFile="${date-output}">
+          <filterchain><striplinebreaks/></filterchain>
+        </loadfile>
+        <echo>${package-date}</echo>
+
+        <copy todir="${output}/${src}">
+            <fileset dir="${src}" excludes="extension.js"/>
+        </copy>
+
+        <replaceregexp byline="true">
+            <regexp pattern="(&quot;version&quot;\s*:\s*)&quot;.*&quot;"/>
+            <substitution expression="\1&quot;${last-tag}&quot;"/>
+            <fileset dir="${output}/${src}">
+                <include name="**/metadata.json"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp byline="true">
+            <regexp pattern="(&quot;package-date&quot;\s*:\s*)&quot;.*&quot;"/>
+            <substitution expression="\1&quot;${package-date}&quot;"/>
+            <fileset dir="${output}/${src}">
+                <include name="**/metadata.json"/>
+            </fileset>
+        </replaceregexp>
+
+        <zip destfile="${zip}"
+           basedir="${output}"
+        />
+    </target>
+ 
+    <target name="clean">
+        <delete dir="${output}"/>
+    </target>
+ 
+    <target name="create" depends="clean">
+        <mkdir dir="${output}"/>
+    </target>
+ </project>
