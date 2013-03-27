@@ -1,0 +1,26 @@
+This work builds on the work of numerous people. These names
+have been found by sifting through the commit logs of Gnome
+Shell and Cinnamon, concerning altTab.js, which is the starting
+point of this applet.
+
+Adel Gadllah <adel.gadllah-at-gmail.com>
+Alejandro Piñeiro <apinheiro-at-igalia.com>
+Clement Lefebvre <clement.lefebvre-at-linuxmint.com>
+Colin Walters <walters-at-verbum.org>
+dalcde <dalcde-at-yahoo.com.hk>
+Dan Winship <danw-at-gnome.org>
+Florian Müllner <fmuellner-at-gnome.org>
+Gwendal Le Bihan <gwendal.lebihan.dev-at-gmail.com>
+Jasper St. Pierre <jstpierre-at-mecheye.net>
+Joseph Scheuhammer <clown-at-utoronto.ca>
+Lars Mueller <cobinja-at-yahoo.de>
+magcius <jstpierre-at-mecheye.net>
+Marina Zhurakhinskaya <marinaz-at-redhat.com>
+Marius Gedminas <marius-at-gedmin.as>
+Maxim Ermilov <zaspire-at-rambler.ru>
+Owen W. Taylor <otaylor-at-fishsoup.net>
+Pavel Vasin <rat4vier-at-gmail.com>
+Per Ångström <per.angstrom-at-autark.se>
+Rui Matos <tiagomatos-at-gmail.com>
+Siegfried-Angel Gevatter Pujals <rainct-at-ubuntu.com>
+Steve Frécinaux <code-at-istique.net>
