@@ -908,12 +908,6 @@ AltTabPopup.prototype = {
     },
 
     _showWindowContextMenu: function(n) {
-        // Make alt-tab stay on screen after the menu has been exited.
-        // This avoids unpleasant surprises after some actions, minimize in particular,
-        // which might otherwise have no lasting effect if the minimized window is
-        // immediately activated.
-        this._persistent = true;
-
         if (g_selection.length && g_selection.indexOf(this._appIcons[n].window) < 0) {
             g_selection = [];
             this._select(n, true);
@@ -939,6 +933,16 @@ AltTabPopup.prototype = {
                 this._select(this._currentApp, true); // refresh
                 if (this.actor) {
                     global.stage.set_key_focus(this.actor);
+                }
+
+                // Make alt-tab stay on screen after the menu has been exited, provided that ALT is not held down.
+                // This avoids unpleasant surprises after some actions, minimize in particular,
+                // which might otherwise have no lasting effect if the minimized window is
+                // immediately activated.
+                let [x, y, mods] = global.get_pointer();
+                let state = mods & this._modifierMask;
+                if (state == 0) {
+                    this._persistent = true;
                 }
             }
         }));
