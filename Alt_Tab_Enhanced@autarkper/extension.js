@@ -2241,7 +2241,7 @@ AppIcon.prototype = {
 
     updateLabel: function() {
         let ws = this.window.get_workspace().index();
-        this.wsLabel.set_text("(" + (ws + 1) + ")");
+        this.wsLabel.set_text("[" + (ws + 1) + "]");
 
         let title = this.window.get_title();
         title = typeof(title) != 'undefined' ? title : (this.app ? this.app.get_name() : "");
