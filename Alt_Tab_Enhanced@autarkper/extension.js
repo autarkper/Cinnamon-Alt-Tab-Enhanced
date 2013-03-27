@@ -781,12 +781,29 @@ AltTabPopup.prototype = {
         }));
         items.push(itemCloseWindow);
 
-        let minimize = selection.filter(function(mw) {return mw.minimized;}).length < selection.length;
-        let itemMinimizeWindow = new PopupMenu.PopupMenuItem(minimize ? _("Minimize") : _("Restore"));
-        itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
-            (minimize ? this._multiMinimize : this._multiRestore).call(this, selection);
-        }));
-        items.push(itemMinimizeWindow);
+        let minimizedCount = selection.filter(function(mw) {return mw.minimized;}).length;
+        let someMinimized = minimizedCount && minimizedCount < selection.length;
+        let noneMinimized = minimizedCount == 0;
+
+        if (someMinimized) {
+            let itemMinimizeWindow = new PopupMenu.PopupMenuItem(_("Restore"));
+            itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
+                this._multiRestore(selection);
+            }));
+            items.push(itemMinimizeWindow);
+            let itemRestoreWindow = new PopupMenu.PopupMenuItem(_("Minimize"));
+            itemRestoreWindow.connect('activate', Lang.bind(this, function(actor, event){
+                this._multiMinimize(selection);
+            }));
+            items.push(itemRestoreWindow);
+        }
+        else {
+            let itemMinimizeWindow = new PopupMenu.PopupMenuItem(noneMinimized ? _("Minimize") : _("Restore"));
+            itemMinimizeWindow.connect('activate', Lang.bind(this, function(actor, event){
+                (noneMinimized ? this._multiMinimize : this._multiRestore).call(this, selection);
+            }));
+            items.push(itemMinimizeWindow);
+        }
 
         if (selection.length > 1) {
             let itemUnselectAll = new PopupMenu.PopupMenuItem(_("Unselect all"));
