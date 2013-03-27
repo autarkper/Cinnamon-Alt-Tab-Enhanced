@@ -621,8 +621,8 @@ AltTabPopup.prototype = {
         // details.) So we check now. (Have to do this after updating
         // selection.)
         if (!this._persistent) {
-            let [x, y, mods] = global.get_pointer();
-            if (!(mods & this._modifierMask)) {
+            let state = this._getModifierState();
+            if (state == 0) {
                 return false;
             }
         }
@@ -959,8 +959,7 @@ AltTabPopup.prototype = {
                 // This avoids unpleasant surprises after some actions, minimize in particular,
                 // which might otherwise have no lasting effect if the minimized window is
                 // immediately activated.
-                let [x, y, mods] = global.get_pointer();
-                let state = mods & this._modifierMask;
+                let state = this._getModifierState();
                 if (state == 0) {
                     this._persistent = true;
                 }
@@ -993,6 +992,11 @@ AltTabPopup.prototype = {
         }));
     },
     
+    _getModifierState : function() {
+        let [x, y, mods] = global.get_pointer();
+        return mods & this._modifierMask;
+    },
+
     show : function(backward, binding, mask) {
         if (!Main.pushModal(this.actor)) {
             this.destroy();
@@ -1046,9 +1050,7 @@ AltTabPopup.prototype = {
         let pressed = keyState === KeyState.PRESSED;
 
         if (released) {
-            let [x, y, mods] = global.get_pointer();
-            let state = mods & this._modifierMask;
-
+            let state = this._getModifierState();
             if (state == 0 && !this._persistent) {
                 this._finish();
                 return true;
@@ -1314,7 +1316,6 @@ AltTabPopup.prototype = {
     },
 
     _showHelp : function() {
-        this._persistent = true;
         let dialog = new ModalDialog.ModalDialog();
 
         let label = new St.Label({text: _("Alt-Tab Quick Help (version %s)").format(g_version)});
