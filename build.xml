@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="fxgateway" basedir="." default="compile">
+<project name="Alt-Tab Enhanced" basedir="." default="compile">
     <property name="src" value="Alt_Tab_Enhanced@autarkper"/>
     <property name="output" value="/tmp/alt-tab-release"/>
     <property name="zip" value="/tmp/Alt-Tab-Enhanced.zip"/>
