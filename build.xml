@@ -20,7 +20,10 @@
         <loadfile property="last-tag" srcFile="${tag-output2}">
           <filterchain><striplinebreaks/></filterchain>
         </loadfile>
-        <echo>${last-tag}</echo>
+
+        <condition property="tag-set">
+          <isset property="last-tag" />
+        </condition>
 
         <tempfile property="date-output" deleteonexit="true"/>
         <exec executable="date" output="${date-output}">
@@ -37,13 +40,9 @@
         </copy>
         <copy file="README" todir="${output}/${src}"/>
 
-        <replaceregexp byline="true">
-            <regexp pattern="(&quot;version&quot;\s*:\s*)&quot;.*&quot;"/>
-            <substitution expression="\1&quot;${last-tag}&quot;"/>
-            <fileset dir="${output}/${src}">
-                <include name="**/metadata.json"/>
-            </fileset>
-        </replaceregexp>
+        <antcall target="set-version"></antcall>
+        <antcall target="no-set-version"></antcall>
+
         <replaceregexp byline="true">
             <regexp pattern="(&quot;package-date&quot;\s*:\s*)&quot;.*&quot;"/>
             <substitution expression="\1&quot;${package-date}&quot;"/>
@@ -54,7 +53,22 @@
 
         <zip destfile="${zip}" basedir="${output}" />
     </target>
- 
+
+    <target name="no-set-version" unless="tag-set">
+        <echo>Skip setting version tag</echo>
+    </target>
+
+    <target name="set-version" if="tag-set">
+        <echo>Set version tag: ${last-tag}</echo>
+        <replaceregexp byline="true">
+            <regexp pattern="(&quot;version&quot;\s*:\s*)&quot;.*&quot;"/>
+            <substitution expression="\1&quot;${last-tag}&quot;"/>
+            <fileset dir="${output}/${src}">
+                <include name="**/metadata.json"/>
+            </fileset>
+        </replaceregexp>
+    </target>
+
     <target name="install" depends="compile">
         <unzip src="${zip}" dest="${user.home}/.local/share/cinnamon/applets" overwrite="true" />
     </target>
