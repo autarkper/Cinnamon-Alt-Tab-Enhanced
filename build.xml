@@ -33,12 +33,13 @@
           <filterchain><striplinebreaks/></filterchain>
         </loadfile>
         <echo>${package-date}</echo>
-        <echo>${user.home}</echo>
 
         <copy todir="${output}/${src}">
             <fileset dir="${src}" excludes="extension.js"/>
         </copy>
         <copy file="README" todir="${output}/${src}"/>
+        <copy file="CREDITS" todir="${output}/${src}"/>
+        <copy file="LICENSE" todir="${output}/${src}"/>
 
         <antcall target="set-version"></antcall>
         <antcall target="no-set-version"></antcall>
@@ -55,7 +56,7 @@
     </target>
 
     <target name="no-set-version" unless="tag-set">
-        <echo>Skip setting version tag</echo>
+        <echo>Skip setting version tag - no tag for latest commit</echo>
     </target>
 
     <target name="set-version" if="tag-set">
