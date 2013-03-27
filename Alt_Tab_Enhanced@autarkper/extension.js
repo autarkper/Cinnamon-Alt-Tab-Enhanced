@@ -1549,7 +1549,9 @@ AltTabPopup.prototype = {
         this._appSwitcher.highlight(app);
         this._doWindowPreview();
         if (g_setup._thumbnailsEnabled && g_setup._iconsEnabled) {
-            this._destroyThumbnails();
+            if (!same) {
+                this._destroyThumbnails();
+            }
             if (this._thumbnailTimeoutId) {
                 Mainloop.source_remove(this._thumbnailTimeoutId);
             }
