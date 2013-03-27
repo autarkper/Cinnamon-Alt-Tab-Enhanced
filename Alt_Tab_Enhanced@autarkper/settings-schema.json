@@ -9,6 +9,7 @@
     "default": true,
     "dependency" : "all-workspaces-mode",
     "indent": true,
+    "tooltip": "Only applicable if there is not enough horizontal space to show all windows at once",
     "description": "Zoom in on the windows of the current workspace"
  },
  "display-origin-arrow": {
@@ -28,7 +29,7 @@
         "Thumbnails" : "icons+thumbnails",
         "Icons only" : "icons"
     },
-    "description": "Select the general switcher style"
+    "description": "General switcher style"
  },
  "vertical-alignment": {
     "type" : "combobox",
@@ -53,6 +54,7 @@
  "display-thumbnail-headers": {
     "type" : "checkbox",
     "default" : true,
+    "tooltip": "Only applicable to some switcher styles",
     "description" : "Display thumbnail headers, showing the window icon and title"
  },
  "compact-labels": {
@@ -69,7 +71,7 @@
         "Focus monitor" : ":focus",
         "Bottom" : ":bottom"
     },
-    "description": "Select your monitor preference"
+    "description": "Monitor preference"
  },
  "background-image-enabled": {
     "type": "checkbox",
@@ -82,7 +84,7 @@
     "min" : 0.0,
     "max" : 1.0,
     "step" : 0.1,
-    "description": "Select the background dim factor"
+    "description": "Background dim factor"
  },
  "seppe": {"type": "separator"},
  "urgent-notifications": {
