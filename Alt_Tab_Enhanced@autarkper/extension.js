@@ -418,7 +418,7 @@ AltTabPopup.prototype = {
                 this._homeWindow = null;
             }
             this._appSwitcher._removeIcon(index);
-            this._select(this._currentApp, true);
+            this._minorRefresh();
             this.refresh();
         }
     },
@@ -709,6 +709,10 @@ AltTabPopup.prototype = {
         });
     },
 
+    _minorRefresh: function() {
+        this._select(this._currentApp, true);
+    },
+
     _multiMoveMonitor: function(selin, index) {
         if (!selin.length) {return;}
         let monitorCount = Main.layoutManager.monitors.length;
@@ -722,21 +726,21 @@ AltTabPopup.prototype = {
                 mw.move_to_monitor(target);
             }
         });
-        this._select(this._currentApp, true); // refresh
+        this._minorRefresh();
     },
 
     _multiClose: function(selection) {
         selection.forEach(function(mw) {
             mw.delete(global.get_current_time());
         });
-        this._select(this._currentApp, true); // refresh
+        this._minorRefresh();
     },
 
     _multiRestore: function(selection) {
         selection.forEach(function(mw) {
             if (mw.minimized) {mw.unminimize();}
         });
-        this._select(this._currentApp, true); // refresh
+        this._minorRefresh();
     },
 
     _multiIgnore: function(selection) {
@@ -749,7 +753,7 @@ AltTabPopup.prototype = {
             else {
                 mw._alttab_ignored = true;
             }
-            this._select(iconIndex, true); // refresh
+        this._minorRefresh();
         }, this);
     },
 
@@ -759,7 +763,7 @@ AltTabPopup.prototype = {
             if (allMinimized) {mw.unminimize();}
             else if (!mw.minimized) {mw.minimize();}
         });
-        this._select(this._currentApp, true); // refresh
+        this._minorRefresh();
     },
 
     _populateCommonWindowContextMenuItems: function(selection) {
@@ -1118,7 +1122,7 @@ AltTabPopup.prototype = {
                         return icon.window;
                     });
                 }
-                this._select(this._currentApp, true); // refresh
+                this._minorRefresh();
             } else if (keysym == Clutter.Menu) {
                 if (this._currentApp > -1 || g_selection.length) {
                     this._showWindowContextMenu(this._currentApp);
@@ -1209,7 +1213,7 @@ AltTabPopup.prototype = {
                 } else {
                     g_selection = this._modifySelection(g_selection, this._currentApp, {removeIfPresent: true});
                 }
-                this._select(this._currentApp, true); // refresh
+                this._minorRefresh();
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
             } else if (keysym == Clutter.h) { // toggle hide
@@ -1235,7 +1239,7 @@ AltTabPopup.prototype = {
                 this._multiIgnore(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.m && !ctrlDown) {
                 this._multiMoveMonitor(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
-                this._select(this._currentApp, true); // refresh
+                this._minorRefresh();
             } else if (keysym == Clutter.n && !ctrlDown) {
                 this._multiMinimize(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.F4) {
@@ -1263,7 +1267,7 @@ AltTabPopup.prototype = {
                 if (g_setup._iconsEnabled && g_setup._thumbnailsEnabled) {
                     if (getVerticalAlignment() != 'center') {
                         g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
-                        this._select(this._currentApp, true); // refresh
+                        this._minorRefresh();
                     }
                 }
             } else if (keysym == Clutter.F8) {
