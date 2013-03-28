@@ -548,14 +548,6 @@ AltTabPopup.prototype = {
 
         if (g_vars.globalFocusOrder) {
             windows = windows.sort(function(a, b) {
-                let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
-                if (minimizedDiff) {
-                    return minimizedDiff;
-                }
-                let ignoredDiff = (!a._alttab_ignored ? 0 : 1) - (!b._alttab_ignored ? 0 : 1)
-                if (ignoredDiff) {
-                    return ignoredDiff;
-                }
                 let inGlobalListDiff = (g_vars.windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (g_vars.windowsOrdered.indexOf(b) < 0 ? 1 : 0);
                 if (inGlobalListDiff) {
                     return inGlobalListDiff;
