@@ -937,7 +937,6 @@ AltTabPopup.prototype = {
         menu.connect('open-state-changed', Lang.bind(this, function(sender, opened) {
             this._menuActive = opened;
             if (!opened) {
-                this._select(this._currentApp, true); // refresh
                 if (this.actor) {
                     global.stage.set_key_focus(this.actor);
                 }
