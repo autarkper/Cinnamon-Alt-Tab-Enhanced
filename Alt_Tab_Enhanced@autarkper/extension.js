@@ -772,6 +772,7 @@ AltTabPopup.prototype = {
 
     _populateCommonWindowContextMenuItems: function(selection) {
         let items = [];
+        items.push(new PopupMenu.PopupSeparatorMenuItem());
         
         let itemCloseWindow = new PopupMenu.PopupMenuItem(_("Close"));
         itemCloseWindow.connect('activate', Lang.bind(this, function(actor, event){
@@ -846,17 +847,11 @@ AltTabPopup.prototype = {
                     item.connect('activate', Lang.bind(this, function() {
                         this._multiMoveMonitor(selection, index);
                     }));
-                    if (Main.layoutManager.monitors.length > 2) {
-                        submenu.menu.addMenuItem(item);
-                    } else {
-                        monitorItems.push(item);
-                    }
+                    submenu.menu.addMenuItem(item);
                 }
             }, this);
-            if (!monitorItems.length) {
-                monitorItems.push(submenu);
-            }
             monitorItems.push(new PopupMenu.PopupSeparatorMenuItem());
+            monitorItems.push(submenu);
             items = monitorItems.concat(items);
         }
 
