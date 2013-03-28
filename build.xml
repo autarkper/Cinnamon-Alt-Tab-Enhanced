@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
-<project name="Alt-Tab Enhanced" basedir="." default="compile">
+<project name="Alt-Tab Enhanced" basedir="." default="package">
     <property name="src" value="Alt_Tab_Enhanced@autarkper"/>
     <property name="output" value="/tmp/alt-tab-release"/>
     <property name="zip" value="/tmp/Alt-Tab-Enhanced.zip"/>
+    <property name="applet-dir" value="${user.home}/.local/share/cinnamon/applets"/>
 
-    <target name="compile" depends="create">
+    <target name="package" depends="create">
         <tempfile property="tag-output" deleteonexit="true"/>
         <exec executable="git" output="${tag-output}">
             <arg value="tag"/>
@@ -41,8 +42,8 @@
         <copy file="CREDITS" todir="${output}/${src}"/>
         <copy file="LICENSE" todir="${output}/${src}"/>
 
-        <antcall target="set-version"></antcall>
         <antcall target="no-set-version"></antcall>
+        <antcall target="set-version"></antcall>
 
         <replaceregexp byline="true">
             <regexp pattern="(&quot;package-date&quot;\s*:\s*)&quot;.*&quot;"/>
@@ -70,8 +71,12 @@
         </replaceregexp>
     </target>
 
-    <target name="install" depends="compile">
-        <unzip src="${zip}" dest="${user.home}/.local/share/cinnamon/applets" overwrite="true" />
+    <target name="uninstall">
+        <delete dir="${applet-dir}/${src}" followSymlinks="false" removeNotFollowedSymlinks="true" includeemptydirs="true" quiet="true" failonerror="false" />
+    </target>
+
+    <target name="install" depends="package, uninstall">
+        <unzip src="${zip}" dest="${applet-dir}" overwrite="true" />
     </target>
 
     <target name="clean">
