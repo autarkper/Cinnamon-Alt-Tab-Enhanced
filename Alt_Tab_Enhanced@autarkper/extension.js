@@ -2373,7 +2373,7 @@ ThumbnailHolder.prototype = {
             let windowMonitor = Main.layoutManager.monitors[windowMonitorIndex];
             let scaleY = doScale ? binHeight/windowMonitor.height : binHeight/clones[0].actor.height;
             let scaleX = doScale ? binWidth/windowMonitor.width : binWidth/clones[0].actor.width;
-            let scale = Math.min(scaleX, scaleY);
+            let scale = Math.min(1, scaleX, scaleY);
 
             for (let j = 0; j < clones.length; j++) {
                 let clone = clones[j];
