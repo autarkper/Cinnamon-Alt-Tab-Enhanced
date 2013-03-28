@@ -589,7 +589,7 @@ AltTabPopup.prototype = {
 
         // Make the initial selection
         if (this._appIcons.length > 0 && (currentIndex >= 0 || forwardIndex >= 0)) {
-            if (binding == 'no-switch-windows') {
+            if (binding == 'no-switch-windows' || binding == 'switch-group') {
                 this._select(currentIndex);
                 this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
                 this._appSwitcher._scrollTo(currentIndex, -1, 2, true);
@@ -991,9 +991,6 @@ AltTabPopup.prototype = {
         }
         this._haveModal = true;
         this._modifierMask = primaryModifier(mask);
-        if (binding && binding.search(/group/) >= 0) {
-            g_settings.allWorkspacesMode = false;
-        }
         if (!this.refresh(binding, backward)) {
             this._finish();
             return false;
@@ -2553,19 +2550,23 @@ function init(metadata, instanceId) {
 
 let attentionConnector = new Connector();
 function enable() {
-    Meta.keybindings_set_custom_handler('switch-windows', function(display, screen, window, binding) {
+    let handler = function(display, screen, window, binding) {
         let tabPopup = new AltTabPopup();
         let modifiers = binding.get_modifiers();
         let backwards = modifiers & Meta.VirtualModifier.SHIFT_MASK;
         tabPopup.show(backwards, binding.get_name(), binding.get_mask());
-    });
+    };
+
+    Meta.keybindings_set_custom_handler('switch-windows', handler);
+    Meta.keybindings_set_custom_handler('switch-group', handler);
+
     attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
     attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
 }
 
 function disable() {
-    Meta.keybindings_set_custom_handler('switch-windows',
-        Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Meta.keybindings_set_custom_handler('switch-windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Meta.keybindings_set_custom_handler('switch-group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     attentionConnector.destroy();
 }
 
