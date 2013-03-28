@@ -806,6 +806,7 @@ AltTabPopup.prototype = {
             let itemUnselectAll = new PopupMenu.PopupMenuItem(_("Unselect all"));
             itemUnselectAll.connect('activate', Lang.bind(this, function(actor, event){
                 g_selection = [];
+                this._minorRefresh();
             }));
             items.push(new PopupMenu.PopupSeparatorMenuItem());
             items.push(itemUnselectAll);
