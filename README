@@ -13,7 +13,8 @@ you can change all settings via Cinnamon Settings, but most of the settings
 are also changeable on a temporary basis via the use of hotkeys - consult the help screen
 for more information.
 
-Compatibility: From Cinnamon 1.7.2 and up.
+Compatibility: From Cinnamon 1.7.2 and up. If you're unable to install from within
+the Applet Settings dialog you are most probably running an incompatible Cinnamon version.
 
 Your settings are stored in
- ~/.cinnamon/configs/Alt_Tab_Enhanced\@autarkper
+ ~/.cinnamon/configs/Alt_Tab_Enhanced@autarkper
