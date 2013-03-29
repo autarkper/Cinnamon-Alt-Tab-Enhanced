@@ -1,6 +1,16 @@
 Alt-Tab Enhanced
 ================
-This is an enhanced Alt-Tab for Cinnamon. It replaces the built-in Alt-Tab, expanding the feature set with multi-workspace capabilities, bigger thumbnails, flexible choice of screen position and preferred monitor, extended mouse support, context menus, more configuration options, and other useful features for the advanced user while working almost exactly like the built-in Alt-Tab for casual use. One of the features is a quick-help screen, accessed by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
+This is an enhanced Alt-Tab for Cinnamon. It replaces the built-in Alt-Tab, expanding the feature set in many directions for the advanced user while working almost exactly like the built-in Alt-Tab for casual use. One of the features is a quick-help screen, accessed by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
+
+This is a brief list of the most prominent features:
+  - Multi-workspace capabilities
+  - Bigger thumbnails
+  - Supports most of the built-in Alt-Tab switcher styles
+  - Flexible choice of screen position and preferred monitor
+  - Extended mouse support
+  - Context menus for working with windows
+  - Many keyboard shortcuts
+  - Many configuration options
 
 Settings
 =============
