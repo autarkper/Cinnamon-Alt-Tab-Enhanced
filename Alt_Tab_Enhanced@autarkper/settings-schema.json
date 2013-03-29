@@ -19,6 +19,7 @@
     "indent": true,
     "description" : "Display a small arrow, below the icon, to indicate the window you came from"
  },
+ "switcher-sep": {"type": "separator"},
  "style": {
     "type": "combobox",
     "default": ":system",
@@ -41,27 +42,6 @@
     },
     "description" : "Where to display the window switcher"
  },
- "thumbnails-behind-icons": {
-    "type" : "combobox",
-    "default" : "never",
-    "options" : {
-        "Never" : "never",
-        "Always" : "always",
-        "Behind identical icons" : "behind-identical"
-    },
-    "description" : "Display a thumbnail behind icons"
- },
- "display-thumbnail-headers": {
-    "type" : "checkbox",
-    "default" : true,
-    "tooltip": "Only applicable to some switcher styles",
-    "description" : "Display thumbnail headers, showing the window icon and title"
- },
- "compact-labels": {
-    "type": "checkbox",
-    "default": true,
-    "description": "Display the window title in a single-row label"
- },
  "preferred-monitor": {
     "type": "combobox",
     "default": ":primary",
@@ -73,6 +53,34 @@
     },
     "description": "Monitor preference"
  },
+ "thumbnails-behind-icons": {
+    "type" : "combobox",
+    "default" : "never",
+    "options" : {
+        "Never" : "never",
+        "Always" : "always",
+        "Behind identical icons" : "behind-identical"
+    },
+    "description" : "Display a thumbnail behind icons"
+ },
+ "compact-labels": {
+    "type": "checkbox",
+    "default": true,
+    "description": "Display the window title in a single-row label"
+ },
+ "thumbnails-sep": {"type": "separator"},
+ "display-thumbnail-headers": {
+    "type" : "checkbox",
+    "default" : true,
+    "tooltip": "Only applicable to some switcher styles",
+    "description" : "Display thumbnail headers, showing the window icon and title"
+ },
+ "full-screen-thumbnails": {
+    "type": "checkbox",
+    "default": false,
+    "description": "Use the full screen size to display thumbnails"
+ },
+ "background-sep": {"type": "separator"},
  "background-image-enabled": {
     "type": "checkbox",
     "default": "true",
@@ -86,7 +94,7 @@
     "step" : 0.1,
     "description": "Background dim factor"
  },
- "seppe": {"type": "separator"},
+ "urgent-sep": {"type": "separator"},
  "urgent-notifications": {
     "type": "checkbox",
     "default": true,

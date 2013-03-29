@@ -147,6 +147,7 @@ const HELP_TEXT = [
     _("F4: Switch between the most common Alt-Tab styles"),
     _("F5: Toggle between seeing all windows or only windows from the current workspace"),
     _("F6: Change vertical alignment of switcher bar (top->center->bottom)"),
+    _("Shift+F6: Toggle full-screen thumbnails on/off"),
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
     _("F8: Toggle single-line window-title labels on/off"),
     _("F9: Switch between the different thumbnail-behind-icon styles (always, never, behind-identical-icons)"),
@@ -476,20 +477,29 @@ AltTabPopup.prototype = {
             let thumbnailCenter = posX + icon.width / 2;
             let spacing = this.actor.get_theme_node().get_length('spacing');
             let spacing2 = Math.floor(spacing/2);
-            let thHeight = vAlignment == 'center'
-                ? primary.height - (this._appSwitcher.actor.allocation.y2 - primary.y) - spacing
-                : primary.height - (this._appSwitcher.actor.allocation.y2 - this._appSwitcher.actor.allocation.y1) - spacing
-                ;
-            let thWidth = Math.floor(thHeight * primary.width / primary.height) + leftPadding * 2;
+            if (!g_settings.fullScreenThumbnails) {
+                let thHeight = vAlignment == 'center'
+                    ? primary.height - (this._appSwitcher.actor.allocation.y2 - primary.y) - spacing
+                    : primary.height - (this._appSwitcher.actor.allocation.y2 - this._appSwitcher.actor.allocation.y1) - spacing
+                    ;
+                let thWidth = Math.floor(thHeight * primary.width / primary.height) + leftPadding * 2;
 
-            childBox.x1 = primary.x + Math.floor((primary.width - thWidth)/2);
-            childBox.x2 = childBox.x1 +  thWidth;
-            childBox.y1 = vAlignment == 'bottom'
-                ? this._appSwitcher.actor.allocation.y1 - thHeight - spacing2
-                : this._appSwitcher.actor.allocation.y2 + spacing2
-                ;
-            childBox.y2 = childBox.y1 + thHeight;
-            this._thumbnails.actor.allocate(childBox, flags);
+                childBox.x1 = primary.x + Math.floor((primary.width - thWidth)/2);
+                childBox.x2 = childBox.x1 +  thWidth;
+                childBox.y1 = vAlignment == 'bottom'
+                    ? this._appSwitcher.actor.allocation.y1 - thHeight - spacing2
+                    : this._appSwitcher.actor.allocation.y2 + spacing2
+                    ;
+                childBox.y2 = childBox.y1 + thHeight;
+            } else {
+                let thHeight = primary.height - spacing;
+                let thWidth = Math.floor(thHeight * primary.width / primary.height) + leftPadding * 2;
+                childBox.x1 = primary.x + Math.floor((primary.width - thWidth)/2);
+                childBox.x2 = childBox.x1 +  thWidth;
+                childBox.y1 = primary.y + spacing2;
+                childBox.y2 = childBox.y1 + thHeight;
+            }
+           this._thumbnails.actor.allocate(childBox, flags);
         }
     },
 
@@ -1255,12 +1265,17 @@ AltTabPopup.prototype = {
                     g_selection = [];
                 }
                 this.refresh();
-            } else if (keysym == Clutter.F6) {
+            } else if (keysym == Clutter.F6 && !shiftDown) {
                 if (g_setup._iconsEnabled) {
                     let alignmentTypeIndex = g_aligmentTypes.indexOf(getVerticalAlignment());
                     let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
                     g_settings.vAlign = g_aligmentTypes[newIndex];
                     g_vAlignOverride = null;
+                    this.refresh();
+                }
+            } else if (keysym == Clutter.F6 && shiftDown) {
+                if (this._thumbnails) {
+                    g_settings.fullScreenThumbnails = !g_settings.fullScreenThumbnails;
                     this.refresh();
                 }
             } else if (keysym == Clutter.F7) {
@@ -1591,6 +1606,7 @@ AltTabPopup.prototype = {
             this.actor.add_actor(this._thumbnails.actor);
             // Need to force an allocation so we can figure out the dimensions
             this._thumbnails.actor.get_allocation_box();
+            this._thumbnails.actor.lower(this._appSwitcher.actor);
         }
         this._thumbnails.addClones(this._appIcons[this._currentApp].cachedWindows[0], this._appIcons[this._currentApp].app, true);
         this.thumbnailsVisible = true;
@@ -2508,6 +2524,11 @@ function init(metadata, instanceId) {
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
+            "full-screen-thumbnails",
+            "fullScreenThumbnails",
+            function() {},
+            null);
+        settings.bindProperty(Settings.BindingDirection.IN,
             "last-gsettings-switcher-style",
             "last-gsettings-switcher-style",
             function() {},
@@ -2538,6 +2559,7 @@ function init(metadata, instanceId) {
         g_settings.thumbnailsBehindIcons = "behind-identical";
         g_settings.allWorkspacesMode = false;
         g_settings.vAlign = 'center';
+        g_settings.fullScreenThumbnails = false;
         g_settings.displayThumbnailHeaders = true;
         g_settings.displayOriginArrow = true;
         g_settings.compactLabels = false;
