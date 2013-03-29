@@ -38,7 +38,7 @@
         <copy todir="${output}/${src}">
             <fileset dir="${src}" excludes="extension.js"/>
         </copy>
-        <copy file="README" todir="${output}/${src}"/>
+        <copy file="README.md" todir="${output}/${src}"/>
         <copy file="CREDITS" todir="${output}/${src}"/>
         <copy file="LICENSE" todir="${output}/${src}"/>
 
