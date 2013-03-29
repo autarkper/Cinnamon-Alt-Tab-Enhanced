@@ -588,13 +588,15 @@ AltTabPopup.prototype = {
             this._homeWindow = currentWindow;
         }
 
-        // if we are refreshing after already being shown, retain current selection, if possible
+        // if we are refreshing after already being shown, retain current selection, if possible.
+        // but only if we are on the same workspace as the selected window.
+        let selectedWindow = this._selectedWindow && wsWindows.indexOf(this._selectedWindow) >= 0 ? this._selectedWindow : null;
         if (g_selection.length) {
-            let isel = this._selectedWindow ? g_selection.indexOf(this._selectedWindow) : -1;
-            forwardIndex = windows.indexOf(isel >= 0 ? this._selectedWindow : g_selection[0]);
+            let isel = selectedWindow ? g_selection.indexOf(selectedWindow) : -1;
+            forwardIndex = isel >= 0 ? windows.indexOf(selectedWindow) : -1;
         }
-        else if (this._selectedWindow) {
-            forwardIndex = windows.indexOf(this._selectedWindow);
+        else if (selectedWindow) {
+            forwardIndex = windows.indexOf(selectedWindow);
         }
 
         // Make the initial selection
@@ -932,6 +934,7 @@ AltTabPopup.prototype = {
     },
 
     _showWindowContextMenu: function(n) {
+        if (n < 0) {return;}
         if (g_selection.length && g_selection.indexOf(this._appIcons[n].window) < 0) {
             g_selection = [];
             this._select(n, true);
