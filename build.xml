@@ -72,6 +72,7 @@
     </target>
 
     <target name="uninstall">
+        <symlink action="delete" link="${applet-dir}/${src}" />
         <delete dir="${applet-dir}/${src}" followSymlinks="false" removeNotFollowedSymlinks="true" includeemptydirs="true" quiet="true" failonerror="false" />
     </target>
 
