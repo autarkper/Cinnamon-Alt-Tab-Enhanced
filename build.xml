@@ -26,6 +26,30 @@
           <isset property="last-tag" />
         </condition>
 
+        <tempfile property="status-output-file" deleteonexit="true"/>
+        <exec executable="git" output="${status-output-file}">
+            <arg value="status"/>
+            <arg value="--porcelain"/>
+            <arg value="--untracked=no"/>
+        </exec>
+        <loadfile property="status-output" srcFile="${status-output-file}">
+          <filterchain><striplinebreaks/></filterchain>
+        </loadfile>
+        <echo>${status-output}</echo>
+
+        <condition property="unclean-status">
+          <isset property="status-output" />
+        </condition>
+
+        <condition property="can-set-tag">
+            <and>
+                <isset property="last-tag" />
+                <not>
+                    <isset property="status-output" />
+                </not>
+            </and>
+        </condition>
+
         <tempfile property="date-output" deleteonexit="true"/>
         <exec executable="date" output="${date-output}">
             <arg value="--rfc-3339=seconds"/>
@@ -56,11 +80,11 @@
         <zip destfile="${zip}" basedir="${output}" />
     </target>
 
-    <target name="no-set-version" unless="tag-set">
-        <echo>Skip setting version tag - no tag for latest commit</echo>
+    <target name="no-set-version" unless="can-set-tag">
+        <echo>Skip setting version tag - no tag for latest commit, or unclean status</echo>
     </target>
 
-    <target name="set-version" if="tag-set">
+    <target name="set-version" if="can-set-tag">
         <echo>Set version tag: ${last-tag}</echo>
         <replaceregexp byline="true">
             <regexp pattern="(&quot;version&quot;\s*:\s*)&quot;.*&quot;"/>
