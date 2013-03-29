@@ -624,11 +624,10 @@ AltTabPopup.prototype = {
             // disturbed by the popup briefly flashing.
             let timeout = POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs);
             if (timeout > 25) {
-                this._initialDelayTimeoutId = Mainloop.timeout_add(Math.max(0, timeout),
-                    Lang.bind(this, function () {
-                        this._appSwitcher.actor.opacity = 255;
-                        this._initialDelayTimeoutId = 0;
-                    }));
+                this._initialDelayTimeoutId = Mainloop.timeout_add(timeout, Lang.bind(this, function () {
+                    this._appSwitcher.actor.opacity = 255;
+                    this._initialDelayTimeoutId = 0;
+                }));
             }
             else {
                 this._appSwitcher.actor.opacity = 255;
@@ -753,7 +752,7 @@ AltTabPopup.prototype = {
             else {
                 mw._alttab_ignored = true;
             }
-        this._minorRefresh();
+            this._minorRefresh();
         }, this);
     },
 
