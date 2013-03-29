@@ -732,6 +732,9 @@ AltTabPopup.prototype = {
         let target = index === undefined ? (selection[0].get_monitor() + monitorCount + 1) % monitorCount : index;
         selection.forEach(function(mw) {
             if (mw.get_monitor() != target) {
+                mw.foreach_transient(function(transient) {
+                    transient.move_to_monitor(target);
+                });
                 mw.move_to_monitor(target);
             }
         });
