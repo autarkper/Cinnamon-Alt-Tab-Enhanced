@@ -1920,14 +1920,14 @@ AppSwitcher.prototype = {
         childBox.x2 = this._leftGradient.width;
         childBox.y2 = this.actor.height;
         this._leftGradient.allocate(childBox, flags);
-        this._leftGradient.opacity = (this._scrollableLeft && scrollable) ? 255 : 0;
+        this._leftGradient.opacity = 0;
 
         childBox.x1 = (this.actor.allocation.x2 - this.actor.allocation.x1) - this._rightGradient.width;
         childBox.y1 = 0;
         childBox.x2 = childBox.x1 + this._rightGradient.width;
         childBox.y2 = this.actor.height;
         this._rightGradient.allocate(childBox, flags);
-        this._rightGradient.opacity = (this._scrollableRight && scrollable) ? 255 : 0;
+        this._rightGradient.opacity = 0;
 
         let arrowWidth = Math.floor(leftPadding / 3);
         let arrowHeight = arrowWidth * 2;
@@ -1936,7 +1936,7 @@ AppSwitcher.prototype = {
         childBox.x2 = childBox.x1 + arrowWidth;
         childBox.y2 = childBox.y1 + arrowHeight;
         this._leftArrow.allocate(childBox, flags);
-        this._leftArrow.opacity = this._leftGradient.opacity;
+        this._leftArrow.opacity = 0;
 
         arrowWidth = Math.floor(rightPadding / 3);
         arrowHeight = arrowWidth * 2;
@@ -1945,7 +1945,8 @@ AppSwitcher.prototype = {
         childBox.x2 = childBox.x1 + arrowWidth;
         childBox.y2 = childBox.y1 + arrowHeight;
         this._rightArrow.allocate(childBox, flags);
-        this._rightArrow.opacity = this._rightGradient.opacity;
+        this._rightArrow.opacity = 0;
+        this.determineScrolling();
     },
 
     addItem : function(item, label) {
@@ -2037,8 +2038,10 @@ AppSwitcher.prototype = {
 
     _getStagePosX: function(actor, offset) {
         let [absItemX, absItemY] = actor.get_transformed_position();
+        let theme_node = actor.get_theme_node();
+        let padding = theme_node.get_horizontal_padding() / 2;
         let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
-        return Math.round(posX + actor.width * (offset || 0));
+        return Math.round(posX + (padding + actor.width) * (offset || 0));
     },
 
     determineScrolling: function() {
@@ -2052,13 +2055,17 @@ AppSwitcher.prototype = {
         let padding = theme_node.get_horizontal_padding();
 
         let rightX = this._getStagePosX(this._items[this._items.length - 1], 0.5);
+        let rightX2 = this._getStagePosX(this._items[this._items.length - 1], 1);
         let leftX = this._getStagePosX(this._items[0], 0.7);
+        let leftX2 = this._getStagePosX(this._items[0], 0);
         let scrollableLeft = leftX < padding/2;
-        let scrollableRight = rightX >= containerWidth;
+        let scrollableLeft2 = leftX2 < padding/2;
+        let scrollableRight = rightX > containerWidth;
+        let scrollableRight2 = rightX2 > containerWidth;
 
-        this._scrollableLeft = scrollableLeft;
+        this._scrollableLeft = scrollableLeft2;
         this._leftArrow.opacity = this._leftGradient.opacity = scrollableLeft ? 255 : 0;
-        this._scrollableRight = scrollableRight;
+        this._scrollableRight = scrollableRight2;
         this._rightArrow.opacity = this._rightGradient.opacity = scrollableRight ? 255: 0;
         Mainloop.idle_add(Lang.bind(this, function() {
             if (!this._clipBin.get_stage()) {return;}
@@ -2104,11 +2111,13 @@ AppSwitcher.prototype = {
         });
 
         if (direction > 0) {
-            if (posX + this._items[ixScroll].get_width() >= containerWidth) {
+            let theme_node = this._items[ixScroll].get_theme_node();
+            let itemPadding = theme_node.get_horizontal_padding() / 2;
+            if (posX + this._items[ixScroll].get_width() + itemPadding >= containerWidth) {
                 Tweener.removeTweens(this._list);
                 let monitor = g_myMonitor;
                 let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
-                let x = this._items[ixScroll].allocation.x2 - monitor.width + padding + parentPadding;
+                let x = this._items[ixScroll].allocation.x2 + itemPadding - monitor.width + padding + parentPadding;
                 scrollit(x);
             }
         }
@@ -2212,7 +2221,6 @@ AppSwitcher.prototype = {
 
         // Clip the area for scrolling
         this._clipBin.set_clip(0, -topPadding, (this.actor.allocation.x2 - this.actor.allocation.x1) - leftPadding - rightPadding, this.actor.height + bottomPadding);
-        this.determineScrolling();
     }
 };
 Signals.addSignalMethods(AppSwitcher.prototype);
