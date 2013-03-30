@@ -608,16 +608,17 @@ AltTabPopup.prototype = {
             } else if (backward) {
                 this._select(backwardIndex);
                 this._appSwitcher._scrollTo(backwardIndex, 1, 0, true);
+            } else if (forwardIndex >= 0) {
+                this._select(forwardIndex);
+                // ensure that all the windows of the current workspace are in view
+                this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
+                this._appSwitcher._scrollTo(forwardIndex, -1, 2, true);
             } else {
-                if (forwardIndex >= 0) {
-                    this._select(forwardIndex);
-                    // ensure that all the windows of the current workspace are in view
-                    this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
-                    this._appSwitcher._scrollTo(forwardIndex, -1, 2, true);
-                }
+                this._select(-1, true);
             }
         } else {
             this._clearPreview();
+            this._select(-1, true);
         }
         // There's a race condition; if the user released Alt before
         // we got the grab, then we won't be notified. (See
@@ -915,7 +916,7 @@ AltTabPopup.prototype = {
 
     _modifySelection: function(insel, n, options) {
         if (n < 0) {
-            return [];
+            return insel;
         }
         let selection = insel.filter(function(window) {return !!window.get_workspace();} );
         let appIcon = this._appIcons[n];
@@ -934,16 +935,19 @@ AltTabPopup.prototype = {
     },
 
     _showWindowContextMenu: function(n) {
-        if (n < 0) {return;}
-        if (g_selection.length && g_selection.indexOf(this._appIcons[n].window) < 0) {
-            g_selection = [];
-            this._select(n, true);
+        if (n < 0 && !g_selection.length) {
+            return;
         }
-        let appIcon = this._appIcons[n];
+        if (n >= 0) {
+            if (g_selection.length && g_selection.indexOf(this._appIcons[n].window) < 0) {
+                g_selection = [];
+                this._select(n, true);
+            }
+        }
         let selection = g_selection.length ? g_selection : this._modifySelection(g_selection, n);
-
         let mm = new PopupMenu.PopupMenuManager(this);
         let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
+        let appIcon = this._appIcons[n >= 0 ? n : this._indexOfWindow(selection[selection.length - 1])];
         let menu = new Applet.AppletPopupMenu({actor: appIcon.actor}, orientation);
         menu._arrowAlignment = selection.length > 1 ? 1.0 : 0.0; // differentiate, give visual clue
         mm.addMenu(menu);
@@ -1140,9 +1144,7 @@ AltTabPopup.prototype = {
                 }
                 this._minorRefresh();
             } else if (keysym == Clutter.Menu) {
-                if (this._currentApp > -1 || g_selection.length) {
-                    this._showWindowContextMenu(this._currentApp);
-                }
+                this._showWindowContextMenu(this._currentApp);
             } else if (keysym == Clutter.Escape) {
                 this.destroy();
             } else if (keysym == Clutter.Tab) {
