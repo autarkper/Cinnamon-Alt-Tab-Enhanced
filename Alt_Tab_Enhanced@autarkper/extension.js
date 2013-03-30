@@ -108,7 +108,6 @@ Connector.prototype = {
     }
 };
 
-const POPUP_APPICON_SIZE = 96;
 const POPUP_SCROLL_TIME = 0.10; // seconds
 const POPUP_DELAY_TIMEOUT = 110; // milliseconds
 
@@ -349,6 +348,7 @@ AltTabPopup.prototype = {
 
         this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
 
+        this.opacity = 255;
         this._haveModal = false;
         this._modifierMask = 0;
 
@@ -631,18 +631,18 @@ AltTabPopup.prototype = {
             }
         }
 
-        if (this._appSwitcher.actor.opacity != 255) {
+        if (this._appSwitcher.actor.opacity != this.opacity) {
             // We delay showing the popup so that fast Alt+Tab users aren't
             // disturbed by the popup briefly flashing.
             let timeout = POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs);
             if (timeout > 25) {
                 this._initialDelayTimeoutId = Mainloop.timeout_add(timeout, Lang.bind(this, function () {
-                    this._appSwitcher.actor.opacity = 255;
+                    this._appSwitcher.actor.opacity = this.opacity;
                     this._initialDelayTimeoutId = 0;
                 }));
             }
             else {
-                this._appSwitcher.actor.opacity = 255;
+                this._appSwitcher.actor.opacity = this.opacity;
             }
         }
         
@@ -1233,13 +1233,11 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
             } else if (keysym == Clutter.h) { // toggle hide
-                if (this._hiding) {
-                    this._hiding = false;
-                    this._appSwitcher.actor.opacity = 255;
+                if (this.opacity < 255) {
+                    this.opacity = this._appSwitcher.actor.opacity = 255;
                 }
                 else {
-                    this._hiding = true;
-                    this._appSwitcher.actor.opacity = 25;
+                    this.opacity = this._appSwitcher.actor.opacity = 25;
                 }
             } else if (keysym == Clutter.g && ctrlDown) {
                 if (global.screen.n_workspaces > 1) {
