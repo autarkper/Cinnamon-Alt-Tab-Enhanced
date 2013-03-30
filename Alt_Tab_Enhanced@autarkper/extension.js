@@ -1150,8 +1150,10 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.Tab) {
                 this._select(this._nextApp(nowrap));
             } else if (keysym == Clutter.Alt_L  ) {
-                // This is to exit persistent mode after a menu has been open.
-                this._persistent = false;
+                if (!this._appletActivated) {
+                    // This is to exit persistent mode after a menu has been open.
+                    this._persistent = false;
+                }
             } else if (keysym == Clutter.ISO_Left_Tab) {
                 this._select(this._previousApp(nowrap));
             } else if (keysym == Clutter.Home || keysym == Clutter.KP_Home) {
@@ -2769,7 +2771,7 @@ MyApplet.prototype = {
         g_vAlignOverride = this.orientation == St.Side.BOTTOM ? 'bottom' : 'top';
         g_monitorOverride = Main.layoutManager.findMonitorForActor(this.actor);
         let tabPopup = new AltTabPopup();
-        tabPopup._persistent = true;
+        tabPopup._appletActivated = tabPopup._persistent = true;
         tabPopup.show(false, 'no-switch-windows');
     },
     
