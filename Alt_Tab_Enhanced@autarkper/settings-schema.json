@@ -78,6 +78,7 @@
  "full-screen-thumbnails": {
     "type": "checkbox",
     "default": false,
+    "tooltip": "Only applicable to some switcher styles",
     "description": "Use the full screen size to display thumbnails"
  },
  "background-sep": {"type": "separator"},
