@@ -1760,18 +1760,16 @@ AppSwitcher.prototype = {
         let iconBorder = themeNode.get_border_width(St.Side.LEFT) + themeNode.get_border_width(St.Side.RIGHT);
         let iconSpacing = iconPadding + iconBorder;
         let totalSpacing = this._list.spacing * (this._items.length - 1);
-        if (this._separators.length)
+        if (this._separators.length) {
            totalSpacing += Math.max(1, this._separators.length - 1) * (this._separators[0].width + this._list.spacing);
+        }
 
-        // We just assume the whole screen here due to weirdness happing with the passed width
         let primary = g_myMonitor;
         let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
         let availWidth = primary.width - parentPadding - this.actor.get_theme_node().get_horizontal_padding();
-        let height = 0;
 
-        for(let i =  0; i < iconSizes.length; i++) {
+        for (let i =  0; i < iconSizes.length; i++) {
             this._iconSize = iconSizes[i];
-            height = this._iconSize + labelNaturalHeight + iconVPadding;
             let w = totalSpacing;
             if (this._altTabPopup._numPrimaryItems != this.icons.length) {
                 let width = this._iconSize + themeNode.get_horizontal_padding() + iconBorder;
@@ -1783,14 +1781,9 @@ AppSwitcher.prototype = {
                 }
             }
             if (w <= availWidth) {
-                    break;
+                break;
             }
         }   
-
-        if (this._items.length == 1) {
-            this._iconSize = iconSizes[0];
-            height = iconSizes[0] + labelNaturalHeight + iconVPadding;
-        }
 
         for(let i = 0; i < this.icons.length; i++) {
             if (this.icons[i].icon != null)
@@ -1798,8 +1791,7 @@ AppSwitcher.prototype = {
             this.icons[i].set_size(this._iconSize);
         }
 
-        alloc.min_size = height;
-        alloc.natural_size = height;
+        alloc.min_size = alloc.natural_size = this._iconSize + labelNaturalHeight + iconVPadding;
     },
 
     _getArrowDimensions: function() {
