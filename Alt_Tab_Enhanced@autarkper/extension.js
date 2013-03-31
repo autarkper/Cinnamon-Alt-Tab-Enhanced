@@ -2250,7 +2250,6 @@ AppIcon.prototype = {
         this._wsLabel_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
         this._wsLabel_bin.add_actor(this.wsLabel);
         this.actor.add(this._wsLabel_bin);
-        this.updateLabel();
     },
 
     _checkAttention: function() {
@@ -2274,8 +2273,10 @@ AppIcon.prototype = {
     },
 
     updateLabel: function() {
-        let ws = this.window.get_workspace().index();
-        this.wsLabel.set_text("[" + (ws + 1) + "]");
+        if (this.wsLabel.visible) {
+            let ws = this.window.get_workspace().index();
+            this.wsLabel.set_text("[" + (ws + 1) + "]");
+        }
 
         let title = this.window.get_title();
         title = typeof(title) != 'undefined' ? title : (this.app ? this.app.get_name() : "");
