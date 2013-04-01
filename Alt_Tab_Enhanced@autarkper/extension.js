@@ -2286,15 +2286,17 @@ AppIcon.prototype = {
             (g_settings.thumbnailsBehindIcons == 'behind-identical' && this.app && this.app.get_windows().length > 1)
             || g_settings.thumbnailsBehindIcons == 'always') ) {
             this.icon = new St.Group();
-            let clones = WindowUtils.createWindowClone(this.window, size, true, true);
+            let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
+            let scale = size/monitor.width;
+            let clones = WindowUtils.createWindowClone(this.window, 0, true, false);
             for (i in clones) {
                 let clone = clones[i];
                 this.icon.add_actor(clone.actor);
-                clone.actor.set_position(clone.x, clone.y);
+                clone.actor.set_position((clone.x-monitor.x)*scale, (clone.y-monitor.y)*scale);
+                clone.actor.set_scale(scale, scale);
             }
             if (this.showIcons) {
                 let [width, height] = clones[0].actor.get_size();
-                clones[0].actor.set_position(Math.floor((size - width)/2), 0);
                 let isize = Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]);
                 let icon = createApplicationIcon(this.app, isize);
                 this.icon.add_actor(icon);
