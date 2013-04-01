@@ -945,6 +945,9 @@ AltTabPopup.prototype = {
             }
         }
         let selection = g_selection.length ? g_selection : this._modifySelection(g_selection, n);
+        if (n < 0 || !selection.length) {
+            return;
+        }
         let mm = new PopupMenu.PopupMenuManager(this);
         let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
         let appIcon = this._appIcons[n >= 0 ? n : this._indexOfWindow(selection[selection.length - 1])];
