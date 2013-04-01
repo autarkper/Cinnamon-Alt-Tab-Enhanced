@@ -101,6 +101,11 @@
     "default": true,
     "description": "Use notifications to bring attention to attention-seeking windows"
  },
+ "force-open-on-preferred-monitor": {
+    "type": "checkbox",
+    "default": false,
+    "description": "Make new windows open on primary monitor"
+ },
  "last-gsettings-switcher-style": {
     "type": "generic",
     "default": ""

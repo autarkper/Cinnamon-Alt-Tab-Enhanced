@@ -313,33 +313,40 @@ function AltTabPopup() {
     this._init();
 }
 
+function selectMonitor(monitorOverride)
+{
+    let index = -1;
+    let monitor = null;
+    if (!monitorOverride) {
+        let mIndex;
+        switch (g_settings.preferredMonitor) {
+            case ":primary":
+                mIndex = "primaryMonitor"; break;
+            case ":bottom":
+                mIndex = "bottomMonitor"; break;
+            case ":focus":
+                mIndex = "focusMonitor"; break;
+            case ":secondary":
+                index = Math.min(1, Main.layoutManager.monitors.length - 1);
+                mIndex = null; break;
+            default:
+                mIndex = "primaryMonitor"; break;
+        }
+        if (mIndex) {
+            index = Main.layoutManager.monitors.indexOf(Main.layoutManager[mIndex]);
+        }
+    } else {
+        index = Main.layoutManager.monitors.indexOf(monitorOverride);
+    }
+    index = index >= 0 ? index : 0;
+    monitor = Main.layoutManager.monitors[index];
+    return [index, monitor];
+}
+
 AltTabPopup.prototype = {
     _init : function() {
         this._loadTs = (new Date()).getTime();
-        if (!g_monitorOverride) {
-            let mIndex;
-            switch (g_settings.preferredMonitor) {
-                case ":primary":
-                    mIndex = "primaryMonitor"; break;
-                case ":bottom":
-                    mIndex = "bottomMonitor"; break;
-                case ":focus":
-                    mIndex = "focusMonitor"; break;
-                case ":secondary":
-                    g_myMonitorIndex = Math.min(1, Main.layoutManager.monitors.length - 1);
-                    mIndex = null; break;
-                default:
-                    mIndex = "primaryMonitor"; break;
-            }
-            if (mIndex) {
-                g_myMonitorIndex = Main.layoutManager.monitors.indexOf(Main.layoutManager[mIndex]);
-            }
-        } else {
-            g_myMonitorIndex = Main.layoutManager.monitors.indexOf(g_monitorOverride);
-        }
-        g_myMonitorIndex = g_myMonitorIndex >= 0 ? g_myMonitorIndex : 0;
-        g_myMonitor = Main.layoutManager.monitors[g_myMonitorIndex];
-
+        [g_myMonitorIndex, g_myMonitor] = selectMonitor(g_monitorOverride);
         this.actor = new Cinnamon.GenericContainer({ name: 'altTabPopup',
                                                   reactive: true,
                                                   visible: false });
@@ -2556,6 +2563,11 @@ function init(metadata, instanceId) {
             "urgentNotifications",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.IN,
+            "force-open-on-preferred-monitor",
+            "forceOpenOnPreferredMonitor",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -2570,6 +2582,7 @@ function init(metadata, instanceId) {
         g_settings.preferredMonitor = ":primary";
         g_settings.backgroundImageEnabled = true;
         g_settings.backgroundDimFactor = 0.7;
+        g_settings.forceOpenOnPreferredMonitor = false;
     }
 
     let oldstyle = g_settings["last-gsettings-switcher-style"];
@@ -2590,6 +2603,35 @@ function enable() {
 
     attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
     attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
+    attentionConnector.addConnection(global.window_manager, 'map', function(cinnamonwm, actor) {
+        if (!g_settings.forceOpenOnPreferredMonitor || Main.layoutManager.monitors.length < 2) {
+            return;
+        }
+        let window = actor.get_meta_window();
+        let parent = window.get_transient_for();
+        if (parent) {
+            if (window.get_monitor() != parent.get_monitor()) {
+                global.log("Alt-Tab Enhanced: moving transient window '%s' from monitor %d to monitor %d (same as parent window)".format(window.title, window.get_monitor() + 1, parent.get_monitor() + 1));
+                window.move_to_monitor(parent.get_monitor());
+            }
+            return;
+        }
+        if (window.get_window_type() < Meta.WindowType.DROPDOWN_MENU && !window._alttab_open_seen) {
+            window._alttab_open_seen = true;
+            let myMonitorIndex = Main.layoutManager.primaryIndex;
+            if (window.get_workspace() && window.get_monitor() != myMonitorIndex) {
+                global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1));
+                window.move_to_monitor(myMonitorIndex); // first attempt, may be counteracted by other parties
+            }
+            Mainloop.timeout_add(500, function() {
+                if (window.get_workspace() && window.get_monitor() != myMonitorIndex) {
+                    global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d (second attempt)".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1));
+                    window.move_to_monitor(myMonitorIndex);
+                }
+            });
+        }
+    });
+
 }
 
 function disable() {
