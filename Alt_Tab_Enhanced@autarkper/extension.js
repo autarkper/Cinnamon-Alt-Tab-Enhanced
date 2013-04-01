@@ -2287,7 +2287,9 @@ AppIcon.prototype = {
             || g_settings.thumbnailsBehindIcons == 'always') ) {
             this.icon = new St.Group();
             let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
-            let scale = size/monitor.width;
+            let scale = size/Math.max(monitor.width, monitor.height);
+            let frame = new St.Group({x: 0, y: 0, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
+            this.icon.add_actor(frame);
             let clones = WindowUtils.createWindowClone(this.window, 0, true, false);
             for (i in clones) {
                 let clone = clones[i];
