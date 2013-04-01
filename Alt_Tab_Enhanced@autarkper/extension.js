@@ -277,6 +277,8 @@ const g_settings = g_vars.settings;
 var g_myMonitor = Main.layoutManager.primaryMonitor;
 var g_myMonitorIndex = Main.layoutManager.primaryIndex;
 
+var g_windowTracker = Cinnamon.WindowTracker.get_default();
+
 function createApplicationIcon(app, size) {
     return app ?
         app.create_icon_texture(size) :
@@ -313,6 +315,7 @@ function AltTabPopup() {
 
 AltTabPopup.prototype = {
     _init : function() {
+        this._loadTs = (new Date()).getTime();
         if (!g_monitorOverride) {
             let mIndex;
             switch (g_settings.preferredMonitor) {
@@ -337,7 +340,6 @@ AltTabPopup.prototype = {
         g_myMonitorIndex = g_myMonitorIndex >= 0 ? g_myMonitorIndex : 0;
         g_myMonitor = Main.layoutManager.monitors[g_myMonitorIndex];
 
-        this._loadTs = (new Date()).getTime();
         this.actor = new Cinnamon.GenericContainer({ name: 'altTabPopup',
                                                   reactive: true,
                                                   visible: false });
@@ -1947,7 +1949,6 @@ AppSwitcher.prototype = {
     addItem : function(item, label) {
         let bbox = new St.Button({ style_class: 'item-box',
                                    reactive: true });
-        item._bbox = bbox;
         bbox.set_child(item);
         this._list.add_actor(bbox);
 
@@ -2229,15 +2230,9 @@ AppIcon.prototype = {
         this.window = window;
         this.showThumbnail = showThumbnail;
         this.showIcons = showIcons;
-        let tracker = Cinnamon.WindowTracker.get_default();
-        this.app = tracker.get_window_app(window);
+        this.app = g_windowTracker.get_window_app(window);
         this.actor = new St.BoxLayout({ style_class: 'alt-tab-app',
                                          vertical: true, y_align: St.Align.START });
-        this.actor.connect('destroy', Lang.bind(this, function() {
-            if (this._urgencyTimeout) {
-                Mainloop.source_remove(this._urgencyTimeout);
-            }
-        }));
         this.icon = null;
 
         this._iconBin = new St.Bin({style_class: 'icon-bin'});
@@ -2256,11 +2251,6 @@ AppIcon.prototype = {
     },
 
     _checkAttention: function() {
-        if (!this.actor._bbox) {return;}
-        if (this._urgencyTimeout) {
-            Mainloop.source_remove(this._urgencyTimeout);
-            this._urgencyTimeout = 0;
-        }
         let bbox = this._iconBin;
         let is_urgent = this.window.is_demanding_attention() || this.window.is_urgent();
 
@@ -2269,9 +2259,6 @@ AppIcon.prototype = {
         }
         else if (!is_urgent && bbox.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
             bbox.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
-        }
-        if (is_urgent) {
-            this._urgencyTimeout = Mainloop.timeout_add(5000, Lang.bind(this, this._checkAttention));
         }
     },
 
