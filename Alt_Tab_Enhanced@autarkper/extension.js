@@ -1455,16 +1455,6 @@ AltTabPopup.prototype = {
         if (!g_setup._previewEnabled || this._appIcons.length < 1 || this._currentApp < 0)
         {
             this._clearPreview();
-            if (!g_setup._previewEnabled) {
-                if (this._previewBackdrop) {
-                    this._previewBackdrop.destroy();
-                    this._previewBackdrop = null;
-                }
-                if (this._dimmer) {
-                    this._dimmer.destroy();
-                    this._dimmer = null;
-                }
-            }
             return;
         }
 
@@ -1472,6 +1462,7 @@ AltTabPopup.prototype = {
             this._displayPreviewTimeoutId = null;
             if (!this._haveModal || this._currentApp < 0) {return;}
 
+            this._setupBackground();
             let childBox = new Clutter.ActorBox();
 
             let window = this._appIcons[this._currentApp].window;
@@ -1530,29 +1521,6 @@ AltTabPopup.prototype = {
             this._previewClones.connect('button-release-event', Lang.bind(this, function() {
                 this._activateWindow(window);}
             ));
-
-            childBox.x1 = this.actor.x;
-            childBox.x2 = this.actor.x + this.actor.width;
-            childBox.y1 = this.actor.y;
-            childBox.y2 = this.actor.y + this.actor.height;
-
-            if (!this._dimmer) {
-                let dimmer = this._dimmer = new St.Bin();
-                dimmer.style = "background-color: rgba(0,0,0,%f)".format(g_settings.backgroundDimFactor);
-                this.actor.add_actor(dimmer);
-                dimmer.lower(this._appSwitcher.actor);
-                dimmer.lower(previewClones);
-                dimmer.allocate(childBox, 0);
-            }
-
-            if (!this._previewBackdrop) {                
-                let backdrop = g_settings.backgroundImageEnabled ? Meta.BackgroundActor.new_for_screen(global.screen) : null;
-                if (backdrop) {
-                    this._previewBackdrop = backdrop;
-                    this.actor.add_actor(backdrop);
-                    backdrop.lower(this._dimmer);
-                }
-            }
         }; // showPreview
 
         // Use a cancellable timeout to avoid flickering effect when tabbing rapidly through the set.
@@ -1606,6 +1574,25 @@ AltTabPopup.prototype = {
         }
     },
 
+    _setupBackground : function() {
+        if (!this._dimmer) {
+            let dimmer = this._dimmer = new St.Bin();
+            dimmer.style = "background-color: rgba(0,0,0,%f)".format(g_settings.backgroundDimFactor);
+            this.actor.add_actor(dimmer);
+            dimmer.lower(this._appSwitcher.actor);
+            dimmer.allocate(this.actor.allocation, 0);
+        }
+
+        if (!this._previewBackdrop) {                
+            let backdrop = g_settings.backgroundImageEnabled ? Meta.BackgroundActor.new_for_screen(global.screen) : null;
+            if (backdrop) {
+                this._previewBackdrop = backdrop;
+                this.actor.add_actor(backdrop);
+                backdrop.lower(this._dimmer);
+            }
+        }
+    },
+
     _destroyThumbnails : function() {
         if (!this._thumbnails) {
             return;
@@ -1621,6 +1608,7 @@ AltTabPopup.prototype = {
 
     _createThumbnails : function() {
         if (!this._thumbnails) {
+            this._setupBackground();
             this._thumbnails = new ThumbnailHolder();
             this._thumbnails.connect('item-activated', Lang.bind(this, this._windowActivated));
             this.actor.add_actor(this._thumbnails.actor);
