@@ -1,14 +1,30 @@
 Alt-Tab Enhanced
 ================
-This is an enhanced Alt-Tab for Cinnamon. It replaces the built-in Alt-Tab, expanding the feature set in many directions for the advanced user while working almost exactly like the built-in Alt-Tab for casual use. One of the features is a quick-help screen, accessed by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
+This is an enhanced Alt-Tab for Cinnamon. Building on the Cinnamon code base, it replaces the built-in Alt-Tab, expanding the feature set in many directions for the advanced user while working almost exactly like the built-in Alt-Tab for casual use. One of the features is a quick-help screen, accessed by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
 
 This is a brief list of the most prominent features:
   - Multi-workspace capabilities
-  - Bigger thumbnails
+    - Optionally shows windows from all workspaces
+  - Bigger thumbnails, less wasted space
   - Supports most of the built-in Alt-Tab switcher styles
-  - Flexible choice of screen position and preferred monitor
+  - New style: "In-place thumbnails", a mix between in-place preview and thumbnails
+  - Choice of screen position
+    - Top, center or bottom
+  - Choice of preferred monitor
+    - Primary monitor, secondary monitor, focus monitor, or bottom monitor
   - Extended mouse support
   - Context menus for working with windows
+    - Minimize/restore windows
+    - Move windows from one workspace to another
+    - Move windows to an empty workspace
+    - Move windows to a new (temporary) workspace
+    - Move windows from one monitor to another
+    - Close windows
+    - Prune empty, unnamed workspaces
+  - Highlight alerting or urgent windows in switcher
+  - Optionally use notifications to bring attention to attention-seeking windows
+    - Click on the notification to activate the attention-seeking window
+    - Click on the notification's Ignore button to dismiss the notification
   - Many keyboard shortcuts
   - Many configuration options
 
