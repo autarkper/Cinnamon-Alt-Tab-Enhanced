@@ -2592,7 +2592,7 @@ function enable() {
     attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
     attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
     attentionConnector.addConnection(global.window_manager, 'map', function(cinnamonwm, actor) {
-        if (!g_settings.forceOpenOnPreferredMonitor || Main.layoutManager.monitors.length < 2) {
+        if (Main.layoutManager.monitors.length < 2) {
             return;
         }
         let window = actor.get_meta_window();
@@ -2604,19 +2604,29 @@ function enable() {
             }
             return;
         }
+        if (!g_settings.forceOpenOnPreferredMonitor) {
+            return;
+        }
         if (window.get_window_type() < Meta.WindowType.DROPDOWN_MENU && !window._alttab_open_seen) {
             window._alttab_open_seen = true;
-            let myMonitorIndex = Main.layoutManager.primaryIndex;
+            // let myMonitorIndex = Main.layoutManager.primaryIndex;
+            let [myMonitorIndex] = selectMonitor(false);
             if (window.get_workspace() && window.get_monitor() != myMonitorIndex) {
                 global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1));
                 window.move_to_monitor(myMonitorIndex); // first attempt, may be counteracted by other parties
             }
-            Mainloop.timeout_add(500, function() {
+            let count = 0;
+            let timerFunction = function() {
+                ++count;
                 if (window.get_workspace() && window.get_monitor() != myMonitorIndex) {
-                    global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d (second attempt)".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1));
+                    global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d (attempt %d)".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1, count));
                     window.move_to_monitor(myMonitorIndex);
                 }
-            });
+                if (count < 3) {
+                    Mainloop.timeout_add(500, timerFunction);
+                }
+            };
+            Mainloop.timeout_add(500, timerFunction);
         }
     });
 

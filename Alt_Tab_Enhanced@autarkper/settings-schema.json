@@ -104,7 +104,7 @@
  "force-open-on-preferred-monitor": {
     "type": "checkbox",
     "default": false,
-    "description": "Make new windows open on primary monitor"
+    "description": "Move new windows to preferred monitor"
  },
  "last-gsettings-switcher-style": {
     "type": "generic",
