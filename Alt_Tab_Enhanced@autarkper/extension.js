@@ -2625,6 +2625,9 @@ function enable() {
                 if (window.get_workspace() && window.get_monitor() != myMonitorIndex) {
                     global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d (attempt %d)".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1, count));
                     window.move_to_monitor(myMonitorIndex);
+                    window.foreach_transient(function(transient) {
+                        transient.move_to_monitor(myMonitorIndex);
+                    });
                 }
                 if (count < 3) {
                     Mainloop.timeout_add(500, timerFunction);
