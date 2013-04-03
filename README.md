@@ -10,14 +10,17 @@ This is a brief list of the most prominent features:
   - New style: "In-place thumbnails", a mix between in-place preview and thumbnails
   - Choice of screen position
     - Top, center or bottom
-  - Choice of preferred monitor
-    - Primary monitor, secondary monitor, focus monitor, or bottom monitor
+  - Multi-monitor support
+    - Choice of preferred monitor
+      - Primary monitor, secondary monitor, focus monitor, or bottom monitor
+    - Optionally move all new windows to the preferred monitor
+    - Automatically force "transient" (dialog) windows to open on the same monitor as their parent
   - Extended mouse support
   - Context menus for working with windows
     - Minimize/restore windows
     - Move windows from one workspace to another
-    - Move windows to an empty workspace
-    - Move windows to a new (temporary) workspace
+    - Move windows to the current workspace
+    - Move windows to an empty workspace (possibly creating a new, temporary workspace)
     - Move windows from one monitor to another
     - Close windows
     - Prune empty, unnamed workspaces
