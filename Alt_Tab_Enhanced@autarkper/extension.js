@@ -1003,6 +1003,7 @@ AltTabPopup.prototype = {
         }
         this._appSwitcher.connect('item-activated', Lang.bind(this, this._appActivated));
         this._appSwitcher.connect('item-context-menu', Lang.bind(this, function(sender, n) {
+            this._select(n);
             this._showWindowContextMenu(n);
         }));
         this._appSwitcher.connect('hover', Lang.bind(this, function(sender, index) {
