@@ -2476,14 +2476,21 @@ function _drawArrow(area, side) {
     cr.fill();
 }
 
+var g_settings_obj;
+var g_instanceId;
+
 function init(metadata, instanceId) {
     g_uuid = metadata['uuid'];
+    g_instanceId = instanceId;
     let version = metadata['version'];
     g_version = version ? '"' + version + '"' : "unknown";
+}
+
+function initSettings() {
     if (Settings) {
-        let settings = instanceId
-            ? new Settings.AppletSettings(g_settings, metadata['uuid'], instanceId)
-            : new Settings.ExtensionSettings(g_settings, metadata['uuid']);
+        let settings = g_settings_obj = (g_instanceId
+            ? new Settings.AppletSettings(g_settings, g_uuid, g_instanceId)
+            : new Settings.ExtensionSettings(g_settings, g_uuid));
 
         settings.bindProperty(Settings.BindingDirection.IN,
             "style",
@@ -2588,6 +2595,8 @@ function init(metadata, instanceId) {
 
 let attentionConnector = new Connector();
 function enable() {
+    initSettings();
+
     let handler = function(display, screen, window, binding) {
         let tabPopup = new AltTabPopup();
         let modifiers = binding.get_modifiers();
@@ -2648,6 +2657,7 @@ function disable() {
     Meta.keybindings_set_custom_handler('switch-windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     attentionConnector.destroy();
+    g_settings_obj.finalize();
 }
 
 let g_applet = null;
