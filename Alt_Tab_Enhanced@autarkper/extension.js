@@ -956,7 +956,7 @@ AltTabPopup.prototype = {
             }
         }
         let selection = g_selection.length ? g_selection : this._modifySelection(g_selection, n);
-        if (n < 0 || !selection.length) {
+        if (n < 0 && !selection.length) {
             return;
         }
         let mm = new PopupMenu.PopupMenuManager(this);
