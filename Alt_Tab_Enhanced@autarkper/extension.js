@@ -677,21 +677,11 @@ AltTabPopup.prototype = {
             ws.connect('window-removed', function() {
                 if (!getTabList(ws).filter(function(window) {
                     return !window.is_on_all_workspaces();
-                }, this).length) {
-                    Main._removeWorkspace(ws);
+                }).length) {
+                    if (Main.hasDefaultWorkspaceName(ws.index())) {
+                        Main._removeWorkspace(ws);
+                    }
                 }
-            });
-        }
-    },
-
-    _multiChangeToNewWorkspace: function(selection) {
-        let lastWsIndex = global.screen.n_workspaces - 1;
-        Main._addWorkspace();
-        let lastWsIndexNew = global.screen.n_workspaces - 1;
-        if (lastWsIndexNew > lastWsIndex) {
-            let ws = global.screen.get_workspace_by_index(lastWsIndexNew);
-            selection.forEach(function(mw) {
-                mw.change_workspace(ws);
             });
         }
     },
@@ -916,12 +906,6 @@ AltTabPopup.prototype = {
                 }));
                 wsItems.push(item);
             }
-
-            let itemMoveToNewWorkspace = new PopupMenu.PopupMenuItem(_("Move to a new workspace"));
-            itemMoveToNewWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
-                this._multiChangeToNewWorkspace(selection);
-            }));
-            wsItems.push(itemMoveToNewWorkspace);
 
             let itemMoveToEmptyWorkspace = new PopupMenu.PopupMenuItem(_("Move to an empty workspace"));
             itemMoveToEmptyWorkspace.connect('activate', Lang.bind(this, function(actor, event) {
