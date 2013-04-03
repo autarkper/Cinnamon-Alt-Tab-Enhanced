@@ -139,6 +139,7 @@ const HELP_TEXT = [
     _("m: Move selected windows to next monitor"),
     _("n: Minimize selected windows"),
     _("Super+Left/Right arrow: Move selected windows to the next workspace right/left"),
+    _("Period key (.): Move selected windows to the current workspace"),
     _("Ctrl+w: Close selected windows. Use with care!"),
     _("Ctrl+g: Toggle \"global mode\", in which windows from all workspaces are mixed, sorted on last use"),
     _("Ctrl+a: Select/Unselect all windows at once"),
@@ -708,6 +709,15 @@ AltTabPopup.prototype = {
         this._multiChangeToTemporaryWorkspace(selection);
     },
 
+    _multiChangeToCurrentWorkspace: function(selection) {
+        let ws = global.screen.get_active_workspace();
+        selection.forEach(function(mw) {
+            if (mw.get_workspace() != ws) {
+                mw.change_workspace(ws);
+            }
+        });
+    },
+
     _multiMoveWorkspace: function(selin, direction) {
         if (!selin.length) {return;}
         // If all windows belong to the same workspace, all are moved left or right.
@@ -1263,6 +1273,8 @@ AltTabPopup.prototype = {
                     }
                     this.refresh();
                 }
+            } else if (keysym == Clutter.KEY_period) {
+                this._multiChangeToCurrentWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.w && ctrlDown) {
                 this._multiClose(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.i && ctrlDown) {
