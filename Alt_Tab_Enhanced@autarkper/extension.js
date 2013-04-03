@@ -2560,6 +2560,11 @@ function init(metadata, instanceId) {
             "forceOpenOnPreferredMonitor",
             function() {},
             null);
+        settings.bindProperty(Settings.BindingDirection.IN,
+            "hide-icon",
+            "hideIcon",
+            handleHideIcon,
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -2645,7 +2650,7 @@ function disable() {
     attentionConnector.destroy();
 }
 
-let g_appletActor = null;
+let g_applet = null;
 let g_urgentCount = 0;
 
 // ----------------------------------
@@ -2731,8 +2736,8 @@ function _onWindowDemandsAttention(display, window, urgent) {
         --g_urgentCount;
         if (g_urgentCount <= 0) {
             g_urgentCount = 0;
-            if (g_appletActor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
-                g_appletActor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+            if (g_applet.actor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+                g_applet.actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
             }
         }
     };
@@ -2773,8 +2778,20 @@ function _onWindowDemandsAttention(display, window, urgent) {
     }
 
     ++g_urgentCount;
-    if (!g_appletActor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
-        g_appletActor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+    if (!g_applet.actor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+        g_applet.actor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+    }
+}
+
+// ----------------------------------
+
+function handleHideIcon()
+{
+    if (g_settings.hideIcon && g_applet.actor.width > 1) {
+        g_applet.actor._old_width = g_applet.actor.width;
+        g_applet.actor.width = 1;
+    } else if (!g_settings.hideIcon && g_applet.actor.width < 2){
+        g_applet.actor.width = g_applet.actor._old_width;
     }
 }
 
@@ -2797,16 +2814,31 @@ MyApplet.prototype = {
     on_applet_added_to_panel: function() {
         this.set_applet_icon_path(this.path + "/icon.png");
         this.set_applet_tooltip("Alt-Tab Enhanced");
+
         let item = new PopupMenu.PopupMenuItem(_("Alt-Tab Enhanced Settings"));
         item.connect('activate', openSettings);
         this._applet_context_menu.addMenuItem(item);
-        g_appletActor = this.actor;
+
+        let itemToggleIcon = new PopupMenu.PopupMenuItem("dummy");
+        itemToggleIcon.connect('activate', function() {
+            g_settings.hideIcon = !g_settings.hideIcon;
+            handleHideIcon();
+        });
+        this._applet_context_menu.addMenuItem(itemToggleIcon);
+
+        this._applet_context_menu.connect('open-state-changed', Lang.bind(this, function(actor, is_opening) {
+            if (is_opening) {
+                itemToggleIcon.label.text = g_settings.hideIcon ? _("Show icon") : _("Hide icon");
+            }
+        }));
+        g_applet = this;
         enable();
+        Mainloop.idle_add(handleHideIcon);
     },
 
     on_applet_removed_from_panel: function(event) {
         disable();
-        g_appletActor = null;
+        g_applet = null;
     },
 
     on_applet_clicked: function(event) {
