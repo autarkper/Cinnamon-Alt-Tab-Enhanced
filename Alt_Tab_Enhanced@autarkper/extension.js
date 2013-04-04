@@ -1186,7 +1186,7 @@ AltTabPopup.prototype = {
             let now = new Date().getTime();
             let ms_diff =  now - (this.lastPressTs || 0);
             this.lastPressTs = now;
-            let nowrap = ms_diff < 100;
+            let nowrap = ms_diff < 200;
 
             if (false) {
             } else if (ctrlDown && (keysym == Clutter.a || keysym == Clutter.A)) {
