@@ -1468,8 +1468,10 @@ AltTabPopup.prototype = {
     },
 
     destroy : function() {
-        this.actor.destroy();
-        this.actor = null;
+        if (this.actor) {
+            this.actor.destroy();
+            this.actor = null;
+        }
     },
 
     _onDestroy : function() {
