@@ -2214,10 +2214,7 @@ AppSwitcher.prototype = {
 
     _allocate: function (actor, box, flags) {
         let childHeight = box.y2 - box.y1;
-
-        let [maxChildMin, maxChildNat] = this._maxChildWidth(childHeight);
         let totalSpacing = this._list.spacing * (this._items.length - 1);
-
         let separatorWidth = 0;
         if (this._separators.length) {
             let [sepMin, sepNat] = this._separators[0].get_preferred_width(childHeight);
@@ -2225,27 +2222,15 @@ AppSwitcher.prototype = {
             totalSpacing += this._separators.length * this._list.spacing;
         }
 
-        let childWidth = Math.floor(Math.max(0, box.x2 - box.x1 - totalSpacing - separatorWidth) / this._items.length);
-
         let x = 0;
         let children = this._list.get_children();
         let childBox = new Clutter.ActorBox();
 
-        let primary = g_myMonitor;
-        let parentRightPadding = this.actor.get_parent().get_theme_node().get_padding(St.Side.RIGHT);
-        if (this.actor.allocation.x2 == primary.x + primary.width - parentRightPadding) {
-            let ixxi = (this._highlighted + this._items.length) % this._items.length;
-            let [childMin, childNat] = this._items[ixxi].get_preferred_width(childHeight);
-            childWidth = childMin;
-        }
-
         for (let i = 0; i < children.length; i++) {
             if (this._items.indexOf(children[i]) != -1) {
-                let [childMin, childNat] = children[i].get_preferred_height(childWidth);
                 let [width, height] = children[i].get_size();
-                let vSpacing = Math.floor((childHeight - childNat) / 2);
                 childBox.x1 = x;
-                childBox.y1 = vSpacing;
+                childBox.y1 = 0;
                 childBox.x2 = x + width;
                 childBox.y2 = childBox.y1 + height;
                 children[i].allocate(childBox, flags);
