@@ -120,6 +120,7 @@ var PREVIEW_SWITCHER_FADEOUT_TIME = 0.5; // seconds
 
 const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
 
+const MAX_ICON_SIZE = 128;
 const iconSizes = [96, 80, 72, 64, 56, 48, 40, 32, 24];
 
 var g_version = "unknown";
@@ -2336,40 +2337,42 @@ AppIcon.prototype = {
         this._initLabelHeight = this._initLabelHeight || this._label_bin.height;
         let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
+        this.icon = new St.Group();
         if (!this.showIcons || (
             (g_settings.thumbnailsBehindIcons == 'behind-identical' && this.app && this.app.get_windows().length > 1)
-            || g_settings.thumbnailsBehindIcons == 'always') ) {
-            this.icon = new St.Group();
+            || g_settings.thumbnailsBehindIcons == 'always') )
+        {
             let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
             let scale = size/Math.max(monitor.width, monitor.height);
-            let frame = new St.Group({x: 0, y: 0, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
+            let frame = new St.Group({x: 0, y: sizeIn - size, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
             this.icon.add_actor(frame);
             let clones = WindowUtils.createWindowClone(this.window, 0, true, false);
             for (i in clones) {
                 let clone = clones[i];
                 this.icon.add_actor(clone.actor);
-                clone.actor.set_position((clone.x-monitor.x)*scale, (clone.y-monitor.y)*scale);
+                clone.actor.set_position((clone.x-monitor.x)*scale, sizeIn - size + (clone.y-monitor.y)*scale);
                 clone.actor.set_scale(scale, scale);
             }
             if (this.showIcons) {
-                let [width, height] = clones[0].actor.get_size();
-                let isize = Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]);
+                let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
                 let icon = createApplicationIcon(this.app, isize);
                 this.icon.add_actor(icon);
-                icon.set_position(Math.floor((size - isize)/2), size - isize);
+                icon.set_position(Math.floor((size - isize)/2), sizeIn - isize);
             }
         }
         else {
-            this.icon = createApplicationIcon(this.app, size);
+            let icon = createApplicationIcon(this.app, size);
+            this.icon.add_actor(icon);
+            icon.set_position(Math.floor((sizeIn - size)/2), sizeIn - size);
         }
         // Make some room for the window title.
-        this._label_bin.width = Math.floor(size * 1.2);
+        this._label_bin.width = size;
         this._label_bin.height = !g_settings.compactLabels ? Math.max(this._initLabelHeight * 2, Math.floor(size/2)) : this._initLabelHeight;
         if (this.window._alttab_ignored) {
             this.icon.opacity = 170;
         }
         this._iconBin.child = this.icon;
-        this._iconBin.set_size(Math.floor(size * 1.2), sizeIn);
+        this._iconBin.set_size(sizeIn, sizeIn);
         if (g_vars.globalFocusOrder) {
             this.wsLabel.show();
         }
