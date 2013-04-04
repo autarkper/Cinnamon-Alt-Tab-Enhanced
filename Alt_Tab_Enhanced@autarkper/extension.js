@@ -1172,13 +1172,13 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.ISO_Left_Tab) {
                 this._select(this._previousApp(nowrap));
             } else if (keysym == Clutter.Home || keysym == Clutter.KP_Home) {
-                this._select(ctrlDown && this._homeWindow ? this._indexOfWindow(this._homeWindow) : 0);
+                this._select(ctrlDown && this._homeWindow ? this._indexOfWindow(this._homeWindow) : Math.min(0, this._appIcons.length - 1));
             } else if (keysym == Clutter.End || keysym == Clutter.KP_End) {
                 this._select(this._appIcons.length - 1);
             } else if (keysym == Clutter.Page_Down || keysym == Clutter.KP_Page_Down) {
                 this._select(Math.min(this._appIcons.length - 1, this._currentApp + SCROLL_AMOUNT));
             } else if (keysym == Clutter.Page_Up || keysym == Clutter.KP_Page_Up) {
-                this._select(Math.max(0, this._currentApp - SCROLL_AMOUNT));
+                this._select(Math.max(Math.min(0, this._appIcons.length - 1), this._currentApp - SCROLL_AMOUNT));
             } else if (keysym == Clutter.Return) {
                 this._finish();
                 return true;
