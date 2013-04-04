@@ -945,6 +945,45 @@ AltTabPopup.prototype = {
         return selection;
     },
 
+    _showContextMenu: function(show) {
+        if (this._contextMenu) {
+            this._contextMenu.close(); this._contextMenu = null;
+            return;
+        }
+        if (!show) {return;}
+        let mm = new PopupMenu.PopupMenuManager(this);
+        let orientation = getVerticalAlignment() == 'top' ? St.Side.TOP : St.Side.BOTTOM;
+        let menu = this._contextMenu = new Applet.AppletPopupMenu({actor: this._appSwitcher.actor}, orientation);
+        mm.addMenu(menu);
+
+        let item = new PopupMenu.PopupMenuItem(_("Help"));
+        item.connect('activate', Lang.bind(this, this._showHelp));
+        menu.addMenuItem(item);
+        let item = new PopupMenu.PopupMenuItem(_("Settings"));
+        item.connect('activate', Lang.bind(this, function() {
+            Mainloop.idle_add(Lang.bind(this, function() {
+                this.destroy();
+                openSettings();
+            }));
+        }));
+        menu.addMenuItem(item);
+
+        let ct = connect(this.actor, 'destroy', Lang.bind(this, function() {
+            this._showContextMenu(false);
+        }));
+        menu.connect('open-state-changed', Lang.bind(this, function(sender, opened) {
+            this._menuActive = opened;
+            if (!opened) {
+                this._contextMenu = null;
+                ct.disconnect();
+                if (this.actor) {
+                    global.stage.set_key_focus(this.actor);
+                }
+            }
+        }));
+        menu.open();
+    },
+
     _showWindowContextMenu: function(n) {
         if (n < 0 && !g_selection.length) {
             return;
@@ -1639,8 +1678,19 @@ AppSwitcher.prototype = {
         this.actor.connect('destroy', Lang.bind(this, function() {
             if (this._highlightTimeout) {Mainloop.source_remove(this._highlightTimeout);}
         }));
-        this.actor.connect('button-release-event', Lang.bind(this, function() {
-            // reserved for future use
+        this.actor.connect('button-release-event', Lang.bind(this, function(actor, event) {
+            let pointerTracker = new PointerTracker.PointerTracker();
+            let [x, y] = pointerTracker.getPosition();
+            if (global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y) != this.actor) {
+                return false;
+            }
+            if (event.get_button() < 3) {
+                altTabPopup._showContextMenu(false);
+                return false;
+            }
+            if (event.get_button() == 3) {
+                altTabPopup._showContextMenu(true);
+            }
             return true;
         }));
 
@@ -2061,8 +2111,10 @@ AppSwitcher.prototype = {
 
         this._scrollableLeft = scrollableLeft2;
         this._leftArrow.opacity = this._leftGradient.opacity = scrollableLeft ? 255 : 0;
+        this._leftGradient.reactive = scrollableLeft;
         this._scrollableRight = scrollableRight2;
         this._rightArrow.opacity = this._rightGradient.opacity = scrollableRight ? 255: 0;
+        this._rightGradient.reactive = scrollableRight;
         Mainloop.idle_add(Lang.bind(this, function() {
             if (!this._clipBin.get_stage()) {return;}
             if (this._scrollableLeft){
