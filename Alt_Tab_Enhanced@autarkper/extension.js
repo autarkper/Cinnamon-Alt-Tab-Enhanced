@@ -526,6 +526,7 @@ AltTabPopup.prototype = {
     },
 
     refresh : function(binding, backward) {
+        this._refreshCount = (this._refreshCount || 0) + 1;
         if (!this.actor) {return false;} // asynchronous death
         if (this._appSwitcher) {
             this._destroyThumbnails();
@@ -591,7 +592,7 @@ AltTabPopup.prototype = {
 
         this._createAppswitcher(windows);
         
-        this._appSwitcher.actor.opacity = this._persistent ? 255 : 0;
+        this._appSwitcher.actor.opacity = (this._refreshCount > 1 || this._persistent) ? 255 : 0;
         this.actor.show();
         
         if (!this._homeWindow) {
