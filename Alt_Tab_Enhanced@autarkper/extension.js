@@ -180,7 +180,7 @@ let g_selection = [];
 let g_monitorOverride = null;
 let g_vAlignOverride = null;
 function getVerticalAlignment() {
-    return g_vAlignOverride || g_settings.vAlign;
+    return g_vAlignOverride || g_settings["vertical-alignment"];
 }
 
 var g_uuid;
@@ -195,7 +195,7 @@ function processSwitcherStyle() {
     g_setup._thumbnailsEnabled = false;
     g_setup._previewThumbnails = false;
 
-    let styleSettingsMaster = g_settings.style;
+    let styleSettingsMaster = g_settings["style"];
     let isSystemStyle = styleSettingsMaster == ":system";
     let styleSettings = isSystemStyle ? g_vars.switcherStyle : styleSettingsMaster;
 
@@ -231,7 +231,7 @@ function processSwitcherStyle() {
     g_setup._showThumbnails = g_setup._thumbnailsEnabled;
     if (g_vars.switcherStyleUpdated && isSystemStyle) {
         if (!g_setup._thumbnailsEnabled) {
-            g_settings.vAlign = 'center';
+            g_settings["vertical-alignment"] = 'center';
         }
         g_vars.switcherStyleUpdated = false;
     }
@@ -319,7 +319,7 @@ function selectMonitor(monitorOverride)
     let monitor = null;
     if (!monitorOverride) {
         let mIndex;
-        switch (g_settings.preferredMonitor) {
+        switch (g_settings["preferred-monitor"]) {
             case ":primary":
                 mIndex = "primaryMonitor"; break;
             case ":bottom":
@@ -486,7 +486,7 @@ AltTabPopup.prototype = {
             let thumbnailCenter = posX + icon.width / 2;
             let spacing = this.actor.get_theme_node().get_length('spacing');
             let spacing2 = Math.floor(spacing/2);
-            if (!g_settings.fullScreenThumbnails) {
+            if (!g_settings["full-screen-thumbnails"]) {
                 let thHeight = vAlignment == 'center'
                     ? primary.height - (this._appSwitcher.actor.allocation.y2 - primary.y) - spacing
                     : primary.height - (this._appSwitcher.actor.allocation.y2 - this._appSwitcher.actor.allocation.y1) - spacing
@@ -553,7 +553,7 @@ AltTabPopup.prototype = {
             if (!wlist.length) {
                 continue;
             }
-            if (g_settings.allWorkspacesMode || i == activeWsIndex) {
+            if (g_settings["all-workspaces-mode"] || i == activeWsIndex) {
                 windows = windows.concat(wlist);
             }
             if (i == activeWsIndex) {
@@ -585,7 +585,7 @@ AltTabPopup.prototype = {
 
         // Size the icon bar primarily to fit the windows of the current workspace, and a few more
         this._numPrimaryItems_Orig = Math.min(Math.max(2, wsWindows.length + 4), windows.length);
-        this._numPrimaryItems = g_settings.zoom ? this._numPrimaryItems_Orig : windows.length;
+        this._numPrimaryItems = g_settings["zoom-on"] ? this._numPrimaryItems_Orig : windows.length;
         this._zoomedOut = this._numPrimaryItems != this._numPrimaryItems_Orig;
 
         this._createAppswitcher(windows);
@@ -656,7 +656,7 @@ AltTabPopup.prototype = {
             }
         }
         
-        if (g_settings.allWorkspacesMode && g_settings.displayOriginArrow && !g_vars.globalFocusOrder) { // restricted feature
+        if (g_settings["all-workspaces-mode"] && g_settings["display-origin-arrow"] && !g_vars.globalFocusOrder) { // restricted feature
             this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
         }
         return true;
@@ -1154,7 +1154,7 @@ AltTabPopup.prototype = {
         });
 
         let switchWorkspace = Lang.bind(this, function(direction) {
-            if (g_settings.allWorkspacesMode) {
+            if (g_settings["all-workspaces-mode"]) {
                 return skipWorkspace(direction);
             }
             if (global.screen.n_workspaces < 2) {
@@ -1300,7 +1300,7 @@ AltTabPopup.prototype = {
                 if (global.screen.n_workspaces > 1) {
                     g_vars.globalFocusOrder = !g_vars.globalFocusOrder;
                     if (g_vars.globalFocusOrder) {
-                        g_settings.allWorkspacesMode = true; // enable together, but disable separately
+                        g_settings["all-workspaces-mode"] = true; // enable together, but disable separately
                     }
                     this.refresh();
                 }
@@ -1316,14 +1316,14 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.n && !ctrlDown) {
                 this._multiMinimize(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.F4) {
-                let index = g_alttabStyles.indexOf(g_settings.style);
+                let index = g_alttabStyles.indexOf(g_settings["style"]);
                 let newIndex = (index + 1 + g_alttabStyles.length) % g_alttabStyles.length;
-                g_settings.style = g_alttabStyles[newIndex];
+                g_settings["style"] = g_alttabStyles[newIndex];
                 processSwitcherStyle();
                 this.refresh();
             } else if (keysym == Clutter.F5) {
-                g_settings.allWorkspacesMode = !g_settings.allWorkspacesMode;
-                if (!g_settings.allWorkspacesMode) {
+                g_settings["all-workspaces-mode"] = !g_settings["all-workspaces-mode"];
+                if (!g_settings["all-workspaces-mode"]) {
                     // must not have a hidden selection
                     g_selection = [];
                 }
@@ -1332,32 +1332,32 @@ AltTabPopup.prototype = {
                 if (g_setup._iconsEnabled) {
                     let alignmentTypeIndex = g_aligmentTypes.indexOf(getVerticalAlignment());
                     let newIndex = (alignmentTypeIndex + 1 + g_aligmentTypes.length) % g_aligmentTypes.length;
-                    g_settings.vAlign = g_aligmentTypes[newIndex];
+                    g_settings["vertical-alignment"] = g_aligmentTypes[newIndex];
                     g_vAlignOverride = null;
                     this.refresh();
                 }
             } else if (keysym == Clutter.F6 && shiftDown) {
                 if (this._thumbnails) {
-                    g_settings.fullScreenThumbnails = !g_settings.fullScreenThumbnails;
+                    g_settings["full-screen-thumbnails"] = !g_settings["full-screen-thumbnails"];
                     this.refresh();
                 }
             } else if (keysym == Clutter.F7) {
                 if (g_setup._iconsEnabled && g_setup._thumbnailsEnabled) {
                     if (getVerticalAlignment() != 'center') {
-                        g_settings.displayThumbnailHeaders = !g_settings.displayThumbnailHeaders;
+                        g_settings["display-thumbnail-headers"] = !g_settings["display-thumbnail-headers"];
                         this._minorRefresh();
                     }
                 }
             } else if (keysym == Clutter.F8) {
                 if (g_setup._iconsEnabled) {
-                    g_settings.compactLabels = !g_settings.compactLabels;
+                    g_settings["compact-labels"] = !g_settings["compact-labels"];
                     this.refresh();
                 }
             } else if (keysym == Clutter.F9) {
                 if (g_setup._iconsEnabled) {
-                    let index = g_thumbnailIconOptions.indexOf(g_settings.thumbnailsBehindIcons);
+                    let index = g_thumbnailIconOptions.indexOf(g_settings["thumbnails-behind-icons"]);
                     let newIndex = (index + 1 + g_thumbnailIconOptions.length) % g_thumbnailIconOptions.length;
-                    g_settings.thumbnailsBehindIcons = g_thumbnailIconOptions[newIndex];
+                    g_settings["thumbnails-behind-icons"] = g_thumbnailIconOptions[newIndex];
                     this.refresh();
                 }
             } else if (ctrlDown) {
@@ -1622,14 +1622,14 @@ AltTabPopup.prototype = {
     _setupBackground : function() {
         if (!this._dimmer) {
             let dimmer = this._dimmer = new St.Bin();
-            dimmer.style = "background-color: rgba(0,0,0,%f)".format(g_settings.backgroundDimFactor);
+            dimmer.style = "background-color: rgba(0,0,0,%f)".format(g_settings["background-dim-factor"]);
             this.actor.add_actor(dimmer);
             dimmer.lower(this._appSwitcher.actor);
             dimmer.allocate(this.actor.allocation, 0);
         }
 
         if (!this._previewBackdrop) {                
-            let backdrop = g_settings.backgroundImageEnabled ? Meta.BackgroundActor.new_for_screen(global.screen) : null;
+            let backdrop = g_settings["background-image-enabled"] ? Meta.BackgroundActor.new_for_screen(global.screen) : null;
             if (backdrop) {
                 this._previewBackdrop = backdrop;
                 this.actor.add_actor(backdrop);
@@ -1781,13 +1781,13 @@ AppSwitcher.prototype = {
         let lastWsIndex = 0;
         workspaceIcons.forEach(function(icon) {
             let wsIndex = (icon.window.is_on_all_workspaces() ? activeWorkspace : icon.window.get_workspace()).index();
-            for (let i = wsIndex - lastWsIndex; g_settings.allWorkspacesMode && i > 0; --i) {
+            for (let i = wsIndex - lastWsIndex; g_settings["all-workspaces-mode"] && i > 0; --i) {
                 this.addSeparator();
                 lastWsIndex = wsIndex;
             }
             this._addIcon(icon);
         }, this);
-        for (let i = lastWsIndex + 1; g_settings.allWorkspacesMode && i < global.screen.n_workspaces; ++i) {
+        for (let i = lastWsIndex + 1; g_settings["all-workspaces-mode"] && i < global.screen.n_workspaces; ++i) {
             this.addSeparator();
         }
         this._label.visible = this.icons.length == 0;
@@ -2322,8 +2322,8 @@ AppIcon.prototype = {
         if (this.icon) {this.icon.destroy();}
         this.icon = new St.Group();
         if (!this.showIcons || (
-            (g_settings.thumbnailsBehindIcons == 'behind-identical' && this.app && this.app.get_windows().length > 1)
-            || g_settings.thumbnailsBehindIcons == 'always') )
+            (g_settings["thumbnails-behind-icons"] == 'behind-identical' && this.app && this.app.get_windows().length > 1)
+            || g_settings["thumbnails-behind-icons"] == 'always') )
         {
             let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
             let scale = size/Math.max(monitor.width, monitor.height);
@@ -2350,7 +2350,7 @@ AppIcon.prototype = {
         }
         // Make some room for the window title.
         this._label_bin.width = size;
-        this._label_bin.height = !g_settings.compactLabels ? Math.max(this._initLabelHeight * 2, Math.floor(size/2)) : this._initLabelHeight;
+        this._label_bin.height = !g_settings["compact-labels"] ? Math.max(this._initLabelHeight * 2, Math.floor(size/2)) : this._initLabelHeight;
         if (this.window._alttab_ignored) {
             this.icon.opacity = 170;
         }
@@ -2396,7 +2396,7 @@ ThumbnailHolder.prototype = {
             this.containerHolder.add_actor(this.container);
             this.container.opacity = 0;
             let headerHeight = 0;
-            let displayHeaders = doScale && g_settings.displayThumbnailHeaders && getVerticalAlignment() != 'center';
+            let displayHeaders = doScale && g_settings["display-thumbnail-headers"] && getVerticalAlignment() != 'center';
             this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
             if (displayHeaders) {
                 headerHeight = 32;
@@ -2540,42 +2540,42 @@ function initSettings() {
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "thumbnails-behind-icons",
-            "thumbnailsBehindIcons",
+            "thumbnails-behind-icons",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "all-workspaces-mode",
-            "allWorkspacesMode",
+            "all-workspaces-mode",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "vertical-alignment",
-            "vAlign",
+            "vertical-alignment",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "display-thumbnail-headers",
-            "displayThumbnailHeaders",
+            "display-thumbnail-headers",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "display-origin-arrow",
-            "displayOriginArrow",
+            "display-origin-arrow",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "compact-labels",
-            "compactLabels",
+            "compact-labels",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "preferred-monitor",
-            "preferredMonitor",
+            "preferred-monitor",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "full-screen-thumbnails",
-            "fullScreenThumbnails",
+            "full-screen-thumbnails",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
@@ -2585,49 +2585,50 @@ function initSettings() {
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "zoom-on",
-            "zoom",
+            "zoom-on",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "background-image-enabled",
-            "backgroundImageEnabled",
+            "background-image-enabled",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "background-dim-factor",
-            "backgroundDimFactor",
+            "background-dim-factor",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "urgent-notifications",
-            "urgentNotifications",
+            "urgent-notifications",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "force-open-on-preferred-monitor",
-            "forceOpenOnPreferredMonitor",
+            "force-open-on-preferred-monitor",
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
             "hide-icon",
-            "hideIcon",
+            "hide-icon",
             handleHideIcon,
             null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
-        g_settings.thumbnailsBehindIcons = "behind-identical";
-        g_settings.allWorkspacesMode = false;
-        g_settings.vAlign = 'center';
-        g_settings.fullScreenThumbnails = false;
-        g_settings.displayThumbnailHeaders = true;
-        g_settings.displayOriginArrow = true;
-        g_settings.compactLabels = false;
-        g_settings.zoom = true;
-        g_settings.preferredMonitor = ":primary";
-        g_settings.backgroundImageEnabled = true;
-        g_settings.backgroundDimFactor = 0.7;
-        g_settings.forceOpenOnPreferredMonitor = false;
+        g_settings["thumbnails-behind-icons"] = "behind-identical";
+        g_settings["all-workspaces-mode"] = false;
+        g_settings["vertical-alignment"] = 'center';
+        g_settings["full-screen-thumbnails"] = false;
+        g_settings["display-thumbnail-headers"] = true;
+        g_settings["display-origin-arrow"] = true;
+        g_settings["compact-labels"] = false;
+        g_settings["zoom-on"] = true;
+        g_settings["preferred-monitor"] = ":primary";
+        g_settings["background-image-enabled"] = true;
+        g_settings["background-dim-factor"] = 0.7;
+        g_settings["urgent-notifications"] = true;
+        g_settings["force-open-on-preferred-monitor"] = false;
     }
 
     let oldstyle = g_settings["last-gsettings-switcher-style"];
@@ -2663,7 +2664,7 @@ function enable() {
             }
             return;
         }
-        if (!g_settings.forceOpenOnPreferredMonitor) {
+        if (!g_settings["force-open-on-preferred-monitor"]) {
             return;
         }
         if (window.get_window_type() < Meta.WindowType.DROPDOWN_MENU && !window._alttab_open_seen) {
@@ -2716,7 +2717,7 @@ function _onWindowDemandsAttention(display, window, urgent) {
     let notification = {destroy: function() {}, connect: function () {} };
     let button = null;
 
-    if (g_settings.urgentNotifications && Main.messageTray) {
+    if (g_settings["urgent-notifications"] && Main.messageTray) {
         let source = window._mtSource = new MessageTray.Source(window.title);
         window._mtSource.connect('destroy', Lang.bind(this, function() {
             delete window._mtSource;
@@ -2842,10 +2843,10 @@ function _onWindowDemandsAttention(display, window, urgent) {
 
 function handleHideIcon()
 {
-    if (g_settings.hideIcon && g_applet.actor.width > 1) {
+    if (g_settings["hide-icon"] && g_applet.actor.width > 1) {
         g_applet.actor._old_width = g_applet.actor.width;
         g_applet.actor.width = 1;
-    } else if (!g_settings.hideIcon && g_applet.actor.width < 2){
+    } else if (!g_settings["hide-icon"] && g_applet.actor.width < 2){
         g_applet.actor.width = g_applet.actor._old_width;
     }
 }
@@ -2876,14 +2877,14 @@ MyApplet.prototype = {
 
         let itemToggleIcon = new PopupMenu.PopupMenuItem("dummy");
         itemToggleIcon.connect('activate', function() {
-            g_settings.hideIcon = !g_settings.hideIcon;
+            g_settings["hide-icon"] = !g_settings["hide-icon"];
             handleHideIcon();
         });
         this._applet_context_menu.addMenuItem(itemToggleIcon);
 
         this._applet_context_menu.connect('open-state-changed', Lang.bind(this, function(actor, is_opening) {
             if (is_opening) {
-                itemToggleIcon.label.text = g_settings.hideIcon ? _("Show icon") : _("Hide icon");
+                itemToggleIcon.label.text = g_settings["hide-icon"] ? _("Show icon") : _("Hide icon");
             }
         }));
         g_applet = this;
