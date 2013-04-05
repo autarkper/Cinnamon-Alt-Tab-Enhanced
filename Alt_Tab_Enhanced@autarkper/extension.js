@@ -1343,10 +1343,8 @@ AltTabPopup.prototype = {
                 }
             } else if (keysym == Clutter.F7) {
                 if (g_setup._iconsEnabled && g_setup._thumbnailsEnabled) {
-                    if (getVerticalAlignment() != 'center') {
-                        g_settings["display-thumbnail-headers"] = !g_settings["display-thumbnail-headers"];
-                        this._minorRefresh();
-                    }
+                    g_settings["display-thumbnail-headers"] = !g_settings["display-thumbnail-headers"];
+                    this._minorRefresh();
                 }
             } else if (keysym == Clutter.F8) {
                 if (g_setup._iconsEnabled) {
@@ -2396,7 +2394,7 @@ ThumbnailHolder.prototype = {
             this.containerHolder.add_actor(this.container);
             this.container.opacity = 0;
             let headerHeight = 0;
-            let displayHeaders = doScale && g_settings["display-thumbnail-headers"] && getVerticalAlignment() != 'center';
+            let displayHeaders = doScale && g_settings["display-thumbnail-headers"];
             this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
             if (displayHeaders) {
                 headerHeight = 32;
