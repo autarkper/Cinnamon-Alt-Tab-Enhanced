@@ -2396,6 +2396,11 @@ ThumbnailHolder.prototype = {
             let headerHeight = 0;
             let displayHeaders = doScale && g_settings["display-thumbnail-headers"];
             this.header.style = 'padding-top: ' + (displayHeaders ? this.headerPadding : 0) + 'px';
+
+            let hPadding = this.actor.get_theme_node().get_horizontal_padding();
+            let vBorder = this.actor.get_theme_node().get_border_width(St.Side.TOP) * 2;
+            let vPadding = this.actor.get_theme_node().get_vertical_padding() + this.headerPadding;
+            let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1 - hPadding;
             if (displayHeaders) {
                 headerHeight = 32;
                 let bin = new St.Group();
@@ -2403,8 +2408,10 @@ ThumbnailHolder.prototype = {
                 this.header.add(bin, { x_fill: false, y_fill: false, y_align: St.Align.START });
                 let label = new St.BoxLayout({vertical: true});
                 this.header.add(label, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+                let header_width = this.header.width;
                 let title = new St.Label({text: window.title});
                 label.add(title, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
+                title.width = Math.min(title.width, binWidth - header_width);
 
                 let label2strings = [];
                 if (global.screen.n_workspaces > 1) {
@@ -2418,12 +2425,7 @@ ThumbnailHolder.prototype = {
                     label.add(label2, { x_fill: false, y_fill: false, y_align: St.Align.MIDDLE });
                 }
             }
-
-            let hPadding = this.actor.get_theme_node().get_horizontal_padding();
-            let vBorder = this.actor.get_theme_node().get_border_width(St.Side.TOP) * 2;
-            let vPadding = this.actor.get_theme_node().get_vertical_padding() + this.headerPadding;
             let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight - vPadding - vBorder;
-            let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1 - hPadding;
             this.container.set_size(binWidth, binHeight);
 
             let clones = WindowUtils.createWindowClone(window, 0, true, false);
