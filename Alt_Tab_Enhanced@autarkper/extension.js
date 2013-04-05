@@ -2787,8 +2787,10 @@ function _onWindowDemandsAttention(display, window, urgent) {
         --g_urgentCount;
         if (g_urgentCount <= 0) {
             g_urgentCount = 0;
-            if (g_applet.actor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
-                g_applet.actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+            if (g_applet) {
+                if (g_applet.actor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+                    g_applet.actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+                }
             }
         }
     };
@@ -2829,8 +2831,10 @@ function _onWindowDemandsAttention(display, window, urgent) {
     }
 
     ++g_urgentCount;
-    if (!g_applet.actor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
-        g_applet.actor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+    if (g_applet) {
+        if (!g_applet.actor.has_style_class_name(DEMANDS_ATTENTION_CLASS_NAME)) {
+            g_applet.actor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+        }
     }
 }
 
