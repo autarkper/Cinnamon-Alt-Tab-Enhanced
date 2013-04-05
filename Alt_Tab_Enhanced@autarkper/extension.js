@@ -111,8 +111,6 @@ Connector.prototype = {
 const POPUP_SCROLL_TIME = 0.10; // seconds
 const POPUP_DELAY_TIMEOUT = 110; // milliseconds
 
-const APP_ICON_HOVER_TIMEOUT = 200; // milliseconds
-
 const THUMBNAIL_FADE_TIME = 0.1; // seconds
 
 const PREVIEW_DELAY_TIMEOUT = 180; // milliseconds
