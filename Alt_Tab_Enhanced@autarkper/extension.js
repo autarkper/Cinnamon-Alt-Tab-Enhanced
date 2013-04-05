@@ -150,6 +150,7 @@ const HELP_TEXT = [
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
     _("F8: Toggle single-line window-title labels on/off"),
     _("F9: Switch between the different thumbnail-behind-icon styles (always, never, behind-identical-icons)"),
+    _("Shift+F10: Make the current configuration permanent"),
     _("F1: Show this quick-help screen"),
     "",
 ];
@@ -1358,6 +1359,8 @@ AltTabPopup.prototype = {
                     g_settings["thumbnails-behind-icons"] = g_thumbnailIconOptions[newIndex];
                     this.refresh();
                 }
+            } else if (keysym == Clutter.F10 && shiftDown) {
+                saveAllSettings();
             } else if (ctrlDown) {
                 let index = keysym - 48; // convert '0' to 0, etc
                 if (index >= 0 && index <= 10) {
@@ -2633,6 +2636,15 @@ function initSettings() {
 
     let oldstyle = g_settings["last-gsettings-switcher-style"];
     getSwitcherStyle();
+}
+
+function saveAllSettings() {
+    for (let setting in g_settings) {
+        if (g_settings_obj.getValue(setting) !== g_settings[setting]) {
+            global.log("saving setting: '" + setting + "', value: '" +  g_settings[setting] + "'");
+            g_settings_obj.setValue(setting, g_settings[setting]);
+        }
+    }
 }
 
 let attentionConnector = new Connector();

@@ -33,7 +33,7 @@ This is a brief list of the most prominent features:
 
 Settings
 =============
-Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of the upcoming Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the help screen for more information.
+Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of the upcoming Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F10.
 
 Your settings are stored in the ~/.cinnamon/configs/Alt_Tab_Enhanced@autarkper directory.
 
