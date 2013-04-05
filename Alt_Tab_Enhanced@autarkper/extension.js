@@ -648,9 +648,10 @@ AltTabPopup.prototype = {
             // disturbed by the popup briefly flashing.
             let timeout = POPUP_DELAY_TIMEOUT - ((new Date().getTime()) - this._loadTs);
             if (timeout > 25) {
-                this._initialDelayTimeoutId = Mainloop.timeout_add(timeout, Lang.bind(this, function () {
-                    this._appSwitcher.actor.opacity = this.opacity;
-                    this._initialDelayTimeoutId = 0;
+                Mainloop.timeout_add(timeout, Lang.bind(this, function () {
+                    if (this.actor) {
+                        this._appSwitcher.actor.opacity = this.opacity;
+                    }
                 }));
             }
             else {
@@ -1015,10 +1016,9 @@ AltTabPopup.prototype = {
         menu.connect('open-state-changed', Lang.bind(this, function(sender, opened) {
             this._menuActive = opened;
             if (!opened) {
-                if (this.actor) {
-                    global.stage.set_key_focus(this.actor);
-                }
+                if (!this.actor) {return;}
 
+                global.stage.set_key_focus(this.actor);
                 // Make alt-tab stay on screen after the menu has been exited, provided that ALT is not held down.
                 // This avoids unpleasant surprises after some actions, minimize in particular,
                 // which might otherwise have no lasting effect if the minimized window is
@@ -1482,8 +1482,6 @@ AltTabPopup.prototype = {
             Mainloop.source_remove(this._motionTimeoutId);
         if (this._thumbnailTimeoutId)
             Mainloop.source_remove(this._thumbnailTimeoutId);
-        if (this._initialDelayTimeoutId)
-            Mainloop.source_remove(this._initialDelayTimeoutId);
         if (this._displayPreviewTimeoutId)
             Mainloop.source_remove(this._displayPreviewTimeoutId);
         g_vAlignOverride = null;
