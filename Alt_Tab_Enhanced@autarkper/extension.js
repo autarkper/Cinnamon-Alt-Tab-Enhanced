@@ -1341,8 +1341,8 @@ AltTabPopup.prototype = {
                     g_settings["thumbnails-behind-icons"] = g_thumbnailIconOptions[newIndex];
                     this.refresh();
                 }
-            } else if (keysym == Clutter.F10 && shiftDown) {
-                saveAllSettings();
+            } else if (keysym == Clutter.F10 && shiftDown && !ctrlDown) {
+                saveSettings();
             } else if (ctrlDown) {
                 let index = keysym - 48; // convert '0' to 0, etc
                 if (index >= 0 && index <= 10) {
@@ -1386,6 +1386,22 @@ AltTabPopup.prototype = {
                     openSettings();
                 }
             },
+            canSaveSettings() ? {
+                label: _("Save current configuration"),
+                focused: false,
+                action: function() {
+                    dialog.close();
+                    saveSettings();
+                }
+            } : null,
+            canSaveSettings() ? {
+                label: _("Revert to saved configuration"),
+                focused: false,
+                action: function() {
+                    dialog.close();
+                    loadSettings();
+                }
+            } : null,
             {
                 label: _("Close"),
                 focused: true,
@@ -1393,7 +1409,7 @@ AltTabPopup.prototype = {
                     dialog.close();
                 }
             }
-        ]);
+        ].filter(function(val) {return val != null;}));
         dialog.open();
     },
 
@@ -2612,11 +2628,31 @@ function initSettings() {
     getSwitcherStyle();
 }
 
-function saveAllSettings() {
+function canSaveSettings() {
+    let dirty = false;
+    let count = 0;
+    for (let setting in g_settings) {
+        ++count;
+        dirty = dirty || g_settings_obj.getValue(setting) !== g_settings[setting];
+    }
+    return count && dirty;
+}
+
+function saveSettings() {
     for (let setting in g_settings) {
         if (g_settings_obj.getValue(setting) !== g_settings[setting]) {
-            global.log("saving setting: '" + setting + "', value: '" +  g_settings[setting] + "'");
             g_settings_obj.setValue(setting, g_settings[setting]);
+            global.log("saved setting: '" + setting + "', value: '" +  g_settings[setting] + "'");
+        }
+    }
+}
+
+function loadSettings() {
+    for (let setting in g_settings) {
+        let newValue = g_settings_obj.getValue(setting);
+        if (g_settings[setting] !== newValue) {
+            g_settings[setting] = newValue;
+            global.log("loaded setting: '" + setting + "', value: '" +  g_settings[setting] + "'");
         }
     }
 }
