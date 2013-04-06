@@ -256,6 +256,44 @@ function selectMonitor(monitorOverride)
     return [index, monitor];
 }
 
+function setupWorkspaceListeners(alttab)
+{
+    g_vars.altTabPopup = alttab;
+    if (!alttab) {return;}
+    if (g_vars.altTabPopup_connected) {return;}
+
+    g_vars.altTabPopup_connected = true;
+    let connectToWorkspace = Lang.bind(this, function(workspace) {
+        workspace.connect('window-removed', Lang.bind(null, function(ws, metaWindow) {
+            if (g_vars.altTabPopup) {g_vars.altTabPopup._removeWindow(metaWindow);}
+        }));
+        workspace.connect('window-added', Lang.bind(null, function(ws, metaWindow) {
+            if (g_vars.altTabPopup) {
+                Mainloop.idle_add(Lang.bind(null, function() {
+                    if (g_vars.altTabPopup) {
+                        g_vars.altTabPopup.refresh();
+                    }
+                }));
+            }
+        }));
+    });
+    for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
+        let workspace = global.screen.get_workspace_by_index(i);
+        connectToWorkspace(workspace);
+    }
+
+    global.display.connect('window-demands-attention', function() {
+        if (g_vars.altTabPopup) g_vars.altTabPopup._onWindowDemandsAttention.apply(g_vars.altTabPopup, arguments);
+    });
+    global.display.connect('window-marked-urgent', function() {
+        if (g_vars.altTabPopup) g_vars.altTabPopup._onWindowDemandsAttention.apply(g_vars.altTabPopup, arguments);
+    });
+    global.screen.connect('workspace-added', Lang.bind(this, function(screen, index) {
+        let workspace = global.screen.get_workspace_by_index(index);
+        connectToWorkspace(workspace);
+    }));
+}
+
 AltTabPopup.prototype = {
     _init : function() {
         this._loadTs = (new Date()).getTime();
@@ -280,32 +318,8 @@ AltTabPopup.prototype = {
         this._numPrimaryItems = 0;
 
         this.thumbnailsVisible = false;
-
-        let connector = new Connector.Connector();
-        connector.tie(this.actor);
-
-        let connectToWorkspace = Lang.bind(this, function(workspace) {
-            connector.addConnection(workspace, 'window-removed', Lang.bind(this, function(ws, metaWindow) {
-                this._removeWindow(metaWindow);
-            }));
-            connector.addConnection(workspace, 'window-added', Lang.bind(this, function(ws, metaWindow) {
-                Mainloop.idle_add(Lang.bind(this, function() {
-                    this.refresh();
-                }));
-            }));
-        });
-        for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
-            let workspace = global.screen.get_workspace_by_index(i);
-            connectToWorkspace(workspace);
-        }
-        connector.addConnection(global.display, 'window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention));
-        connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
-        connector.addConnection(global.screen, 'workspace-added', Lang.bind(this, function(screen, index) {
-            let workspace = global.screen.get_workspace_by_index(index);
-            connectToWorkspace(workspace);
-        }));
-
         Main.uiGroup.add_actor(this.actor);
+        setupWorkspaceListeners(this);
     },
 
     _indexOfWindow: function(metaWindow) {
@@ -1397,6 +1411,7 @@ AltTabPopup.prototype = {
     },
 
     _onDestroy : function() {
+        setupWorkspaceListeners(null);
         this._popModal();
 
         if (this._motionTimeoutId)
