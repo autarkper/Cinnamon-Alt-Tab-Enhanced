@@ -247,7 +247,6 @@ if (!g_vars) {
 // there are some things we want to live on, even when we are disabled,
 // so that we don't have to start from scratch if we are enabled again
     g_vars.windowsOrdered = [];
-    g_vars.windowsToIgnore = [];
     g_vars.globalFocusOrder = false;
 
     connect(global.display, 'notify::focus-window', function(display) {
@@ -381,13 +380,6 @@ AltTabPopup.prototype = {
             let workspace = global.screen.get_workspace_by_index(index);
             connectToWorkspace(workspace);
         }));
-
-        // remove zombies
-        if (g_vars.windowsToIgnore.length) {
-            g_vars.windowsToIgnore = g_vars.windowsToIgnore.filter(function(window) {
-                return window.get_workspace() != null;
-            });
-        }
 
         Main.uiGroup.add_actor(this.actor);
     },
