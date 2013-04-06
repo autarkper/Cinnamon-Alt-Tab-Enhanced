@@ -24,89 +24,13 @@ const WindowUtils = imports.misc.windowUtils;
 const AppletManager = imports.ui.appletManager;
 const MessageTray = imports.ui.messageTray;
 
+var Connector;
+
 var Settings = null;
 try {
     Settings = imports.ui.settings; // requires Cinnamon 1.7.2 or later
 }
 catch (e) {}
-
-/* usage:
- * "let connection = connect(someObject, 'some-signal', someFunction [, ...])
- *  ///...
- *  connection.disconnect();
- *  "
- * 
- * @arg-0: target, the object you want to connect to
- * @arg-1 .. @arg-n: arguments to the target's connect function
- *
- * return value: an object that you call disconnect on
- */
-var connect = function() {
-    let args = [].slice.apply(arguments);
-    let target = args.shift();
-    let id = target.connect.apply(target, args);
-    return {
-        disconnect: function() {
-            if (target) {
-                target.disconnect(id); target = null;
-                }
-        },
-        forget: function() {
-            target = null;
-        },
-        getTarget: function() {
-            return target;
-        },
-        /* Ties the connection to an object, so it is automatically destroyed with the object.
-         */
-        tie: function(object) {
-            object.connect('destroy', Lang.bind(this, this.disconnect));
-        }
-    };
-};
-
-function Connector() {
-    this._init.apply(this, arguments);
-}
-
-/* A class that takes care of your connections - just remember to
- * call destroy when it is time to disconnect.
- */
-Connector.prototype = {
-    _init: function() {
-        this.connections = [];
-    },
-
-    /* usage: "addConnection(someObject, 'some-signal', someFunction [, ...])"
-     * 
-     * @arg-0: target, the object you want to connect to
-     * @arg-1 .. @arg-n: arguments to the target's connect function
-     *
-     * @return aConnection, the created connection, which you can optionally disconnect or "forget" later on.
-     */
-    addConnection: function() {
-        let connection = connect.apply(0, arguments);
-        this.connections.push(connection);
-        return connection;
-    },
-
-    /* Disconnects all connections.
-     */
-    destroy: function() {
-        if (this.connections) {
-            this.connections.forEach(function(connection) {
-                connection.disconnect();
-            }, this);
-            this.connections = null;
-        }
-    },
-
-    /* Ties the connector to an object, so the connector is automatically destroyed with the object.
-     */
-    tie: function(object) {
-        object.connect('destroy', Lang.bind(this, this.destroy));
-    }
-};
 
 const POPUP_SCROLL_TIME = 0.10; // seconds
 const POPUP_DELAY_TIMEOUT = 110; // milliseconds
@@ -249,13 +173,13 @@ if (!g_vars) {
     g_vars.windowsOrdered = [];
     g_vars.globalFocusOrder = false;
 
-    connect(global.display, 'notify::focus-window', function(display) {
+    global.display.connect('notify::focus-window', function(display) {
         g_vars.windowsOrdered = g_vars.windowsOrdered.filter(function(window) {
             return window && window != display.focus_window && window.get_workspace();
         }, this);
         g_vars.windowsOrdered.unshift(display.focus_window);
     });
-    connect(global.settings, 'changed::alttab-switcher-style', getSwitcherStyle);
+    global.settings.connect('changed::alttab-switcher-style', getSwitcherStyle);
 
     // this object will be populated with our settings, if settings support is available
     g_vars.settings = {};
@@ -357,7 +281,7 @@ AltTabPopup.prototype = {
 
         this.thumbnailsVisible = false;
 
-        let connector = new Connector();
+        let connector = new Connector.Connector();
         connector.tie(this.actor);
 
         let connectToWorkspace = Lang.bind(this, function(workspace) {
@@ -951,7 +875,7 @@ AltTabPopup.prototype = {
         }));
         menu.addMenuItem(item);
 
-        let ct = connect(this.actor, 'destroy', Lang.bind(this, function() {
+        let ct = Connector.connect(this.actor, 'destroy', Lang.bind(this, function() {
             this._showContextMenu(false);
         }));
         menu.connect('open-state-changed', Lang.bind(this, function(sender, opened) {
@@ -2520,6 +2444,10 @@ var g_settings_obj;
 var g_instanceId;
 
 function init(metadata, instanceId) {
+    imports.searchPath.push(metadata.path);
+    Connector = imports.connector;
+    attentionConnector = new Connector.Connector();
+
     g_uuid = metadata['uuid'];
     g_instanceId = instanceId;
     let version = metadata['version'];
@@ -2657,7 +2585,7 @@ function loadSettings() {
     }
 }
 
-let attentionConnector = new Connector();
+var attentionConnector;
 function enable() {
     initSettings();
 
@@ -2830,11 +2758,11 @@ function _onWindowDemandsAttention(display, window, urgent) {
     };
     timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
 
-    wDestroyId = connect(window.get_compositor_private(), 'destroy', function() {
+    wDestroyId = Connector.connect(window.get_compositor_private(), 'destroy', function() {
         cleanup(true);
     });
 
-    wFocusId = connect(display, 'notify::focus-window', function(display) {
+    wFocusId = Connector.connect(display, 'notify::focus-window', function(display) {
         if (display.focus_window == window) {
             cleanup(true);
         }
