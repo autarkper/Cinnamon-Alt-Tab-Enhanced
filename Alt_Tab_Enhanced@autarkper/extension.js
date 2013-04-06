@@ -2465,7 +2465,7 @@ var g_instanceId;
 function init(metadata, instanceId) {
     imports.searchPath.push(metadata.path);
     Connector = imports.connector;
-    attentionConnector = new Connector.Connector();
+    g_attentionConnector = new Connector.Connector();
 
     g_uuid = metadata['uuid'];
     g_instanceId = instanceId;
@@ -2604,7 +2604,7 @@ function loadSettings() {
     }
 }
 
-var attentionConnector;
+var g_attentionConnector;
 function enable() {
     initSettings();
 
@@ -2618,9 +2618,9 @@ function enable() {
     Meta.keybindings_set_custom_handler('switch-windows', handler);
     Meta.keybindings_set_custom_handler('switch-group', handler);
 
-    attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
-    attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
-    attentionConnector.addConnection(global.window_manager, 'map', function(cinnamonwm, actor) {
+    g_attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
+    g_attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
+    g_attentionConnector.addConnection(global.window_manager, 'map', function(cinnamonwm, actor) {
         if (Main.layoutManager.monitors.length < 2) {
             return;
         }
@@ -2667,7 +2667,7 @@ function enable() {
 function disable() {
     Meta.keybindings_set_custom_handler('switch-windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
-    attentionConnector.destroy();
+    g_attentionConnector.destroy();
     g_settings_obj.finalize();
 }
 
