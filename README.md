@@ -14,7 +14,7 @@ This is a brief list of the most prominent features:
     - Choice of preferred monitor
       - Primary monitor, secondary monitor, focus monitor, or bottom monitor
     - Option to automatically move all new windows to the preferred monitor
-    - Automatically force "transient" (dialog) windows to open on the same monitor as their parent
+    - Automatically forces "transient" (dialog) windows to open on the same monitor as their parent
   - Extended mouse support
   - Context menus for working with windows
     - Minimize/restore windows
@@ -24,8 +24,8 @@ This is a brief list of the most prominent features:
     - Move windows from one monitor to another
     - Close windows
     - Prune empty, unnamed workspaces
-  - Highlight alerting or urgent windows in switcher
-  - Optionally use notifications to bring attention to attention-seeking windows
+  - Highlights alerting or urgent windows in switcher
+  - Optionally uses notifications to bring attention to attention-seeking windows
     - Click on the notification to activate the attention-seeking window
     - Click on the notification's Ignore button to dismiss the notification
   - Many keyboard shortcuts
@@ -33,7 +33,7 @@ This is a brief list of the most prominent features:
 
 Settings
 =============
-Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of the upcoming Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F10.
+Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of the upcoming Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the Help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F10, or press "Save current configuration" in the Help screen, which also has a button to revert to the saved configuration, in case you have made unwanted changes.
 
 Compatibility
 =============
