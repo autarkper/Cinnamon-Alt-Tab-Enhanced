@@ -230,12 +230,6 @@ function processSwitcherStyle() {
     }
 
     g_setup._showThumbnails = g_setup._thumbnailsEnabled;
-    if (g_vars.switcherStyleUpdated && isSystemStyle) {
-        if (!g_setup._thumbnailsEnabled) {
-            g_settings["vertical-alignment"] = 'center';
-        }
-        g_vars.switcherStyleUpdated = false;
-    }
 }
 
 const g_aligmentTypes = ["top", "center", "bottom"];
@@ -243,12 +237,7 @@ const g_alttabStyles = ["icons+preview", ":preview-thumbnails", "icons", "icons+
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
 
 function getSwitcherStyle() {
-    let oldstyle = g_settings["last-gsettings-switcher-style"];
     g_vars.switcherStyle = global.settings.get_string("alttab-switcher-style");
-    g_vars.switcherStyleUpdated = oldstyle != g_vars.switcherStyle;
-    if (g_vars.switcherStyleUpdated) {
-        g_settings["last-gsettings-switcher-style"] = g_vars.switcherStyle;
-    }
     processSwitcherStyle();
 };
 
@@ -2581,11 +2570,6 @@ function initSettings() {
             function() {},
             null);
         settings.bindProperty(Settings.BindingDirection.IN,
-            "last-gsettings-switcher-style",
-            "last-gsettings-switcher-style",
-            function() {},
-            null);
-        settings.bindProperty(Settings.BindingDirection.IN,
             "zoom-on",
             "zoom-on",
             function() {},
@@ -2633,7 +2617,6 @@ function initSettings() {
         g_settings["force-open-on-preferred-monitor"] = false;
     }
 
-    let oldstyle = g_settings["last-gsettings-switcher-style"];
     getSwitcherStyle();
 }
 

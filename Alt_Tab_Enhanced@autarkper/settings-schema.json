@@ -110,9 +110,5 @@
     "type": "checkbox",
     "default": false,
     "description": "Hide the panel icon"
- },
- "last-gsettings-switcher-style": {
-    "type": "generic",
-    "default": ""
  }
 }
