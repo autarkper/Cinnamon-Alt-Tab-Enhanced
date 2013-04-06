@@ -338,6 +338,10 @@ AltTabPopup.prototype = {
     },
 
     _removeWindow: function(metaWindow) {
+        let index = g_selection.indexOf(metaWindow);
+        if (index >= 0) {
+            g_selection.splice(index, 1);
+        }
         let index = this._indexOfWindow(metaWindow);
         if (index >= 0) {
             if (index == this._currentApp) {
