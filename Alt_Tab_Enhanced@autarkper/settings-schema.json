@@ -84,7 +84,7 @@
  "background-sep": {"type": "separator"},
  "background-image-enabled": {
     "type": "checkbox",
-    "default": "true",
+    "default": "false",
     "description": "Show the desktop background image behind thumbnails and previews"
  },
 "background-dim-factor": {
