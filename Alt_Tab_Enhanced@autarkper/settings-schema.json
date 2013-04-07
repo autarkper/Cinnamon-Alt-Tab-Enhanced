@@ -13,8 +13,8 @@
     "description": "Zoom in on the windows of the current workspace"
  },
  "display-origin-arrow": {
-    "type" : "checkbox",
-    "default" : false,
+    "type" : "generic",
+    "default" : true,
     "dependency" : "all-workspaces-mode",
     "indent": true,
     "description" : "Display a small arrow, below the icon, to indicate the window you came from"
