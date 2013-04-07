@@ -60,7 +60,7 @@ const HELP_TEXT = [
     _("Space: Select/unselect current window"),
     _("Menu key, Right-click: Open context menu for the selected windows"),
     _("m: Move selected windows to next monitor"),
-    _("n: Minimize selected windows"),
+    _("n: Minimize/restore selected windows"),
     _("Super+Left/Right arrow: Move selected windows to the next workspace right/left"),
     _("Period key (.): Move selected windows to the current workspace"),
     _("Ctrl+w: Close selected windows. Use with care!"),
