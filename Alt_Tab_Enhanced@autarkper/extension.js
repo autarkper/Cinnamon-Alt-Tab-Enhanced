@@ -2199,6 +2199,8 @@ AppSwitcher.prototype = {
 };
 Signals.addSignalMethods(AppSwitcher.prototype);
 
+// -------------------------------------------------------------------------------------------
+
 function AppIcon() {
     this._init.apply(this, arguments);
 }
@@ -2305,6 +2307,8 @@ AppIcon.prototype = {
         }
     }
 };
+
+// -------------------------------------------------------------------------------------------
 
 function ThumbnailHolder() {
     this._init.apply(this, arguments);
@@ -2416,6 +2420,8 @@ ThumbnailHolder.prototype = {
 };
 Signals.addSignalMethods(ThumbnailHolder.prototype);
 
+// -------------------------------------------------------------------------------------------
+
 function _drawArrow(area, side) {
     let themeNode = area.get_theme_node();
     let borderColor = themeNode.get_border_color(side);
@@ -2458,6 +2464,9 @@ function _drawArrow(area, side) {
     Clutter.cairo_set_source_color(cr, bodyColor);
     cr.fill();
 }
+
+// -------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------
 
 var g_settings_obj;
 var g_instanceId;
