@@ -600,13 +600,15 @@ AltTabPopup.prototype = {
                 mw.change_workspace(ws);
             });
             ws.connect('window-removed', function() {
-                if (!getTabList(ws).filter(function(window) {
-                    return !window.is_on_all_workspaces();
-                }).length) {
-                    if (Main.hasDefaultWorkspaceName(ws.index())) {
-                        Main._removeWorkspace(ws);
+                Mainloop.timeout_add_seconds(10, function() {
+                    if (ws.index() >= 0 && !getTabList(ws).filter(function(window) {
+                        return !window.is_on_all_workspaces();
+                    }).length) {
+                        if (Main.hasDefaultWorkspaceName(ws.index())) {
+                            Main._removeWorkspace(ws);
+                        }
                     }
-                }
+                });
             });
         }
     },
