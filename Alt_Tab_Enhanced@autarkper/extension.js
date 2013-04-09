@@ -1662,8 +1662,8 @@ AppSwitcher.prototype = {
         this._list = new Cinnamon.GenericContainer({ style_class: 'switcher-list-item-container' });
         this._list.spacing = 0;
         this._list.connect('style-changed', Lang.bind(this, function() {
-                                                        this._list.spacing = this._list.get_theme_node().get_length('spacing');
-                                                     }));
+            this._list.spacing = this._list.get_theme_node().get_length('spacing');
+        }));
 
         this._list.connect('get-preferred-width', Lang.bind(this, this._getPreferredWidth));
         this._list.connect('get-preferred-height', Lang.bind(this, this._getPreferredHeight));
@@ -1679,7 +1679,7 @@ AppSwitcher.prototype = {
         let pointerTracker = new PointerTracker.PointerTracker();
         this._leftGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-left', vertical: true, reactive: true});
         this._leftGradient.connect('enter-event', Lang.bind(this, function() {
-            if (pointerTracker.hasMoved() && this._scrollableLeft) {
+            if (pointerTracker.hasMoved() && this._scrollableLeft && this._items.length) {
                 Tweener.addTween(this._list, { anchor_x: 0,
                     time: POPUP_SCROLL_TIME,
                     transition: 'linear',
@@ -1691,7 +1691,7 @@ AppSwitcher.prototype = {
 
         this._rightGradient = new St.BoxLayout({style_class: 'thumbnail-scroll-gradient-right', vertical: true, reactive: true});
         this._rightGradient.connect('enter-event', Lang.bind(this, function() {
-            if (pointerTracker.hasMoved() && this._scrollableRight) {
+            if (pointerTracker.hasMoved() && this._scrollableRight && this._items.length) {
                 let padding = this.actor.get_theme_node().get_horizontal_padding();
                 let parentPadding = this.actor.get_parent().get_theme_node().get_horizontal_padding();
                 let x = this._items[this._items.length - 1].allocation.x2 - g_myMonitor.width + padding + parentPadding;
