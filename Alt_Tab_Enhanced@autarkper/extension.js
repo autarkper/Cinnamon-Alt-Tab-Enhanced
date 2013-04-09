@@ -441,7 +441,7 @@ AltTabPopup.prototype = {
     },
 
     get _currentApp() {
-        return this._appSwitcher._curApp;
+        return !isNaN(this._appSwitcher._curApp) ?  this._appSwitcher._curApp : -1;
     },
 
     get _appIcons() {
