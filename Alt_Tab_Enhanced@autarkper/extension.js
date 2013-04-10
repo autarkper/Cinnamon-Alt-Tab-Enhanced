@@ -488,7 +488,17 @@ AltTabPopup.prototype = {
             if (!wlist.length) {
                 continue;
             }
-            if (g_settings["all-workspaces-mode"] || i == activeWsIndex) {
+            if (Main.layoutManager.monitors.length > 1) {
+                let activeMonitor = wlist[0].get_monitor();
+                wlist.sort(function(a, b) {
+                    let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
+                    if (minimizedDiff) return minimizedDiff;
+                    let monitorDiff = (a.get_monitor() == activeMonitor ? 0 : 1) - (b.get_monitor() == activeMonitor ? 0 : 1);
+                    if (monitorDiff) return monitorDiff;
+                    else return wlist.indexOf(a) - wlist.indexOf(b);
+                }, this);
+            }
+            if (i == activeWsIndex || g_settings["all-workspaces-mode"]) {
                 windows = windows.concat(wlist);
             }
             if (i == activeWsIndex) {
