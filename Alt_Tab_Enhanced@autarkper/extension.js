@@ -2279,15 +2279,17 @@ AppIcon.prototype = {
             (g_settings["thumbnails-behind-icons"] == 'behind-identical' && this.app && this.app.get_windows().length > 1)
             || g_settings["thumbnails-behind-icons"] == 'always') )
         {
+            let scale = size/Math.max(global.screen_width, global.screen_height);
+            Main.layoutManager.monitors.forEach(function(monitor, mindex) { 
+                let frame = new St.Group({x: monitor.x*scale, y: monitor.y*scale + sizeIn - size, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
+                this.icon.add_actor(frame);
+            }, this);
             let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
-            let scale = size/Math.max(monitor.width, monitor.height);
-            let frame = new St.Group({x: 0, y: sizeIn - size, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
-            this.icon.add_actor(frame);
             let clones = WindowUtils.createWindowClone(this.window, 0, true, false);
             for (i in clones) {
                 let clone = clones[i];
                 this.icon.add_actor(clone.actor);
-                clone.actor.set_position((clone.x-monitor.x)*scale, sizeIn - size + (clone.y-monitor.y)*scale);
+                clone.actor.set_position(clone.x*scale, sizeIn - size + clone.y*scale);
                 clone.actor.set_scale(scale, scale);
             }
             if (this.showIcons) {
