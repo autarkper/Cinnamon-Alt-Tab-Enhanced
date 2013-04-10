@@ -175,7 +175,7 @@ if (!g_vars) {
 
     global.display.connect('notify::focus-window', function(display) {
         g_vars.windowsOrdered = g_vars.windowsOrdered.filter(function(window) {
-            return window && window != display.focus_window && window.get_workspace();
+            return window && window != display.focus_window && isValidWindow(window);
         }, this);
         g_vars.windowsOrdered.unshift(display.focus_window);
     });
@@ -292,6 +292,16 @@ function setupWorkspaceListeners(alttab)
         let workspace = global.screen.get_workspace_by_index(index);
         connectToWorkspace(workspace);
     }));
+}
+
+function getWindowWorkspace(mw) {
+    return Main.wm.workspacesOnlyOnPrimary && mw.get_monitor() == Main.layoutManager.primaryIndex
+        ? mw.get_workspace()
+        : global.screen.get_active_workspace();
+}
+
+function isValidWindow(mw) {
+    return !!mw.get_workspace();
 }
 
 AltTabPopup.prototype = {
@@ -629,7 +639,7 @@ AltTabPopup.prototype = {
     _multiChangeToCurrentWorkspace: function(selection) {
         let ws = global.screen.get_active_workspace();
         selection.forEach(function(mw) {
-            if (mw.get_workspace() != ws) {
+            if (getWindowWorkspace(mw) != ws) {
                 mw.change_workspace(ws);
             }
         });
@@ -641,17 +651,17 @@ AltTabPopup.prototype = {
         // Otherwise, only move some windows, left or right, so they all end up on the same workspace.
 
         let selection = selin.slice();
-        selection.sort(function(a, b) {return a.get_workspace().index() < b.get_workspace().index();});
-        let current = selection[direction > 0 ? selection.length - 1 : 0].get_workspace().index();
+        selection.sort(function(a, b) {return getWindowWorkspace(a).index() < getWindowWorkspace(b).index();});
+        let current = getWindowWorkspace(selection[direction > 0 ? selection.length - 1 : 0]).index();
         let nextIndex = direction > 0
-            ? (current > selection[0].get_workspace().index() 
+            ? (current > getWindowWorkspace(selection[0]).index() 
                 ? current
                 : Math.min(current + direction, global.screen.n_workspaces - 1))
-            : (current < selection[selection.length - 1].get_workspace().index()
+            : (current < getWindowWorkspace(selection[selection.length - 1]).index()
                 ? current
                 : Math.max(current + direction, 0));
         selection.forEach(function(mw) {
-            if (direction > 0 ? mw.get_workspace().index() < nextIndex : mw.get_workspace().index() > nextIndex) {
+            if (direction > 0 ? getWindowWorkspace(mw).index() < nextIndex : getWindowWorkspace(mw).index() > nextIndex) {
                 mw.change_workspace(global.screen.get_workspace_by_index(nextIndex));
             }
         });
@@ -811,12 +821,12 @@ AltTabPopup.prototype = {
         if (true) {
             let wsItems = [];
             for (let i = 0; i < global.screen.n_workspaces; ++i) {
-                if (selection.filter(function(mw) {return mw.get_workspace().index() != i;}).length) {
+                if (selection.filter(function(mw) {return getWindowWorkspace(mw).index() != i;}).length) {
                     let item = new PopupMenu.PopupMenuItem(_("Move to %s").format(Main.getWorkspaceName(i)));
                     let index = i;
                     item.connect('activate', Lang.bind(this, function() {
                         selection.forEach(function(mw) {
-                            if (mw.get_workspace().index() != index) {
+                            if (getWindowWorkspace(mw).index() != index) {
                                 mw.change_workspace(global.screen.get_workspace_by_index(index));
                             }
                         });
@@ -826,7 +836,7 @@ AltTabPopup.prototype = {
             }
             wsItems.push(new PopupMenu.PopupSeparatorMenuItem());
 
-            if (selection.filter(function(mw) {return mw.get_workspace() != global.screen.get_active_workspace();}).length) {
+            if (selection.filter(function(mw) {return getWindowWorkspace(mw) != global.screen.get_active_workspace();}).length) {
                 let item = new PopupMenu.PopupMenuItem(_("Move to current workspace"));
                 item.connect('activate', Lang.bind(this, function() {
                     this._multiChangeToCurrentWorkspace(selection);
@@ -856,7 +866,7 @@ AltTabPopup.prototype = {
         if (n < 0) {
             return insel;
         }
-        let selection = insel.filter(function(window) {return !!window.get_workspace();} );
+        let selection = insel.filter(function(window) {return isValidWindow(window);} );
         let appIcon = this._appIcons[n];
         let index = selection.indexOf(appIcon.window);
         if (index < 0) {
@@ -1045,9 +1055,9 @@ AltTabPopup.prototype = {
         }
         
         let findFirstWorkspaceWindow = Lang.bind(this, function(startIndex) {
-            let wsCurIx = this._appIcons[startIndex].window.get_workspace().index();
+            let wsCurIx = getWindowWorkspace(this._appIcons[startIndex].window).index();
             for (let i = startIndex; i >= 0; --i) {
-                if (this._appIcons[i].window.get_workspace().index() == wsCurIx) {
+                if (getWindowWorkspace(this._appIcons[i].window).index() == wsCurIx) {
                     continue;
                 }
                 return i + 1;
@@ -1059,10 +1069,10 @@ AltTabPopup.prototype = {
             if (this._currentApp < 0) {
                 return false;
             }
-            let wsCurIx = this._appIcons[this._currentApp].window.get_workspace().index();
+            let wsCurIx = getWindowWorkspace(this._appIcons[this._currentApp].window).index();
             if (direction > 0) {
                 for (let [i, iLen] = [this._currentApp + 1, this._appIcons.length]; i < iLen; ++i) {
-                    if (i == iLen - 1 || this._appIcons[i].window.get_workspace().index() != wsCurIx) {
+                    if (i == iLen - 1 || getWindowWorkspace(this._appIcons[i].window).index() != wsCurIx) {
                         this._select(i);
                         return true;
                     }
@@ -1376,7 +1386,7 @@ AltTabPopup.prototype = {
     _activateWindow : function(window) {
         let wsNow = global.screen.get_active_workspace();
         Main.activateWindow(window);
-        if (window.get_workspace() != wsNow) {
+        if (getWindowWorkspace(window) != wsNow) {
             Main.wm.showWorkspaceOSD();
         }
     },
@@ -1722,7 +1732,7 @@ AppSwitcher.prototype = {
         this.icons = [];
         let lastWsIndex = 0;
         workspaceIcons.forEach(function(icon) {
-            let wsIndex = (icon.window.is_on_all_workspaces() ? activeWorkspace : icon.window.get_workspace()).index();
+            let wsIndex = (icon.window.is_on_all_workspaces() ? activeWorkspace : getWindowWorkspace(icon.window)).index();
             for (let i = wsIndex - lastWsIndex; g_settings["all-workspaces-mode"] && i > 0; --i) {
                 this.addSeparator();
                 lastWsIndex = wsIndex;
@@ -2246,7 +2256,7 @@ AppIcon.prototype = {
 
     updateLabel: function() {
         if (this.wsLabel.visible) {
-            let ws = this.window.get_workspace().index();
+            let ws = getWindowWorkspace(this.window).index();
             this.wsLabel.set_text("[" + (ws + 1) + "]");
         }
 
@@ -2257,7 +2267,7 @@ AppIcon.prototype = {
 
     calculateSlotSize: function(sizeIn) {
         // Icons are sized smaller if they don't belong to the active workspace
-        return this.window.get_workspace() == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
+        return getWindowWorkspace(this.window) == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
     },
 
     set_size: function(sizeIn, focused) {
@@ -2363,7 +2373,7 @@ ThumbnailHolder.prototype = {
 
                 let label2strings = [];
                 if (global.screen.n_workspaces > 1) {
-                    label2strings.push("[" + Main.getWorkspaceName(window.get_workspace().index()) + "]");
+                    label2strings.push("[" + Main.getWorkspaceName(getWindowWorkspace(window).index()) + "]");
                 }
                 if (windowMonitorIndex != g_myMonitorIndex) {
                     label2strings.push("(Monitor " + (windowMonitorIndex + 1) + ")");
@@ -2651,14 +2661,14 @@ function enable() {
             window._alttab_open_seen = true;
             // let myMonitorIndex = Main.layoutManager.primaryIndex;
             let [myMonitorIndex] = selectMonitor(false);
-            if (window.get_workspace() && window.get_monitor() != myMonitorIndex) {
+            if (isValidWindow(window) && window.get_monitor() != myMonitorIndex) {
                 global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1));
                 window.move_to_monitor(myMonitorIndex); // first attempt, may be counteracted by other parties
             }
             let count = 0;
             let timerFunction = function() {
                 ++count;
-                if (window.get_workspace() && window.get_monitor() != myMonitorIndex) {
+                if (isValidWindow(window) && window.get_monitor() != myMonitorIndex) {
                     global.log("Alt-Tab Enhanced: moving window '%s' from monitor %d to monitor %d (attempt %d)".format(window.title, window.get_monitor() + 1, myMonitorIndex + 1, count));
                     window.move_to_monitor(myMonitorIndex);
                     window.foreach_transient(function(transient) {
@@ -2704,7 +2714,7 @@ function _onWindowDemandsAttention(display, window, urgent) {
         }));
         Main.messageTray.add(source);
 
-        let wsIndex = window.get_workspace().index();
+        let wsIndex = getWindowWorkspace(window).index();
         let wsText = (wsIndex != global.screen.get_active_workspace_index()) ?
             _(" on workspace %s").format(Main.getWorkspaceName(wsIndex)) :
             "";
