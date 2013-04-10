@@ -2035,9 +2035,8 @@ AppSwitcher.prototype = {
         }, this);
     },
 
-    _getStagePosX: function(actor, offset) {
+    _getStagePosX: function(theme_node, actor, offset) {
         let [absItemX, absItemY] = actor.get_transformed_position();
-        let theme_node = actor.get_theme_node();
         let padding = theme_node.get_horizontal_padding() / 2;
         let [result, posX, posY] = this.actor.transform_stage_point(absItemX, 0);
         return Math.round(posX + (padding + actor.width) * (offset || 0));
@@ -2053,10 +2052,10 @@ AppSwitcher.prototype = {
         let [containerWidth, containerHeight] = this.actor.get_transformed_size();
         let padding = theme_node.get_horizontal_padding();
 
-        let rightX = this._getStagePosX(this._items[this._items.length - 1], 0.5);
-        let rightX2 = this._getStagePosX(this._items[this._items.length - 1], 1);
-        let leftX = this._getStagePosX(this._items[0], 0.7);
-        let leftX2 = this._getStagePosX(this._items[0], 0);
+        let rightX = this._getStagePosX(theme_node, this._items[this._items.length - 1], 0.5);
+        let rightX2 = this._getStagePosX(theme_node, this._items[this._items.length - 1], 1);
+        let leftX = this._getStagePosX(theme_node, this._items[0], 0.7);
+        let leftX2 = this._getStagePosX(theme_node, this._items[0], 0);
         let scrollableLeft = leftX < padding/2;
         let scrollableLeft2 = leftX2 < padding/2;
         let scrollableRight = rightX > containerWidth;
@@ -2086,15 +2085,18 @@ AppSwitcher.prototype = {
     },
 
     _scrollTo: function(index, direction, scrollMax_, fast) {        
+        let theme_node = this.actor.get_stage() ? this.actor.get_theme_node() : null;
+        if (!theme_node) {return;}
+
         let scrollMax = scrollMax_ ? scrollMax_ : 1;
         let ixScroll = direction > 0 ?
             Math.min(index + scrollMax, this._items.length - 1) : // right
             Math.max(index - scrollMax, 0); // left
 
-        let posX = this._getStagePosX(this._items[ixScroll]);
+        let posX = this._getStagePosX(theme_node, this._items[ixScroll]);
         let [containerWidth, containerHeight] = this.actor.get_transformed_size();
         
-        let padding = this.actor.get_theme_node().get_horizontal_padding();
+        let padding = theme_node.get_horizontal_padding();
 
         let delay = fast ? 0 : 250;
         let scrollit = Lang.bind(this, function(x) {
