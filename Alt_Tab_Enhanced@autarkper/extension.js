@@ -2268,6 +2268,10 @@ AppIcon.prototype = {
     },
 
     calculateSlotSize: function(sizeIn) {
+        return sizeIn;
+    },
+
+    calculateIconSize: function(sizeIn) {
         // Icons are sized smaller if they don't belong to the active workspace
         return getWindowWorkspace(this.window) == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
     },
@@ -2295,13 +2299,15 @@ AppIcon.prototype = {
                 clone.actor.set_scale(scale, scale);
             }
             if (this.showIcons) {
+                let size = this.calculateIconSize(sizeIn);
                 let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
                 let icon = createApplicationIcon(this.app, isize);
                 this.icon.add_actor(icon);
-                icon.set_position(Math.floor((size - isize)/2), sizeIn - isize);
+                icon.set_position(Math.floor((sizeIn - isize)/2), sizeIn - isize);
             }
         }
         else {
+            let size = this.calculateIconSize(sizeIn);
             let icon = createApplicationIcon(this.app, size);
             this.icon.add_actor(icon);
             icon.set_position(Math.floor((sizeIn - size)/2), sizeIn - size);
