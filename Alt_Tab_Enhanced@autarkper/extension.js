@@ -722,6 +722,9 @@ AltTabPopup.prototype = {
                     transient.move_to_monitor(target);
                 });
                 mw.move_to_monitor(target);
+                if (isSpecialWorkspaceHandling() && target == Main.layoutManager.primaryIndex) {
+                    mw.unstick();
+                }
             }
         });
         this._minorRefresh();
