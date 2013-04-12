@@ -2379,7 +2379,7 @@ ThumbnailHolder.prototype = {
 
             let hPadding = this.actor.get_theme_node().get_horizontal_padding();
             let vBorder = this.actor.get_theme_node().get_border_width(St.Side.TOP) * 2;
-            let vPadding = this.actor.get_theme_node().get_vertical_padding() + this.headerPadding;
+            let vPadding = (this.actor.get_theme_node().get_vertical_padding() + this.headerPadding) * 1;
             let binWidth = this.actor.allocation.x2 - this.actor.allocation.x1 - hPadding;
             if (displayHeaders) {
                 headerHeight = 32;
@@ -2420,7 +2420,7 @@ ThumbnailHolder.prototype = {
 
                 let childBox = new Clutter.ActorBox();
                 childBox.x1 = Math.floor((hPadding + binWidth-clone.actor.width*scale)/2);
-                childBox.y1 = Math.floor(doScale ? vPadding : (vPadding + binHeight-clone.actor.height*scale)/2);
+                childBox.y1 = Math.floor(doScale ? vPadding/2 : (vPadding + binHeight-clone.actor.height*scale)/2);
                 childBox.x2 = childBox.x1 + clone.actor.width;
                 childBox.y2 = childBox.y1 + clone.actor.height;
                 clone.actor.allocate(childBox, 0);
