@@ -301,7 +301,7 @@ function getWindowWorkspace(mw) {
 }
 
 function isValidWindow(mw) {
-    return !!mw.get_workspace();
+    return !!mw.get_compositor_private();
 }
 
 AltTabPopup.prototype = {
@@ -348,9 +348,11 @@ AltTabPopup.prototype = {
     },
 
     _removeWindow: function(metaWindow) {
-        let index = g_selection.indexOf(metaWindow);
-        if (index >= 0) {
-            g_selection.splice(index, 1);
+        if (!isValidWindow(metaWindow)) {
+            let index = g_selection.indexOf(metaWindow);
+            if (index >= 0) {
+                g_selection.splice(index, 1);
+            }
         }
         let index = this._indexOfWindow(metaWindow);
         if (index >= 0) {
