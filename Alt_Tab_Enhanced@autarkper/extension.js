@@ -2342,7 +2342,7 @@ AppIcon.prototype = {
                 let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
                 let icon = createApplicationIcon(this.app, isize);
                 this.icon.add_actor(icon);
-                icon.set_position(Math.floor((sizeIn - isize)/2), sizeIn - isize);
+                icon.set_position(Math.floor((sizeIn - isize)/1), sizeIn - isize);
             }
         }
         else {
