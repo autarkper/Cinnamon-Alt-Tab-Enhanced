@@ -1067,7 +1067,7 @@ AltTabPopup.prototype = {
     _previousApp : function(nowrap) {
         return nowrap
             ? Math.max(this._currentApp - 1, 0)
-            : mod(this._currentApp - 1, this._appIcons.length);
+            : mod(Math.max(-1, this._currentApp - 1), this._appIcons.length);
     },
 
     _toggleZoom : function() {
