@@ -1512,7 +1512,7 @@ AltTabPopup.prototype = {
             if (!g_setup._previewThumbnails) {
                 previewClones = new St.Group();
                 this.actor.add_actor(previewClones);
-                let clones = WindowUtils.createWindowClone(window, null, true, false);
+                let clones = WindowUtils.createWindowClone(window, 0, 0, true, false);
                 for (let i = 0; i < clones.length; i++) {
                     let clone = clones[i];
                     previewClones.add_actor(clone.actor);
@@ -2333,7 +2333,7 @@ AppIcon.prototype = {
                 this.icon.add_actor(frame);
             }, this);
             let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
-            let clones = WindowUtils.createWindowClone(this.window, 0, true, false);
+            let clones = WindowUtils.createWindowClone(this.window, 0, 0, true, false);
             for (i in clones) {
                 let clone = clones[i];
                 this.icon.add_actor(clone.actor);
@@ -2438,7 +2438,7 @@ ThumbnailHolder.prototype = {
             let binHeight = this.actor.allocation.y2 - this.actor.allocation.y1 - headerHeight - vPadding - vBorder;
             this.container.set_size(binWidth, binHeight);
 
-            let clones = WindowUtils.createWindowClone(window, 0, true, false);
+            let clones = WindowUtils.createWindowClone(window, 0, 0, true, false);
             let windowMonitor = Main.layoutManager.monitors[windowMonitorIndex];
             let scaleY = doScale ? binHeight/windowMonitor.height : binHeight/clones[0].actor.height;
             let scaleX = doScale ? binWidth/windowMonitor.width : binWidth/clones[0].actor.width;
@@ -2778,7 +2778,7 @@ function _onWindowDemandsAttention(display, window, urgent) {
         const size = 64;
 
         let icon = new St.Group();
-        let clones = WindowUtils.createWindowClone(window, size, true, true);
+        let clones = WindowUtils.createWindowClone(window, size, size, true, true);
         for (i in clones) {
             let clone = clones[i];
             icon.add_actor(clone.actor);
