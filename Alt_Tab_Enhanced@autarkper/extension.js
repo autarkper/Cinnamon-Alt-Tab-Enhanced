@@ -172,6 +172,8 @@ if (!g_vars) {
 // so that we don't have to start from scratch if we are enabled again
     g_vars.windowsOrdered = [];
     g_vars.globalFocusOrder = false;
+    g_vars.g_lastWindowHotkey = -1;
+    g_vars.g_hotKeyAssignment = {};
 
     global.display.connect('notify::focus-window', function(display) {
         g_vars.windowsOrdered = g_vars.windowsOrdered.filter(function(window) {
@@ -190,6 +192,61 @@ const g_settings = g_vars.settings;
 var g_myMonitor = Main.layoutManager.primaryMonitor;
 var g_myMonitorIndex = Main.layoutManager.primaryIndex;
 
+var g_activeWsIndex = null;
+//----
+var g_hotKeyAssignment = g_vars.g_hotKeyAssignment;
+
+function assignHotkey(window, force) {
+    if (!window._alttab_hotkey || force) {
+        ++g_vars.g_lastWindowHotkey;
+        window._alttab_hotkey = {index: g_vars.g_lastWindowHotkey};
+        g_hotKeyAssignment[g_vars.g_lastWindowHotkey] = window;
+    }
+    return window._alttab_hotkey.index;
+}
+
+function assignHotkeys(newones_in, remove) {
+    if (!newones_in) {
+        return;
+    }
+    let newones = newones_in.slice();
+    newones.slice().sort(function(a, b) {
+        return -((a._alttab_hotkey ? a._alttab_hotkey.index : 0) - (b._alttab_hotkey ? b._alttab_hotkey.index : 0));
+    }).forEach(function(window) {
+        unassignHotkey(window);
+    });
+
+    if (remove) {
+        return;
+    }
+
+    // fill the empty slots
+    for (let i = 0; newones.length && i < g_vars.g_lastWindowHotkey; ++i) {
+        let window = g_hotKeyAssignment[i];
+        if (!window) {
+            window = newones.shift();
+            g_hotKeyAssignment[i] = window;
+            window._alttab_hotkey = {index: i};
+        }
+    }
+
+    // add the rest
+    newones.forEach(function(window) {
+        assignHotkey(window);
+    });
+}
+
+function unassignHotkey(window) {
+    if (window._alttab_hotkey) {
+        if (window._alttab_hotkey.index == g_vars.g_lastWindowHotkey) {
+            --g_vars.g_lastWindowHotkey;
+        }
+        delete g_hotKeyAssignment[window._alttab_hotkey.index];
+        delete window._alttab_hotkey;
+    }
+}
+
+//----
 var g_windowTracker = Cinnamon.WindowTracker.get_default();
 
 function createApplicationIcon(app, size) {
@@ -265,6 +322,9 @@ function setupWorkspaceListeners(alttab)
     g_vars.altTabPopup_connected = true;
     let connectToWorkspace = Lang.bind(this, function(workspace) {
         workspace.connect('window-removed', Lang.bind(null, function(ws, metaWindow) {
+            if (!isValidWindow(metaWindow)) {
+                unassignHotkey(metaWindow);
+            }
             if (g_vars.altTabPopup) {g_vars.altTabPopup._removeWindow(metaWindow);}
         }));
         workspace.connect('window-added', Lang.bind(null, function(ws, metaWindow) {
@@ -292,6 +352,12 @@ function setupWorkspaceListeners(alttab)
         let workspace = global.screen.get_workspace_by_index(index);
         connectToWorkspace(workspace);
     }));
+    global.screen.connect('workspace-removed', function() {
+        if (g_vars.altTabPopup) g_vars.altTabPopup.refresh();
+    });
+    global.screen.connect('window-left-monitor', function() {
+        if (g_vars.altTabPopup) g_vars.altTabPopup.refresh();
+    });
 }
 
 function isSpecialWorkspaceHandling() {
@@ -300,15 +366,13 @@ function isSpecialWorkspaceHandling() {
 
 function isOnWorkspaceIndex(mw, index) {
     let ix = getWindowWorkspaceIndex(mw);
-    return ix < 0 || ix == index;
+    return ix == index;
 }
 
 function getWindowWorkspaceIndex(mw) {
-    return !isSpecialWorkspaceHandling()
-        ? mw.get_workspace().index()
-        : mw.get_monitor() == Main.layoutManager.primaryIndex
-            ? mw.get_workspace().index()
-            : -1;
+    return (isSpecialWorkspaceHandling() && mw.get_monitor() != Main.layoutManager.primaryIndex)
+        ? -1
+        : mw.get_workspace() ? mw.get_workspace().index() : -1;
 }
 
 function getWindowWorkspace(mw) {
@@ -317,9 +381,16 @@ function getWindowWorkspace(mw) {
         : global.screen.get_active_workspace();
 }
 
+function moveToMonitor(mw, target) {
+    mw.foreach_transient(function(transient) {
+        transient.move_to_monitor(target);
+    });
+    mw.move_to_monitor(target);
+}
+
 function changeWindowWorkspace(mw, ws) {
     if (isSpecialWorkspaceHandling() && mw.get_monitor() != Main.layoutManager.primaryIndex) {
-        return false;
+        moveToMonitor(mw, Main.layoutManager.primaryIndex);
     }
     mw.change_workspace(ws);
     return true;
@@ -328,6 +399,8 @@ function changeWindowWorkspace(mw, ws) {
 function isValidWindow(mw) {
     return !!mw.get_compositor_private();
 }
+
+var g_firstWorkspaceIndex = 0;
 
 AltTabPopup.prototype = {
     _init : function() {
@@ -502,30 +575,34 @@ AltTabPopup.prototype = {
             }
         };
 
-        // Find out the currently active window
+        let cwsi = global.screen.get_active_workspace_index();
+        // if there are duplicates, we want the "original" window to be on the current workspace
         let wsWindows = getTabList().filter(filterDuplicates);
-        let [currentWindow, forwardWindow, backwardWindow] = [(wsWindows.length > 0 ? wsWindows[0] : null), null, null];
-        let activeMonitor = !wsWindows.length ? 0 : wsWindows[0].get_monitor();
+        
+        let ws_slots = {};
+        for (let i = 0, numws = global.screen.n_workspaces; i < numws; ++i) {
+            let windows = i == cwsi ? wsWindows : getTabList(global.screen.get_workspace_by_index(i)).filter(filterDuplicates);
+            windows.forEach(function(window) {
+                let indx = getWindowWorkspaceIndex(window);
+                let slot = ws_slots[indx] || [];
+                slot.push(window);
+                ws_slots[indx] = slot;
+            });
+        }
+
+        let [currentWindow, forwardWindow, backwardWindow] = [wsWindows[0], null, null];
 
         let windows = [];
         let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
 
-        let activeWsIndex = global.screen.get_active_workspace_index();
-        for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
-            let wlist = i == activeWsIndex ? wsWindows : getTabList(global.screen.get_workspace_by_index(i)).filter(filterDuplicates);
-            if (!wlist.length) {
+        let activeWsIndex = g_activeWsIndex = wsWindows.length && getWindowWorkspaceIndex(currentWindow) == -1 ? -1 : global.screen.get_active_workspace_index();
+        let awsMode = g_settings["all-workspaces-mode"];
+        for (let i = -1, numws = global.screen.n_workspaces; i < numws; ++i) {
+            let wlist = ws_slots[i];
+            if (!wlist || !wlist.length) {
                 continue;
             }
-            if (Main.layoutManager.monitors.length > 1) {
-                wlist.sort(function(a, b) {
-                    let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
-                    if (minimizedDiff) return minimizedDiff;
-                    let monitorDiff = (a.get_monitor() == activeMonitor ? 0 : 1) - (b.get_monitor() == activeMonitor ? 0 : 1);
-                    if (monitorDiff) return monitorDiff;
-                    else return wlist.indexOf(a) - wlist.indexOf(b);
-                }, this);
-            }
-            if (i == activeWsIndex || g_settings["all-workspaces-mode"]) {
+            if ((i == activeWsIndex || awsMode) || (!awsMode && i == -1)) {
                 windows = windows.concat(wlist);
             }
             if (i == activeWsIndex) {
@@ -537,8 +614,12 @@ AltTabPopup.prototype = {
             }
         }
 
+        g_firstWorkspaceIndex = ws_slots[-1] ? -1 : 0;
+
         if (g_vars.globalFocusOrder) {
             windows = windows.sort(function(a, b) {
+                let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
+                if (minimizedDiff) return minimizedDiff;
                 let inGlobalListDiff = (g_vars.windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (g_vars.windowsOrdered.indexOf(b) < 0 ? 1 : 0);
                 if (inGlobalListDiff) {
                     return inGlobalListDiff;
@@ -676,10 +757,11 @@ AltTabPopup.prototype = {
     _multiChangeToCurrentWorkspace: function(selection) {
         let ws = global.screen.get_active_workspace();
         selection.forEach(function(mw) {
-            if (getWindowWorkspace(mw) != ws) {
+            if (!isOnWorkspaceIndex(mw, ws.index())) {
                 changeWindowWorkspace(mw, ws);
             }
         });
+        this.refresh();
     },
 
     _multiMoveWorkspace: function(selin, direction) {
@@ -718,10 +800,7 @@ AltTabPopup.prototype = {
         let target = index === undefined ? (selection[0].get_monitor() + monitorCount + 1) % monitorCount : index;
         selection.forEach(function(mw) {
             if (mw.get_monitor() != target) {
-                mw.foreach_transient(function(transient) {
-                    transient.move_to_monitor(target);
-                });
-                mw.move_to_monitor(target);
+                moveToMonitor(mw, target);
                 if (isSpecialWorkspaceHandling() && target == Main.layoutManager.primaryIndex) {
                     mw.unstick();
                 }
@@ -731,10 +810,18 @@ AltTabPopup.prototype = {
     },
 
     _multiClose: function(selection) {
-        selection.forEach(function(mw) {
+        selection.sort(function(a, b){
+            // sort so that the highest hotkey gets deleted first
+            return -((a._alttab_hotkey ? a._alttab_hotkey.index : 0) - (b._alttab_hotkey ? b._alttab_hotkey.index : 1));
+        }).forEach(function(mw) {
             mw.delete(global.get_current_time());
         });
         this._minorRefresh();
+    },
+
+    _multiAssignHotkey: function(selection, remove) {
+        assignHotkeys(selection, remove);
+        this.refresh();
     },
 
     _multiRestore: function(selection) {
@@ -753,7 +840,8 @@ AltTabPopup.prototype = {
             }
             else {
                 mw._alttab_ignored = true;
-            }
+                unassignHotkey(mw);
+             }
             this._minorRefresh();
         }, this);
     },
@@ -764,7 +852,7 @@ AltTabPopup.prototype = {
             if (allMinimized) {mw.unminimize();}
             else if (!mw.minimized) {mw.minimize();}
         });
-        this._minorRefresh();
+        this.refresh();
     },
 
     _populateCommonWindowContextMenuItems: function(selection) {
@@ -801,6 +889,45 @@ AltTabPopup.prototype = {
                 (noneMinimized ? this._multiMinimize : this._multiRestore).call(this, selection);
             }));
             items.push(itemMinimizeWindow);
+        }
+
+        if (selection.length) {
+            let wn_items = [];
+            let some_unassignable = selection.some(function(mw) {return mw._alttab_hotkey;});
+            let some_assignable = selection.some(function(mw) {return !mw._alttab_hotkey;});
+            let reassignable = !some_assignable && selection.length > 1 && selection.some(function(mw, index) {
+                if (index == 0) {return false;}
+                return !mw._alttab_hotkey || !selection[index -1]._alttab_hotkey || selection[index -1]._alttab_hotkey.index > mw._alttab_hotkey.index;
+            });
+            if (reassignable) {
+                let item = new PopupMenu.PopupMenuItem(_("Reassign window number"));
+                item.connect('activate', Lang.bind(this, function(actor, event){
+                    this._multiAssignHotkey(selection);
+                }));
+                wn_items.push(item);
+            } else if (some_assignable) {
+                let item = new PopupMenu.PopupMenuItem(_("Assign window number"));
+                item.connect('activate', Lang.bind(this, function(actor, event){
+                    this._multiAssignHotkey(selection.filter(function(mw) {return !mw._alttab_hotkey;}));
+                }));
+                wn_items.push(item);
+            }
+            if (some_unassignable) {
+                let item = new PopupMenu.PopupMenuItem(_("Unassign window number"));
+                item.connect('activate', Lang.bind(this, function(actor, event){
+                    this._multiAssignHotkey(selection, true);
+                }));
+                wn_items.push(item);
+            }
+            if (wn_items.length < 2) {
+                items = items.concat(wn_items);
+            } else {
+                let submenu = new PopupMenu.PopupSubMenuMenuItem(_("Window numbers"));
+                wn_items.forEach(function(item) {
+                    submenu.menu.addMenuItem(item);
+                });
+                items.push(submenu);           
+            }
         }
 
         if (selection.length > 1) {
@@ -870,6 +997,9 @@ AltTabPopup.prototype = {
                                 changeWindowWorkspace(mw, global.screen.get_workspace_by_index(index));
                             }
                         });
+                        // explicit refresh should technically only be needed in case we are unsticking a window,
+                        // otherwise the handlers should kick in
+                        this.refresh();
                     }));
                     wsItems.push(item);
                 }
@@ -890,6 +1020,17 @@ AltTabPopup.prototype = {
                     this._multiChangeToEmptyWorkspace(selection);
                 }));
                 wsItems.push(itemMoveToEmptyWorkspace);
+            }
+
+            if (selection.filter(function(mw) {return getWindowWorkspaceIndex(mw) >= 0;}).length) {
+                let item = new PopupMenu.PopupMenuItem(_("Show on all workspaces"));
+                item.connect('activate', Lang.bind(this, function(actor, event) {
+                    selection.forEach(function(mw) {
+                        mw.stick();
+                    });
+                    this.refresh();
+                }));
+                wsItems.push(item);
             }
 
             if (wsItems.length > 2) {
@@ -1160,6 +1301,12 @@ AltTabPopup.prototype = {
         const SCROLL_AMOUNT = 5;
 
         if (pressed) {
+            if (!this._released) {
+                // if the user doesn't relase the tab key for a while after the initial
+                // invocation, we don't want to scroll in the list but stay on the initially
+                // selected item.
+                return true;
+            }
             let now = new Date().getTime();
             let ms_diff =  now - (this.lastPressTs || 0);
             this.lastPressTs = now;
@@ -1256,6 +1403,7 @@ AltTabPopup.prototype = {
             return true;
         }
         else if (released) {
+            this._released = true;
             if (false) {
             } else if (keysym == Clutter.F1) {
                 this._showHelp();
@@ -1289,6 +1437,8 @@ AltTabPopup.prototype = {
                 this._multiClose(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.i && ctrlDown) {
                 this._multiIgnore(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
+            } else if (keysym == Clutter.r && ctrlDown) {
+                this._multiAssignHotkey(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
             } else if (keysym == Clutter.m && !ctrlDown) {
                 this._multiMoveMonitor(this._modifySelection(g_selection, this._currentApp, {mustExist: true}));
                 this._minorRefresh();
@@ -1339,17 +1489,25 @@ AltTabPopup.prototype = {
                 }
             } else if (keysym == Clutter.F10 && shiftDown && !ctrlDown) {
                 saveSettings();
-            } else if (ctrlDown) {
-                let index = keysym - 48; // convert '0' to 0, etc
+            } else {
+                let index = this._symbolToIndex(keysym);
                 if (index >= 0 && index <= 10) {
-                    let nextIndex = (index == 0
-                        ? global.screen.n_workspaces
-                        : Math.min(index, global.screen.n_workspaces)
-                        ) - 1;
-                    if (nextIndex != global.screen.get_active_workspace_index()) {
-                        global.screen.get_workspace_by_index(nextIndex).activate(global.get_current_time());
-                        Main.wm.showWorkspaceOSD();
-                        this.refresh();
+                    if (ctrlDown) {
+                        let nextIndex = (index == 0
+                            ? global.screen.n_workspaces
+                            : Math.min(index, global.screen.n_workspaces)
+                            ) - 1;
+                        if (nextIndex != global.screen.get_active_workspace_index()) {
+                            global.screen.get_workspace_by_index(nextIndex).activate(global.get_current_time());
+                            Main.wm.showWorkspaceOSD();
+                            this.refresh();
+                        }
+                    } else if (!ctrlDown && !superDown) {
+                        let window = g_hotKeyAssignment[index];
+                        if (window) {
+                            this._activateWindow(window);
+                            this.destroy();
+                        }
                     }
                 }
             }
@@ -1357,6 +1515,18 @@ AltTabPopup.prototype = {
         }
         
         return false;
+    },
+
+    _symbolToIndex : function(keysym) {
+        let index = keysym - 48; // convert '0' to 0, etc
+        if (index >= 0 && index <= 10) {
+            return index;
+        }
+        let index = keysym - Clutter.KP_0; // convert Num-pad '0' to index 0, etc
+        if (index >= 0 && index <= 10) {
+            return index;
+        }
+        return -1;
     },
 
     _showHelp : function() {
@@ -1426,9 +1596,9 @@ AltTabPopup.prototype = {
     },
 
     _activateWindow : function(window) {
-        let wsNow = global.screen.get_active_workspace_index();
+        let wsNow = global.screen.get_active_workspace();
         Main.activateWindow(window);
-        if (!isOnWorkspaceIndex(window, wsNow)) {
+        if (window.get_workspace() != wsNow) {
             Main.wm.showWorkspaceOSD();
         }
     },
@@ -1771,17 +1941,18 @@ AppSwitcher.prototype = {
             workspaceIcons.push(appIcon);
         }
 
+        let awMode = g_settings["all-workspaces-mode"];
         this.icons = [];
-        let lastWsIndex = 0;
+        let lastWsIndex = g_firstWorkspaceIndex;
         workspaceIcons.forEach(function(icon) {
-            let wsIndex = (icon.window.is_on_all_workspaces() ? activeWorkspace : getWindowWorkspaceIndex(icon.window));
-            for (let i = wsIndex - lastWsIndex; g_settings["all-workspaces-mode"] && i > 0; --i) {
+            let wsIndex = getWindowWorkspaceIndex(icon.window);
+            for (let i = wsIndex - lastWsIndex; awMode && i > 0; --i) {
                 this.addSeparator();
                 lastWsIndex = wsIndex;
             }
             this._addIcon(icon);
         }, this);
-        for (let i = lastWsIndex + 1; g_settings["all-workspaces-mode"] && i < global.screen.n_workspaces; ++i) {
+        for (let i = lastWsIndex + 1; awMode && i < global.screen.n_workspaces; ++i) {
             this.addSeparator();
         }
         this._label.visible = this.icons.length == 0;
@@ -2306,7 +2477,8 @@ AppIcon.prototype = {
 
         let title = this.window.get_title();
         title = typeof(title) != 'undefined' ? title : (this.app ? this.app.get_name() : "");
-        this.label.set_text(title.length && this.window.minimized ? "[" + title + "]" : title);
+        let hotkey = this.window._alttab_hotkey ? (this.window._alttab_hotkey.index) + ": " : "";
+        this.label.set_text(hotkey + (title.length && this.window.minimized ? "[" + title + "]" : title));
     },
 
     calculateSlotSize: function(sizeIn) {
@@ -2354,6 +2526,12 @@ AppIcon.prototype = {
             this.icon.add_actor(icon);
             icon.set_position(Math.floor((sizeIn - size)/2), sizeIn - size);
         }
+        if (this.window._alttab_hotkey) {
+            let label = new St.Label({x: 0, y: 0, width: size, height: size, text: this.window._alttab_hotkey.index.toString()});
+            label.style = "font-size:" + size/2 + "px; text-align:right; color: rgb(255,144,144)";
+            this.icon.add_actor(label);
+        }
+
         // Make some room for the window title.
         this._label_bin.width = size;
         this._label_bin.height = !g_settings["compact-labels"] ? Math.max(this._initLabelHeight * 2, Math.floor(size/2)) : this._initLabelHeight;
@@ -2673,6 +2851,9 @@ function loadSettings() {
         if (g_settings[setting] !== newValue) {
             g_settings[setting] = newValue;
             global.log("loaded setting: '" + setting + "', value: '" +  g_settings[setting] + "'");
+            if (setting == "style") {
+                processSwitcherStyle();
+            }
         }
     }
 }

@@ -1,12 +1,12 @@
 Alt-Tab Enhanced
 ================
-This is an enhanced Alt-Tab for Cinnamon. Building on the Cinnamon code base, it replaces the built-in Alt-Tab, expanding the feature set in many directions for the advanced user while working almost exactly like the built-in Alt-Tab for casual use. One of the features is a quick-help screen, accessed by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
+This is an enhanced Alt-Tab for Cinnamon. Building on the Cinnamon code base, it replaces the built-in "legacy" Alt-Tab, expanding the feature set in many directions for the advanced user while working almost exactly like the built-in Alt-Tab for casual use. One of the features is a quick-help screen, accessed by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
 
 This is a brief list of the most prominent features:
   - Multi-workspace capabilities
     - Optionally shows windows from all workspaces
   - Bigger thumbnails, less wasted space
-  - Supports most of the built-in Alt-Tab switcher styles
+  - Supports most of the legacy Alt-Tab switcher styles
   - New style: "In-place thumbnails", a mix between in-place preview and thumbnails
   - Choice of screen position
     - Top, center or bottom
@@ -15,12 +15,17 @@ This is a brief list of the most prominent features:
       - Primary monitor, secondary monitor, focus monitor, or bottom monitor
     - Option to automatically move all new windows to the preferred monitor
     - Automatically forces "transient" (dialog) windows to open on the same monitor as their parent
+    - Honors Cinnamon's "Only use workspaces on primary monitor" setting
+  - Direct activation of windows using numeric hotkeys
+    - Selected windows can be assigned a number, starting from 0, which can be used as a hotkey
   - Extended mouse support
+    - Multiple selection of windows with the mouse
   - Context menus for working with windows
     - Minimize/restore windows
     - Move windows from one workspace to another
     - Move windows to the current workspace
     - Move windows to an empty workspace (possibly creating a new, temporary workspace)
+    - Make windows show on all workspaces
     - Move windows from one monitor to another
     - Close windows
     - Prune empty, unnamed workspaces
@@ -38,7 +43,7 @@ Alt-Tab Enhanced is one of the first applets to use the new "applet settings" su
 Compatibility
 =============
 
-Alt-Tab Enhanced is compatible with Cinnamon from version 1.7.2 and up.
+Alt-Tab Enhanced is compatible with Cinnamon from version 1.7.4 and up.
 
 Installation
 =============
