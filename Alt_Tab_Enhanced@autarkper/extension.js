@@ -2397,7 +2397,7 @@ AppSwitcher.prototype = {
                 childBox.x1 = x;
                 childBox.y1 = 0;
                 childBox.x2 = x + width;
-                childBox.y2 = childBox.y1 + height;
+                childBox.y2 = childBox.y1 + childHeight;
                 children[i].allocate(childBox, flags);
 
                 x += this._list.spacing + width;
@@ -2487,48 +2487,62 @@ AppIcon.prototype = {
 
     calculateIconSize: function(sizeIn) {
         // Icons are sized smaller if they don't belong to the active workspace
-        return getWindowWorkspace(this.window) == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
+        return isOnWorkspaceIndex(this.window, g_activeWsIndex) ? sizeIn : Math.floor(sizeIn * 3 / 4);
     },
 
     set_size: function(sizeIn, focused) {
         this._initLabelHeight = this._initLabelHeight || this._label_bin.height;
-        let size = this.calculateSlotSize(sizeIn);
-        if (this.icon) {this.icon.destroy();}
+        if (this.icon) {return;}
         this.icon = new St.Group();
+        let size = this.calculateIconSize(sizeIn);
         if (!this.showIcons || (
             (g_settings["thumbnails-behind-icons"] == 'behind-identical' && this.app && this.app.get_windows().length > 1)
             || g_settings["thumbnails-behind-icons"] == 'always') )
         {
-            let scale = size/Math.max(global.screen_width, global.screen_height);
-            Main.layoutManager.monitors.forEach(function(monitor, mindex) { 
-                let frame = new St.Group({x: monitor.x*scale, y: monitor.y*scale + sizeIn - size, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
-                this.icon.add_actor(frame);
-            }, this);
-            let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
-            let clones = WindowUtils.createWindowClone(this.window, 0, 0, true, false);
-            for (i in clones) {
-                let clone = clones[i];
-                this.icon.add_actor(clone.actor);
-                clone.actor.set_position(clone.x*scale, sizeIn - size + clone.y*scale);
-                clone.actor.set_scale(scale, scale);
+            if (this._clone_timeoutId) {
+                Mainloop.source_remove(this._clone_timeoutId);
             }
+            this._clone_timeoutId = Mainloop.idle_add(Lang.bind(this, function() {
+                this._clone_timeoutId = 0;
+                if (!this.icon.get_stage()) {return;}
+                let thumbnail = new St.Group();
+                this.icon.add_actor(thumbnail);
+                let scale = size/Math.max(global.screen_width, global.screen_height);
+                Main.layoutManager.monitors.forEach(function(monitor, mindex) { 
+                    let frame = new St.Group({x: monitor.x*scale, y: monitor.y*scale, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
+                    thumbnail.add_actor(frame);
+                }, this);
+                let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
+                let clones = WindowUtils.createWindowClone(this.window, 0, 0, true, false);
+                for (i in clones) {
+                    let clone = clones[i];
+                    thumbnail.add_actor(clone.actor);
+                    clone.actor.set_position(clone.x*scale, clone.y*scale);
+                    clone.actor.set_scale(scale, scale);
+                }
+                if (this.hkLabel) {
+                    thumbnail.lower(this.hkLabel);
+                }
+                if (this.icon_icon) {
+                    thumbnail.lower(this.icon_icon);
+                }
+            }));
             if (this.showIcons) {
-                let size = this.calculateIconSize(sizeIn);
                 let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
-                let icon = createApplicationIcon(this.app, isize);
+                let icon = this.icon_icon = createApplicationIcon(this.app, isize);
                 this.icon.add_actor(icon);
-                icon.set_position(Math.floor((sizeIn - isize)/1), sizeIn - isize);
+                icon.set_position(Math.floor((sizeIn - isize)/1), size - isize);
             }
         }
         else {
-            let size = this.calculateIconSize(sizeIn);
             let icon = createApplicationIcon(this.app, size);
             this.icon.add_actor(icon);
-            icon.set_position(Math.floor((sizeIn - size)/2), sizeIn - size);
+            icon.set_position(Math.floor((sizeIn - size)/2), 0);
         }
         if (this.window._alttab_hotkey) {
-            let label = new St.Label({x: 0, y: 0, width: size, height: size, text: this.window._alttab_hotkey.index.toString()});
-            label.style = "font-size:" + size/2 + "px; text-align:right; color: rgb(255,144,144)";
+            let sizeQuarter = Math.floor(size/4);
+            let label = this.hkLabel = new St.Label({x: 0, y: -sizeQuarter, width: size, height: sizeIn, text: this.window._alttab_hotkey.index.toString()});
+            label.style = "font-size:" + (sizeQuarter*2) + "px; color: rgb(255,144,144)";
             this.icon.add_actor(label);
         }
 
@@ -2539,7 +2553,7 @@ AppIcon.prototype = {
             this.icon.opacity = 170;
         }
         this._iconBin.child = this.icon;
-        this._iconBin.set_size(sizeIn, sizeIn);
+        this._iconBin.set_size(sizeIn, size);
         if (g_vars.globalFocusOrder) {
             this.wsLabel.show();
         }
