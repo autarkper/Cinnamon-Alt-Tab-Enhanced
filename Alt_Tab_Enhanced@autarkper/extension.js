@@ -2527,8 +2527,9 @@ AppIcon.prototype = {
             icon.set_position(Math.floor((sizeIn - size)/2), sizeIn - size);
         }
         if (this.window._alttab_hotkey) {
-            let label = new St.Label({x: 0, y: 0, width: size, height: size, text: this.window._alttab_hotkey.index.toString()});
-            label.style = "font-size:" + size/2 + "px; text-align:right; color: rgb(255,144,144)";
+            let sizeQuarter = Math.floor(size/4);
+            let label = new St.Label({x: 0, y: -sizeQuarter, width: size, height: size, text: this.window._alttab_hotkey.index.toString()});
+            label.style = "font-size:" + (sizeQuarter*2) + "px; color: rgb(255,144,144)";
             this.icon.add_actor(label);
         }
 
