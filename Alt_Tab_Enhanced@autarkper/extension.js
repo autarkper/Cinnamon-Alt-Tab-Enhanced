@@ -2520,11 +2520,10 @@ AppIcon.prototype = {
                     clone.actor.set_scale(scale, scale);
                 }
                 if (this.showIcons) {
-                    let size = this.calculateIconSize(sizeIn);
                     let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
                     let icon = createApplicationIcon(this.app, isize);
                     thumbnail.add_actor(icon);
-                    icon.set_position(Math.floor((sizeIn - isize)/1), sizeIn - isize);
+                    icon.set_position(Math.floor((sizeIn - isize)/1), size - isize);
                 }
                 if (this.hkLabel) {
                     thumbnail.lower(this.hkLabel);
@@ -2534,7 +2533,7 @@ AppIcon.prototype = {
         else {
             let icon = createApplicationIcon(this.app, size);
             this.icon.add_actor(icon);
-            icon.set_position(Math.floor((sizeIn - size)/2), sizeIn - size);
+            icon.set_position(Math.floor((sizeIn - size)/2), 0);
         }
         if (this.window._alttab_hotkey) {
             let sizeQuarter = Math.floor(size/4);
