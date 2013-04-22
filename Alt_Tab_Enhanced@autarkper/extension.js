@@ -2397,7 +2397,7 @@ AppSwitcher.prototype = {
                 childBox.x1 = x;
                 childBox.y1 = 0;
                 childBox.x2 = x + width;
-                childBox.y2 = childBox.y1 + height;
+                childBox.y2 = childBox.y1 + childHeight;
                 children[i].allocate(childBox, flags);
 
                 x += this._list.spacing + width;
@@ -2494,7 +2494,7 @@ AppIcon.prototype = {
         this._initLabelHeight = this._initLabelHeight || this._label_bin.height;
         if (this.icon) {return;}
         this.icon = new St.Group();
-        let size = this.calculateSlotSize(sizeIn);
+        let size = this.calculateIconSize(sizeIn);
         if (!this.showIcons || (
             (g_settings["thumbnails-behind-icons"] == 'behind-identical' && this.app && this.app.get_windows().length > 1)
             || g_settings["thumbnails-behind-icons"] == 'always') )
@@ -2532,14 +2532,13 @@ AppIcon.prototype = {
             }));
         }
         else {
-            let size = this.calculateIconSize(sizeIn);
             let icon = createApplicationIcon(this.app, size);
             this.icon.add_actor(icon);
             icon.set_position(Math.floor((sizeIn - size)/2), sizeIn - size);
         }
         if (this.window._alttab_hotkey) {
             let sizeQuarter = Math.floor(size/4);
-            let label = this.hkLabel = new St.Label({x: 0, y: -sizeQuarter, width: size, height: size, text: this.window._alttab_hotkey.index.toString()});
+            let label = this.hkLabel = new St.Label({x: 0, y: sizeIn - (sizeQuarter*5), width: size, height: sizeIn, text: this.window._alttab_hotkey.index.toString()});
             label.style = "font-size:" + (sizeQuarter*2) + "px; color: rgb(255,144,144)";
             this.icon.add_actor(label);
         }
@@ -2551,7 +2550,7 @@ AppIcon.prototype = {
             this.icon.opacity = 170;
         }
         this._iconBin.child = this.icon;
-        this._iconBin.set_size(sizeIn, sizeIn);
+        this._iconBin.set_size(sizeIn, size);
         if (g_vars.globalFocusOrder) {
             this.wsLabel.show();
         }
