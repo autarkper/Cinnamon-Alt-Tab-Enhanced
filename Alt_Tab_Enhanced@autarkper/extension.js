@@ -2492,33 +2492,44 @@ AppIcon.prototype = {
 
     set_size: function(sizeIn, focused) {
         this._initLabelHeight = this._initLabelHeight || this._label_bin.height;
-        let size = this.calculateSlotSize(sizeIn);
-        if (this.icon) {this.icon.destroy();}
+        if (this.icon) {return;}
         this.icon = new St.Group();
+        let size = this.calculateSlotSize(sizeIn);
         if (!this.showIcons || (
             (g_settings["thumbnails-behind-icons"] == 'behind-identical' && this.app && this.app.get_windows().length > 1)
             || g_settings["thumbnails-behind-icons"] == 'always') )
         {
-            let scale = size/Math.max(global.screen_width, global.screen_height);
-            Main.layoutManager.monitors.forEach(function(monitor, mindex) { 
-                let frame = new St.Group({x: monitor.x*scale, y: monitor.y*scale + sizeIn - size, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
-                this.icon.add_actor(frame);
-            }, this);
-            let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
-            let clones = WindowUtils.createWindowClone(this.window, 0, 0, true, false);
-            for (i in clones) {
-                let clone = clones[i];
-                this.icon.add_actor(clone.actor);
-                clone.actor.set_position(clone.x*scale, sizeIn - size + clone.y*scale);
-                clone.actor.set_scale(scale, scale);
+            if (this._clone_timeoutId) {
+                Mainloop.source_remove(this._clone_timeoutId);
             }
-            if (this.showIcons) {
-                let size = this.calculateIconSize(sizeIn);
-                let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
-                let icon = createApplicationIcon(this.app, isize);
-                this.icon.add_actor(icon);
-                icon.set_position(Math.floor((sizeIn - isize)/1), sizeIn - isize);
-            }
+            this._clone_timeoutId = Mainloop.timeout_add(focused ? 0 : 25, Lang.bind(this, function() {
+                this._clone_timeoutId = 0;
+                let thumbnail = new St.Group();
+                this.icon.add_actor(thumbnail);
+                let scale = size/Math.max(global.screen_width, global.screen_height);
+                Main.layoutManager.monitors.forEach(function(monitor, mindex) { 
+                    let frame = new St.Group({x: monitor.x*scale, y: monitor.y*scale + sizeIn - size, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
+                    thumbnail.add_actor(frame);
+                }, this);
+                let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
+                let clones = WindowUtils.createWindowClone(this.window, 0, 0, true, false);
+                for (i in clones) {
+                    let clone = clones[i];
+                    thumbnail.add_actor(clone.actor);
+                    clone.actor.set_position(clone.x*scale, sizeIn - size + clone.y*scale);
+                    clone.actor.set_scale(scale, scale);
+                }
+                if (this.showIcons) {
+                    let size = this.calculateIconSize(sizeIn);
+                    let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
+                    let icon = createApplicationIcon(this.app, isize);
+                    thumbnail.add_actor(icon);
+                    icon.set_position(Math.floor((sizeIn - isize)/1), sizeIn - isize);
+                }
+                if (this.hkLabel) {
+                    thumbnail.lower(this.hkLabel);
+                }
+            }));
         }
         else {
             let size = this.calculateIconSize(sizeIn);
@@ -2528,7 +2539,7 @@ AppIcon.prototype = {
         }
         if (this.window._alttab_hotkey) {
             let sizeQuarter = Math.floor(size/4);
-            let label = new St.Label({x: 0, y: -sizeQuarter, width: size, height: size, text: this.window._alttab_hotkey.index.toString()});
+            let label = this.hkLabel = new St.Label({x: 0, y: -sizeQuarter, width: size, height: size, text: this.window._alttab_hotkey.index.toString()});
             label.style = "font-size:" + (sizeQuarter*2) + "px; color: rgb(255,144,144)";
             this.icon.add_actor(label);
         }
