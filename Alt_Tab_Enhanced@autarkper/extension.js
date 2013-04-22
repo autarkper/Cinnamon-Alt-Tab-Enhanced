@@ -2487,7 +2487,7 @@ AppIcon.prototype = {
 
     calculateIconSize: function(sizeIn) {
         // Icons are sized smaller if they don't belong to the active workspace
-        return getWindowWorkspace(this.window) == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
+        return isOnWorkspaceIndex(this.window, g_activeWsIndex) ? sizeIn : Math.floor(sizeIn * 3 / 4);
     },
 
     set_size: function(sizeIn, focused) {
