@@ -2502,7 +2502,7 @@ AppIcon.prototype = {
             if (this._clone_timeoutId) {
                 Mainloop.source_remove(this._clone_timeoutId);
             }
-            this._clone_timeoutId = Mainloop.timeout_add(focused ? 0 : 25, Lang.bind(this, function() {
+            this._clone_timeoutId = Mainloop.idle_add(Lang.bind(this, function() {
                 this._clone_timeoutId = 0;
                 let thumbnail = new St.Group();
                 this.icon.add_actor(thumbnail);
