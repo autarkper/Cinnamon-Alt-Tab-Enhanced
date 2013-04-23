@@ -2504,6 +2504,7 @@ AppIcon.prototype = {
             }
             this._clone_timeoutId = Mainloop.idle_add(Lang.bind(this, function() {
                 this._clone_timeoutId = 0;
+                if (!this.icon.get_stage()) {return;}
                 let thumbnail = new St.Group();
                 this.icon.add_actor(thumbnail);
                 let scale = size/Math.max(global.screen_width, global.screen_height);
