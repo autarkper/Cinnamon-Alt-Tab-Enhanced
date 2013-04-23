@@ -2508,7 +2508,7 @@ AppIcon.prototype = {
                 this.icon.add_actor(thumbnail);
                 let scale = size/Math.max(global.screen_width, global.screen_height);
                 Main.layoutManager.monitors.forEach(function(monitor, mindex) { 
-                    let frame = new St.Group({x: monitor.x*scale, y: monitor.y*scale + sizeIn - size, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
+                    let frame = new St.Group({x: monitor.x*scale, y: monitor.y*scale, width: monitor.width*scale, height: monitor.height*scale, style: "border: 1px rgba(127,127,127,1)"});
                     thumbnail.add_actor(frame);
                 }, this);
                 let monitor = Main.layoutManager.monitors[this.window.get_monitor()];
@@ -2516,7 +2516,7 @@ AppIcon.prototype = {
                 for (i in clones) {
                     let clone = clones[i];
                     thumbnail.add_actor(clone.actor);
-                    clone.actor.set_position(clone.x*scale, sizeIn - size + clone.y*scale);
+                    clone.actor.set_position(clone.x*scale, clone.y*scale);
                     clone.actor.set_scale(scale, scale);
                 }
                 if (this.showIcons) {
