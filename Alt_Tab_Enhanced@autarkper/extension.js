@@ -2519,16 +2519,19 @@ AppIcon.prototype = {
                     clone.actor.set_position(clone.x*scale, clone.y*scale);
                     clone.actor.set_scale(scale, scale);
                 }
-                if (this.showIcons) {
-                    let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
-                    let icon = createApplicationIcon(this.app, isize);
-                    thumbnail.add_actor(icon);
-                    icon.set_position(Math.floor((sizeIn - isize)/1), size - isize);
-                }
                 if (this.hkLabel) {
                     thumbnail.lower(this.hkLabel);
                 }
+                if (this.icon_icon) {
+                    thumbnail.lower(this.icon_icon);
+                }
             }));
+            if (this.showIcons) {
+                let isize = Math.min(MAX_ICON_SIZE, Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]));
+                let icon = this.icon_icon = createApplicationIcon(this.app, isize);
+                this.icon.add_actor(icon);
+                icon.set_position(Math.floor((sizeIn - isize)/1), size - isize);
+            }
         }
         else {
             let icon = createApplicationIcon(this.app, size);
