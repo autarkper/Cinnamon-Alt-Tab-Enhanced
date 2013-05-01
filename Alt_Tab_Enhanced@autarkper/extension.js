@@ -58,7 +58,7 @@ const HELP_TEXT = [
     _("Ctrl+Right arrow: Skip right"),
     _("Ctrl+Left arrow: Skip left"),
     _("Space: Select/unselect current window"),
-    _("Menu key, Right-click: Open context menu for the selected windows"),
+    _("Menu key, Shift+F10, Right-click: Open context menu for the selected windows"),
     _("m: Move selected windows to next monitor"),
     _("n: Minimize/restore selected windows"),
     _("Super+Left/Right arrow: Move selected windows to the next workspace right/left"),
@@ -74,7 +74,7 @@ const HELP_TEXT = [
     _("F7: Toggle display of thumbnail header (showing window icon and title)"),
     _("F8: Toggle single-line window-title labels on/off"),
     _("F9: Switch between the different thumbnail-behind-icon styles (always, never, behind-identical-icons)"),
-    _("Shift+F10: Make the current configuration permanent"),
+    _("Shift+F3: Make the current configuration permanent"),
     _("F1: Show this quick-help screen"),
     "",
 ];
@@ -1322,7 +1322,9 @@ AltTabPopup.prototype = {
                     });
                 }
                 this._minorRefresh();
-            } else if (keysym == Clutter.Menu) {
+            } else if (keysym == Clutter.Menu ||
+                (keysym == Clutter.F10 && shiftDown && !ctrlDown)) // Standardish context-menu shortcut
+            {
                 this._showWindowContextMenu(this._currentApp);
             } else if (keysym == Clutter.Escape) {
                 this.destroy();
@@ -1487,7 +1489,7 @@ AltTabPopup.prototype = {
                     g_settings["thumbnails-behind-icons"] = g_thumbnailIconOptions[newIndex];
                     this.refresh();
                 }
-            } else if (keysym == Clutter.F10 && shiftDown && !ctrlDown) {
+            } else if (keysym == Clutter.F3 && shiftDown && !ctrlDown) {
                 saveSettings();
             } else {
                 let index = this._symbolToIndex(keysym);
