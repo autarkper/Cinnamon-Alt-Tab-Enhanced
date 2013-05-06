@@ -1,6 +1,6 @@
 Alt-Tab Enhanced
 ================
-This is an enhanced Alt-Tab for Cinnamon. Building on the Cinnamon code base, it replaces the built-in "legacy" Alt-Tab, expanding the feature set in many directions for the advanced user while working almost exactly like the built-in Alt-Tab for casual use. One of the features is a quick-help screen, accessed by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
+This is an enhanced Alt-Tab for Cinnamon. Building on the Cinnamon code base, it replaces the built-in "legacy" Alt-Tab, expanding the feature set in many directions for the advanced user while working almost exactly like the built-in "classic" Alt-Tab for casual use. One of the new features is a quick-help screen, activated by pressing F1 with Alt-Tab open. To toggle between multi-workspace mode and single-workspace mode, press F5.
 
 This is a brief list of the most prominent features:
   - Multi-workspace capabilities
@@ -17,7 +17,7 @@ This is a brief list of the most prominent features:
     - Automatically forces "transient" (dialog) windows to open on the same monitor as their parent
     - Honors Cinnamon's "Only use workspaces on primary monitor" setting
   - Direct activation of windows using numeric hotkeys
-    - Selected windows can be assigned a number, starting from 0, which can be used as a hotkey
+    - Selected windows can be assigned a number, starting from 0, which can be used as a hotkey (inside Alt-Tab)
   - Extended mouse support
     - Multiple selection of windows with the mouse
   - Context menus for working with windows
@@ -33,12 +33,12 @@ This is a brief list of the most prominent features:
   - Optionally uses notifications to bring attention to attention-seeking windows
     - Click on the notification to activate the attention-seeking window
     - Click on the notification's Ignore button to dismiss the notification
-  - Many keyboard shortcuts
+  - Many keyboard shortcuts, see help screen
   - Many configuration options
 
 Settings
 =============
-Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of the upcoming Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the Help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F10, or press "Save current configuration" in the Help screen, which also has a button to revert to the saved configuration, in case you have made unwanted changes.
+Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the Help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F10, or press "Save current configuration" in the Help screen, which also has a button to revert to the saved configuration, in case you have made unwanted changes.
 
 Compatibility
 =============
