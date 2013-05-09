@@ -38,7 +38,7 @@ This is a brief list of the most prominent features:
 
 Settings
 =============
-Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the Help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F10, or press "Save current configuration" in the Help screen, which also has a button to revert to the saved configuration, in case you have made unwanted changes.
+Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the Help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F3, or press "Save current configuration" in the Help screen, which also has a button to revert to the saved configuration, in case you have made unwanted changes.
 
 Compatibility
 =============
