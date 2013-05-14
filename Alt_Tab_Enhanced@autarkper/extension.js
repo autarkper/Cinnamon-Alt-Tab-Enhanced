@@ -2644,7 +2644,7 @@ ThumbnailHolder.prototype = {
 
                 let childBox = new Clutter.ActorBox();
                 childBox.x1 = Math.floor((hPadding + binWidth-clone.actor.width*scale)/2);
-                childBox.y1 = Math.floor(doScale ? vPadding/2 : (vPadding + binHeight-clone.actor.height*scale)/2);
+                childBox.y1 = Math.floor((vPadding + binHeight-clone.actor.height*scale)/2);
                 childBox.x2 = childBox.x1 + clone.actor.width;
                 childBox.y2 = childBox.y1 + clone.actor.height;
                 clone.actor.allocate(childBox, 0);
