@@ -2885,6 +2885,8 @@ function enable() {
         tabPopup.show(backwards, binding.get_name(), binding.get_mask());
     };
 
+    Meta.keybindings_set_custom_handler('switch-applications', handler);
+    Meta.keybindings_set_custom_handler('switch-applications-backward', handler);
     Meta.keybindings_set_custom_handler('switch-windows', handler);
     Meta.keybindings_set_custom_handler('switch-group', handler);
 
@@ -2935,6 +2937,8 @@ function enable() {
 }
 
 function disable() {
+    Meta.keybindings_set_custom_handler('switch-applications-backward', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Meta.keybindings_set_custom_handler('switch-applications', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     g_attentionConnector.destroy();
