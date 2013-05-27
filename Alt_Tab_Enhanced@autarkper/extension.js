@@ -1934,28 +1934,30 @@ AppSwitcher.prototype = {
 
         // Construct the AppIcons, add to the popup
         let activeWorkspace = global.screen.get_active_workspace();
-        let workspaceIcons = [];
+        let allIcons = [];
         for (let i = 0; i < windows.length; i++) {
             let appIcon = new AppIcon(windows[i], showThumbnails, showIcons);
             // Cache the window list now; we don't handle dynamic changes here,
             // and we don't want to be continually retrieving it
             appIcon.cachedWindows = [windows[i]];
-            workspaceIcons.push(appIcon);
+            allIcons.push(appIcon);
         }
 
         let awMode = g_settings["all-workspaces-mode"];
         this.icons = [];
-        let lastWsIndex = g_firstWorkspaceIndex;
-        workspaceIcons.forEach(function(icon) {
-            let wsIndex = getWindowWorkspaceIndex(icon.window);
-            for (let i = wsIndex - lastWsIndex; awMode && i > 0; --i) {
+        if (allIcons.length) {
+            let lastWsIndex = g_firstWorkspaceIndex;
+            allIcons.forEach(function(icon) {
+                let wsIndex = getWindowWorkspaceIndex(icon.window);
+                for (let i = wsIndex - lastWsIndex; awMode && i > 0; --i) {
+                    this.addSeparator();
+                    lastWsIndex = wsIndex;
+                }
+                this._addIcon(icon);
+            }, this);
+            for (let i = lastWsIndex + 1; awMode && i < global.screen.n_workspaces; ++i) {
                 this.addSeparator();
-                lastWsIndex = wsIndex;
             }
-            this._addIcon(icon);
-        }, this);
-        for (let i = lastWsIndex + 1; awMode && i < global.screen.n_workspaces; ++i) {
-            this.addSeparator();
         }
         this._label.visible = this.icons.length == 0;
         this._prevApp = this._curApp = -1;
