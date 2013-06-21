@@ -43,7 +43,7 @@ Alt-Tab Enhanced is one of the first applets to use the new "applet settings" su
 Compatibility
 =============
 
-Alt-Tab Enhanced is compatible with Cinnamon from version 1.7.4 and up.
+Alt-Tab Enhanced is compatible with Cinnamon from version 1.8 and up.
 
 Installation
 =============
