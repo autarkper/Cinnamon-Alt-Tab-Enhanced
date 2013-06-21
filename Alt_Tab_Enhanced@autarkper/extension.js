@@ -2822,6 +2822,9 @@ function loadSettings() {
             if (setting == "style") {
                 processSwitcherStyle();
             }
+            if (setting == "hide-icon") {
+                handleHideIcon();
+            }
         }
     }
 }
