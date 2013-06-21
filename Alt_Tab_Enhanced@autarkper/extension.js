@@ -1077,7 +1077,7 @@ AltTabPopup.prototype = {
         mm.addMenu(menu);
 
         let item = new PopupMenu.PopupMenuItem(_("Help"));
-        item.connect('activate', Lang.bind(this, this._showHelp));
+        item.connect('activate', Lang.bind(this, showHelp));
         menu.addMenuItem(item);
         let item = new PopupMenu.PopupMenuItem(_("Settings"));
         item.connect('activate', Lang.bind(this, function() {
@@ -1408,7 +1408,7 @@ AltTabPopup.prototype = {
             this._released = true;
             if (false) {
             } else if (keysym == Clutter.F1) {
-                this._showHelp();
+                showHelp();
             } else if (keysym == Clutter.KEY_space) {
                 if (superDown) {
                     g_selection = [this._selectedWindow];
@@ -1529,56 +1529,6 @@ AltTabPopup.prototype = {
             return index;
         }
         return -1;
-    },
-
-    _showHelp : function() {
-        let dialog = new ModalDialog.ModalDialog();
-
-        let label = new St.Label({text: _("Alt-Tab Quick Help (version %s)").format(g_version)});
-        let bin = new St.Bin();
-        bin.child = label;
-        dialog.contentLayout.add(bin);
-        HELP_TEXT.forEach(function(text) {
-            let label = new St.Label({text: text});
-            dialog.contentLayout.add(label);
-        }, this);
-
-        let altTab = this;
-        dialog.setButtons([
-            {
-                label: _("Open Settings"),
-                focused: false,
-                action: function() {
-                    altTab.destroy();
-                    dialog.close();
-                    openSettings();
-                }
-            },
-            canSaveSettings() ? {
-                label: _("Save current configuration"),
-                focused: false,
-                action: function() {
-                    dialog.close();
-                    saveSettings();
-                }
-            } : null,
-            canSaveSettings() ? {
-                label: _("Revert to saved configuration"),
-                focused: false,
-                action: function() {
-                    dialog.close();
-                    loadSettings();
-                }
-            } : null,
-            {
-                label: _("Close"),
-                focused: true,
-                action: function() {
-                    dialog.close();
-                }
-            }
-        ].filter(function(val) {return val != null;}));
-        dialog.open();
     },
 
     _onScroll : function(actor, event) {
@@ -3085,6 +3035,58 @@ function _onWindowDemandsAttention(display, window, urgent) {
 }
 
 // ----------------------------------
+var showHelp = function() {
+    let dialog = new ModalDialog.ModalDialog();
+
+    let label = new St.Label({text: _("Alt-Tab Quick Help (version %s)").format(g_version)});
+    let bin = new St.Bin();
+    bin.child = label;
+    dialog.contentLayout.add(bin);
+    HELP_TEXT.forEach(function(text) {
+        let label = new St.Label({text: text});
+        dialog.contentLayout.add(label);
+    }, this);
+
+    dialog.setButtons([
+        {
+            label: _("Open Settings"),
+            focused: false,
+            action: function() {
+                if (g_vars.altTabPopup) {
+                    g_vars.altTabPopup.destroy();
+                }
+                dialog.close();
+                openSettings();
+            }
+        },
+        canSaveSettings() ? {
+            label: _("Save current configuration"),
+            focused: false,
+            action: function() {
+                dialog.close();
+                saveSettings();
+            }
+        } : null,
+        canSaveSettings() ? {
+            label: _("Revert to saved configuration"),
+            focused: false,
+            action: function() {
+                dialog.close();
+                loadSettings();
+            }
+        } : null,
+        {
+            label: _("Close"),
+            focused: true,
+            action: function() {
+                dialog.close();
+            }
+        }
+    ].filter(function(val) {return val != null;}));
+    dialog.open();
+};
+
+// ----------------------------------
 
 function handleHideIcon()
 {
@@ -3118,6 +3120,10 @@ MyApplet.prototype = {
 
         let item = new PopupMenu.PopupMenuItem(_("Alt-Tab Enhanced Settings"));
         item.connect('activate', openSettings);
+        this._applet_context_menu.addMenuItem(item);
+
+        let item = new PopupMenu.PopupMenuItem(_("Help"));
+        item.connect('activate', showHelp);
         this._applet_context_menu.addMenuItem(item);
 
         let itemToggleIcon = new PopupMenu.PopupMenuItem("dummy");
