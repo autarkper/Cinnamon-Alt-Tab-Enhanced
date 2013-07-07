@@ -170,17 +170,10 @@ if (!g_vars) {
     g_vars = Main._alttab_enhanced_vars = {};
 // there are some things we want to live on, even when we are disabled,
 // so that we don't have to start from scratch if we are enabled again
-    g_vars.windowsOrdered = [];
     g_vars.globalFocusOrder = false;
     g_vars.g_lastWindowHotkey = -1;
     g_vars.g_hotKeyAssignment = {};
 
-    global.display.connect('notify::focus-window', function(display) {
-        g_vars.windowsOrdered = g_vars.windowsOrdered.filter(function(window) {
-            return window && window != display.focus_window && isValidWindow(window);
-        }, this);
-        g_vars.windowsOrdered.unshift(display.focus_window);
-    });
     global.settings.connect('changed::alttab-switcher-style', getSwitcherStyle);
 
     // this object will be populated with our settings, if settings support is available
@@ -620,12 +613,8 @@ AltTabPopup.prototype = {
             windows = windows.sort(function(a, b) {
                 let minimizedDiff = (a.minimized ? 1 : 0) - (b.minimized ? 1 : 0);
                 if (minimizedDiff) return minimizedDiff;
-                let inGlobalListDiff = (g_vars.windowsOrdered.indexOf(a) < 0 ? 1 : 0) - (g_vars.windowsOrdered.indexOf(b) < 0 ? 1 : 0);
-                if (inGlobalListDiff) {
-                    return inGlobalListDiff;
-                }
-                let globalDiff = g_vars.windowsOrdered.indexOf(a) - g_vars.windowsOrdered.indexOf(b);
-                return globalDiff || windows.indexOf(a) - windows.indexOf(b);
+                let timeDiff = b.get_user_time() - a.get_user_time();
+                return timeDiff || windows.indexOf(a) - windows.indexOf(b);
             }, this);
             currentWindow = windows[0];
             forwardWindow = windows[1];
