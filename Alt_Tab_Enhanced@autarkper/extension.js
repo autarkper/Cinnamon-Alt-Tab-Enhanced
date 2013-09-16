@@ -2433,14 +2433,20 @@ AppIcon.prototype = {
         return isOnWorkspaceIndex(this.window, g_activeWsIndex) ? sizeIn : Math.floor(sizeIn * 3 / 4);
     },
 
+    have_identical_icons: function() {
+        return this.app && this.app.get_windows().length > 1 && (g_vars.globalFocusOrder || this.app.get_windows().filter(function(window) {
+            return getWindowWorkspaceIndex(window) == getWindowWorkspaceIndex(this.window);
+        }, this).length > 1);
+    },
+
     set_size: function(sizeIn, focused) {
         this._initLabelHeight = this._initLabelHeight || this._label_bin.height;
         if (this.icon) {return;}
         this.icon = new St.Group();
         let size = this.calculateIconSize(sizeIn);
         if (!this.showIcons || (
-            (g_settings["thumbnails-behind-icons"] == 'behind-identical' && this.app && this.app.get_windows().length > 1)
-            || g_settings["thumbnails-behind-icons"] == 'always') )
+            g_settings["thumbnails-behind-icons"] == 'behind-identical' && this.have_identical_icons() ||
+            g_settings["thumbnails-behind-icons"] == 'always') )
         {
             if (this._clone_timeoutId) {
                 Mainloop.source_remove(this._clone_timeoutId);
