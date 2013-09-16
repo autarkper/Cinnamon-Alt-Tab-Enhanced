@@ -583,7 +583,7 @@ AltTabPopup.prototype = {
             });
         }
 
-        let [currentWindow, forwardWindow, backwardWindow] = [wsWindows[0], null, null];
+        let currentWindow = wsWindows[0], forwardWindow = null, backwardWindow = null;
 
         let windows = [];
         let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
