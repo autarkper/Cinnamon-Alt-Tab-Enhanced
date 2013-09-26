@@ -198,6 +198,10 @@ function assignHotkey(window, force) {
     return window._alttab_hotkey.index;
 }
 
+function hotkeyToString(window) {
+	return (window._alttab_hotkey.index + 1).toString();
+}
+
 function assignHotkeys(newones_in, remove) {
     if (!newones_in) {
         return;
@@ -1508,14 +1512,18 @@ AltTabPopup.prototype = {
         return false;
     },
 
+    _symbolToIndex__ : function(index) {
+		return (20 + index - 1) % 10;
+    },
+
     _symbolToIndex : function(keysym) {
         let index = keysym - 48; // convert '0' to 0, etc
         if (index >= 0 && index <= 10) {
-            return index;
+            return this._symbolToIndex__(index);
         }
         let index = keysym - Clutter.KP_0; // convert Num-pad '0' to index 0, etc
         if (index >= 0 && index <= 10) {
-            return index;
+            return this._symbolToIndex__(index);
         }
         return -1;
     },
@@ -2420,7 +2428,7 @@ AppIcon.prototype = {
 
         let title = this.window.get_title();
         title = typeof(title) != 'undefined' ? title : (this.app ? this.app.get_name() : "");
-        let hotkey = this.window._alttab_hotkey ? (this.window._alttab_hotkey.index) + ": " : "";
+        let hotkey = this.window._alttab_hotkey ? (hotkeyToString(this.window)) + ": " : "";
         this.label.set_text(hotkey + (title.length && this.window.minimized ? "[" + title + "]" : title));
     },
 
@@ -2490,7 +2498,7 @@ AppIcon.prototype = {
         }
         if (this.window._alttab_hotkey) {
             let sizeQuarter = Math.floor(size/4);
-            let label = this.hkLabel = new St.Label({x: 0, y: -sizeQuarter, width: size, height: sizeIn, text: this.window._alttab_hotkey.index.toString()});
+            let label = this.hkLabel = new St.Label({x: 0, y: -sizeQuarter, width: size, height: sizeIn, text: hotkeyToString(this.window)});
             label.style = "font-size:" + (sizeQuarter*2) + "px; color: rgb(255,144,144)";
             this.icon.add_actor(label);
         }
