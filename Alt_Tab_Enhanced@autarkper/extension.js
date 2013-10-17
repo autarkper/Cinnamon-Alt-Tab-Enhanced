@@ -3125,10 +3125,6 @@ MyApplet.prototype = {
         this.set_applet_tooltip("Alt-Tab Enhanced");
 
         this._applet_context_menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        let item = new PopupMenu.PopupMenuItem(_("Alt-Tab Enhanced Settings..."));
-        item.connect('activate', openSettings);
-        this._applet_context_menu.addMenuItem(item);
-
         let item = new PopupMenu.PopupMenuItem(_("Help"));
         item.connect('activate', showHelp);
         this._applet_context_menu.addMenuItem(item);
