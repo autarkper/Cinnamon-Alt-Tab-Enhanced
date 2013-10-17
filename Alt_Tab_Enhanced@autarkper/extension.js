@@ -703,7 +703,7 @@ AltTabPopup.prototype = {
             }
         }
         
-        if (g_settings["all-workspaces-mode"] && g_settings["display-origin-arrow"] && !g_vars.globalFocusOrder) { // restricted feature
+        if (g_settings["display-origin-arrow"] && !g_vars.globalFocusOrder) { // restricted feature
             this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
         }
         return true;
