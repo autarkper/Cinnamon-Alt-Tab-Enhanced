@@ -6,7 +6,6 @@ This is a brief list of the most prominent features:
   - Multi-workspace capabilities
     - Optionally shows windows from all workspaces
   - Bigger thumbnails, less wasted space
-  - Supports most of the legacy Alt-Tab switcher styles
   - New style: "In-place thumbnails", a mix between in-place preview and thumbnails
   - Choice of screen position
     - Top, center or bottom
@@ -17,7 +16,7 @@ This is a brief list of the most prominent features:
     - Automatically forces "transient" (dialog) windows to open on the same monitor as their parent
     - Honors Cinnamon's "Only use workspaces on primary monitor" setting
   - Direct activation of windows using numeric hotkeys
-    - Selected windows can be assigned a number, starting from 0, which can be used as a hotkey (inside Alt-Tab)
+    - Selected windows can be assigned a number, starting from 1, which can be used as a hotkey (inside Alt-Tab)
   - Extended mouse support
     - Multiple selection of windows with the mouse
   - Context menus for working with windows
@@ -38,7 +37,7 @@ This is a brief list of the most prominent features:
 
 Settings
 =============
-Alt-Tab Enhanced is one of the first applets to use the new "applet settings" support that is a new feature of Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the Help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F3, or press "Save current configuration" in the Help screen, which also has a button to revert to the saved configuration, in case you have made unwanted changes.
+Alt-Tab Enhanced uses the "applet settings" support that was introduced in Cinnamon 1.8. This means that you can change all settings via Cinnamon Settings, but most of the settings are also changeable for the duration of the current session via the use of hotkeys - consult the Help screen for more information. To save the current configuration permanently, after making temporary changes, just press Shift+F3, or press "Save current configuration" in the Help screen, which also has a button to revert to the saved configuration, in case you have made unwanted changes.
 
 Compatibility
 =============
@@ -47,5 +46,4 @@ Alt-Tab Enhanced is compatible with Cinnamon from version 1.8 and up.
 
 Installation
 =============
-Alt-Tab Enhanced is most easily installed from within Cinnamon's Applet Settings dialog. If that kind of installation support is missing you are most probably running an incompatible Cinnamon version.
-
+Alt-Tab Enhanced is most easily installed online from Cinnamon Settings, Applets. If that kind of installation support is missing, you are most probably running an incompatible Cinnamon version.
