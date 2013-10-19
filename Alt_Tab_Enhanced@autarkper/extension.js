@@ -572,13 +572,22 @@ AltTabPopup.prototype = {
             }
         };
 
+        let get_tab_list = function() {
+            let windows = getTabList.apply(0, arguments)
+            if (windows.length > 0 && binding == 'switch-group' && global.display.focus_window) {
+                return windows.filter(function(window) {
+                    return window.get_wm_class() == global.display.focus_window.get_wm_class();
+                });
+            }
+            return windows;
+        };
         let cwsi = global.screen.get_active_workspace_index();
         // if there are duplicates, we want the "original" window to be on the current workspace
-        let wsWindows = getTabList().filter(filterDuplicates);
+        let wsWindows = get_tab_list().filter(filterDuplicates);
         
         let ws_slots = {};
         for (let i = 0, numws = global.screen.n_workspaces; i < numws; ++i) {
-            let windows = i == cwsi ? wsWindows : getTabList(global.screen.get_workspace_by_index(i)).filter(filterDuplicates);
+            let windows = i == cwsi ? wsWindows : get_tab_list(global.screen.get_workspace_by_index(i)).filter(filterDuplicates);
             windows.forEach(function(window) {
                 let indx = getWindowWorkspaceIndex(window);
                 let slot = ws_slots[indx] || [];
@@ -656,7 +665,7 @@ AltTabPopup.prototype = {
 
         // Make the initial selection
         if (this._appIcons.length > 0 && (currentIndex >= 0 || forwardIndex >= 0)) {
-            if (binding == 'no-switch-windows' || binding == 'switch-group') {
+            if (binding == 'no-switch-windows') {
                 this._select(currentIndex);
                 this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
                 this._appSwitcher._scrollTo(currentIndex, -1, 2, true);
