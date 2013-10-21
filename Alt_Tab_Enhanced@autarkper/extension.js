@@ -34,10 +34,12 @@ catch (e) {}
 
 const POPUP_SCROLL_TIME = 0.10; // seconds
 const POPUP_DELAY_TIMEOUT = 110; // milliseconds
+const PREVIEW_TRANSITION_SECONDS = 0.125;
 
 const THUMBNAIL_FADE_TIME = 0.1; // seconds
 
-const PREVIEW_DELAY_TIMEOUT = 180; // milliseconds
+const PREVIEW_DELAY_TIMEOUT_FIRST = 300; // milliseconds
+const PREVIEW_DELAY_TIMEOUT = 200; // milliseconds
 var PREVIEW_SWITCHER_FADEOUT_TIME = 0.5; // seconds
 
 const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
@@ -1612,9 +1614,19 @@ AltTabPopup.prototype = {
     },
     
     _clearPreview: function() {
+        if (this._displayPreviewTimeoutId) {
+            Mainloop.source_remove(this._displayPreviewTimeoutId);
+            this._displayPreviewTimeoutId = 0;
+        }
         if (this._previewClones) {
-            this._previewClones.destroy();
+            let temp = this._previewClones;
             this._previewClones = null;
+            Tweener.addTween(temp, { 
+                opacity: 0,
+                time: PREVIEW_TRANSITION_SECONDS,
+                transition: 'linear',
+                onComplete: function() {temp.destroy();}
+            });
         }
     },
     
@@ -1635,10 +1647,12 @@ AltTabPopup.prototype = {
             let window = this._appIcons[this._currentApp].window;
             let app = this._appIcons[this._currentApp].app;
 
+            let opacity = 255;
             let previewClones = null;
             let [x1, y1] = [0, 0];
             if (!g_setup._previewThumbnails) {
                 previewClones = new St.Group();
+                previewClones.opacity = 0;
                 this.actor.add_actor(previewClones);
                 let clones = WindowUtils.createWindowClone(window, 0, 0, true, false);
                 for (let i = 0; i < clones.length; i++) {
@@ -1669,7 +1683,7 @@ AltTabPopup.prototype = {
 
             previewClones.lower(this._appSwitcher.actor);
             if (window.minimized) {
-                previewClones.opacity = 192;
+                opacity = 192;
             }
             const size = 64;
             let icon = app ? app.create_icon_texture(size) : null;
@@ -1682,6 +1696,11 @@ AltTabPopup.prototype = {
                 icon.allocate(childBox, 0);
             }
 
+            Tweener.addTween(previewClones, { 
+                opacity: opacity,
+                time: PREVIEW_TRANSITION_SECONDS,
+                transition: 'linear',
+            });
             this._clearPreview();
             this._previewClones = previewClones;
             this._previewClones.reactive = true;
@@ -1691,10 +1710,7 @@ AltTabPopup.prototype = {
         }; // showPreview
 
         // Use a cancellable timeout to avoid flickering effect when tabbing rapidly through the set.
-        if (this._displayPreviewTimeoutId) {
-            Mainloop.source_remove(this._displayPreviewTimeoutId);
-        }
-        let delay = this._previewOnce ? PREVIEW_DELAY_TIMEOUT : PREVIEW_DELAY_TIMEOUT/2;
+        let delay = this._previewOnce ? PREVIEW_DELAY_TIMEOUT : PREVIEW_DELAY_TIMEOUT_FIRST;
         this._displayPreviewTimeoutId = Mainloop.timeout_add(delay, Lang.bind(this, showPreview));
         this._previewOnce = true;
     },
@@ -1731,7 +1747,7 @@ AltTabPopup.prototype = {
                 Mainloop.source_remove(this._thumbnailTimeoutId);
             }
             this._thumbnailTimeoutId = Mainloop.timeout_add(
-                this.thumbnailOnce ? PREVIEW_DELAY_TIMEOUT : PREVIEW_DELAY_TIMEOUT/2, Lang.bind(this, function() {
+                this.thumbnailOnce ? PREVIEW_DELAY_TIMEOUT : PREVIEW_DELAY_TIMEOUT_FIRST, Lang.bind(this, function() {
                     if (this._currentApp >= 0) { 
                         this._thumbnailTimeoutId = null;
                         this.thumbnailOnce = true;
