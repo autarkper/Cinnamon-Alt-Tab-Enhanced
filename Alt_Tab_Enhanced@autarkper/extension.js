@@ -123,8 +123,7 @@ function processSwitcherStyle() {
     g_setup._previewThumbnails = false;
 
     let styleSettingsMaster = g_settings["style"];
-    let isSystemStyle = styleSettingsMaster == ":system";
-    let styleSettings = isSystemStyle ? g_vars.switcherStyle : styleSettingsMaster;
+    let styleSettings = styleSettingsMaster;
 
     let found = false;
     if (styleSettings.indexOf(":") < 0) {
@@ -162,11 +161,6 @@ const g_aligmentTypes = ["top", "center", "bottom"];
 const g_alttabStyles = ["icons+preview", ":preview-thumbnails", "icons", "icons+thumbnails"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
 
-function getSwitcherStyle() {
-    g_vars.switcherStyle = global.settings.get_string("alttab-switcher-style");
-    processSwitcherStyle();
-};
-
 var g_vars = Main._alttab_enhanced_vars;
 if (!g_vars) {
     g_vars = Main._alttab_enhanced_vars = {};
@@ -175,8 +169,6 @@ if (!g_vars) {
     g_vars.globalFocusOrder = false;
     g_vars.g_lastWindowHotkey = -1;
     g_vars.g_hotKeyAssignment = {};
-
-    global.settings.connect('changed::alttab-switcher-style', getSwitcherStyle);
 
     // this object will be populated with our settings, if settings support is available
     g_vars.settings = {};
@@ -2821,7 +2813,7 @@ function initSettings() {
         g_settings["force-open-on-preferred-monitor"] = false;
     }
 
-    getSwitcherStyle();
+    processSwitcherStyle();
 }
 
 function canSaveSettings() {

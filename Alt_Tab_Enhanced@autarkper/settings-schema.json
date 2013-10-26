@@ -15,16 +15,14 @@
  "display-origin-arrow": {
     "type" : "generic",
     "default" : true,
-    "dependency" : "all-workspaces-mode",
     "indent": true,
     "description" : "Display a small arrow, below the icon, to indicate the window you came from"
  },
  "switcher-sep": {"type": "separator"},
  "style": {
     "type": "combobox",
-    "default": ":system",
+    "default": "icons+thumbnails",
     "options" : {
-        "Use built-in Alt-Tab's switcher-style setting" : ":system",
         "In-place previews" : "icons+preview",
         "In-place thumbnails" : ":preview-thumbnails",
         "Thumbnails" : "icons+thumbnails",
