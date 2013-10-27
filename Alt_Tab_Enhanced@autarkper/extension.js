@@ -1364,39 +1364,9 @@ AltTabPopup.prototype = {
                 });
             } else if (action == Meta.KeyBindingAction.SWITCH_GROUP || action == Meta.KeyBindingAction.SWITCH_WINDOWS) {
                 this._select(shiftDown ? this._previousApp(nowrap) : this._nextApp(nowrap));
-            } else {
-                let removeOptions = {removeIfPresent: true, noAdd: true};
-                if (keysym == Clutter.Left) {
-                    if (superDown) {
-                        this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), -1);
-                        return true;
-                    }
-                    if (ctrlDown && !shiftDown) {
-                        if (switchWorkspace(-1)) {
-                            return false;
-                        }
-                    } else if (shiftDown) {
-                        g_selection = this._modifySelection(g_selection, this._currentApp, ctrlDown ? removeOptions : null);
-                        g_selection = this._modifySelection(g_selection, this._previousApp(nowrap), ctrlDown ? removeOptions : null);
-                    }    
-                    this._select(this._previousApp(nowrap));
-                }
-                else if (keysym == Clutter.Right) {
-                    if (superDown) {
-                        this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), 1);
-                        return true;
-                    }
-                    if (ctrlDown && !shiftDown) {
-                        if (switchWorkspace(1)) {
-                            return false;
-                        }
-                    }
-                    else if (shiftDown) {
-                        g_selection = this._modifySelection(g_selection, this._currentApp, ctrlDown ? removeOptions : null);
-                        g_selection = this._modifySelection(g_selection, this._nextApp(nowrap), ctrlDown ? removeOptions : null);
-                    }
-                    this._select(this._nextApp(nowrap));
-                }
+            }
+            else if (keysym == Clutter.Left || keysym == Clutter.Right) {
+                this._clearPreview();
             }
             return true;
         }
@@ -1488,6 +1458,41 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.F3 && shiftDown && !ctrlDown) {
                 saveSettings();
             } else {
+                let removeOptions = {removeIfPresent: true, noAdd: true};
+                let nowrap = false;
+                if (keysym == Clutter.Left) {
+                    if (superDown) {
+                        this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), -1);
+                        return true;
+                    }
+                    if (ctrlDown && !shiftDown) {
+                        if (switchWorkspace(-1)) {
+                            return false;
+                        }
+                    } else if (shiftDown) {
+                        g_selection = this._modifySelection(g_selection, this._currentApp, ctrlDown ? removeOptions : null);
+                        g_selection = this._modifySelection(g_selection, this._previousApp(nowrap), ctrlDown ? removeOptions : null);
+                    }
+                    this._select(this._previousApp(nowrap));
+                    return true;
+                }
+                if (keysym == Clutter.Right) {
+                    if (superDown) {
+                        this._multiMoveWorkspace(this._modifySelection(g_selection, this._currentApp, {mustExist: true}), 1);
+                        return true;
+                    }
+                    if (ctrlDown && !shiftDown) {
+                        if (switchWorkspace(1)) {
+                            return false;
+                        }
+                    }
+                    else if (shiftDown) {
+                        g_selection = this._modifySelection(g_selection, this._currentApp, ctrlDown ? removeOptions : null);
+                        g_selection = this._modifySelection(g_selection, this._nextApp(nowrap), ctrlDown ? removeOptions : null);
+                    }
+                    this._select(this._nextApp(nowrap));
+                    return true;
+                }
                 let index = this._symbolToIndex(keysym);
                 if (index >= 0 && index <= 10) {
                     if (ctrlDown) {
