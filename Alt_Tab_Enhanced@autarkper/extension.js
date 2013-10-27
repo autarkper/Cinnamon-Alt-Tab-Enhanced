@@ -1989,6 +1989,8 @@ AppSwitcher.prototype = {
         if (height == 0) {
             return;
         }
+        let labelNaturalHeight = 0;
+        this.icons.forEach(function(appIcon) {labelNaturalHeight = Math.max(labelNaturalHeight, appIcon._label_bin.get_preferred_height(-1)[1]);});
 
         let arrow = this[id] = new St.DrawingArea({ style_class: 'switcher-arrow' });
         arrow.connect('repaint', Lang.bind(this, function() {
@@ -2002,7 +2004,7 @@ AppSwitcher.prototype = {
 
         childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
         childBox.x2 = childBox.x1 + arrowWidth;
-        childBox.y1 = height + arrowHeight;
+        childBox.y1 = labelNaturalHeight + height - arrowHeight;
         childBox.y2 = childBox.y1 + arrowHeight;
         arrow.allocate(childBox, 0);
     },
