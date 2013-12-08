@@ -157,6 +157,11 @@ function processSwitcherStyle() {
     g_setup._showThumbnails = g_setup._thumbnailsEnabled;
 }
 
+let temporaryAwsMode = false;
+function isAwsMode() {
+    return g_settings["all-workspaces-mode"] || temporaryAwsMode;
+}
+
 const g_aligmentTypes = ["top", "center", "bottom"];
 const g_alttabStyles = ["icons+preview", ":preview-thumbnails", "icons", "icons+thumbnails"]; // the most usual ones ...
 const g_thumbnailIconOptions = ["behind-identical", "always", "never"];
@@ -596,7 +601,7 @@ AltTabPopup.prototype = {
         let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
 
         let activeWsIndex = g_activeWsIndex = wsWindows.length && getWindowWorkspaceIndex(currentWindow) == -1 ? -1 : global.screen.get_active_workspace_index();
-        let awsMode = g_settings["all-workspaces-mode"];
+        let awsMode = isAwsMode();
         for (let i = -1, numws = global.screen.n_workspaces; i < numws; ++i) {
             let wlist = ws_slots[i];
             if (!wlist || !wlist.length) {
@@ -1182,6 +1187,7 @@ AltTabPopup.prototype = {
             return false;
         }
         this._haveModal = true;
+        temporaryAwsMode = binding == 'switch-panels';
         this._modifierMask = primaryModifier(mask);
         if (!this.refresh(binding, backward)) {
             this._finish();
@@ -1270,7 +1276,7 @@ AltTabPopup.prototype = {
         });
 
         let switchWorkspace = Lang.bind(this, function(direction) {
-            if (g_settings["all-workspaces-mode"]) {
+            if (isAwsMode()) {
                 return skipWorkspace(direction);
             }
             if (global.screen.n_workspaces < 2) {
@@ -1912,7 +1918,7 @@ AppSwitcher.prototype = {
             allIcons.push(appIcon);
         }
 
-        let awMode = g_settings["all-workspaces-mode"];
+        let awMode = isAwsMode();
         this.icons = [];
         if (allIcons.length) {
             let lastWsIndex = g_firstWorkspaceIndex;
@@ -2871,6 +2877,7 @@ function enable() {
     Meta.keybindings_set_custom_handler('switch-applications-backward', handler);
     Meta.keybindings_set_custom_handler('switch-windows', handler);
     Meta.keybindings_set_custom_handler('switch-group', handler);
+    Meta.keybindings_set_custom_handler('switch-panels', handler);
 
     g_attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
     g_attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
@@ -2923,6 +2930,7 @@ function disable() {
     Meta.keybindings_set_custom_handler('switch-applications', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Meta.keybindings_set_custom_handler('switch-panels', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     g_attentionConnector.destroy();
     g_settings_obj.finalize();
 }
