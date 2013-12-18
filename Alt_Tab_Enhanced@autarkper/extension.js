@@ -1289,7 +1289,7 @@ AltTabPopup.prototype = {
                 return false;
             }
             Main.wm.showWorkspaceOSD();
-            this.refresh();
+            this.refresh("no-switch-windows", false);
             return true;
         });
 
