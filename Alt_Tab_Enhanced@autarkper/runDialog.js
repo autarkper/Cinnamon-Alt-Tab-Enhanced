@@ -9,11 +9,13 @@ const Meta = imports.gi.Meta;
 const St = imports.gi.St;
 const Cinnamon = imports.gi.Cinnamon;
 const Signals = imports.signals;
+const GnomeSession = imports.misc.gnomeSession;
 
 const FileUtils = imports.misc.fileUtils;
 const Main = imports.ui.main;
 const ModalDialog = imports.ui.modalDialog;
 const CinnamonEntry = imports.ui.cinnamonEntry;
+const Tooltips = imports.ui.tooltips;
 const Tweener = imports.ui.tweener;
 const Util = imports.misc.util;
 const History = imports.misc.history;
@@ -29,9 +31,15 @@ const TERMINAL_SCHEMA = 'org.cinnamon.desktop.default-applications.terminal';
 const EXEC_KEY = 'exec';
 const EXEC_ARG_KEY = 'exec-arg';
 
-const SHOW_COMPLETIONS_KEY = 'run-dialog-show-completions';
-
 const DIALOG_GROW_TIME = 0.1;
+
+const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
+
+const FAVORITE_APPS_KEY = 'favorite-apps';
+const PANEL_LAUNCHERS_KEY = 'panel-launchers';
+const CUSTOM_LAUNCHERS_PATH = GLib.get_home_dir() + '/.cinnamon/panel-launchers';
+
+const ICONSIZE = 32;
 
 function CommandCompleter() {
     this._init();
@@ -165,7 +173,7 @@ CommandCompleter.prototype = {
             }
         }
         if (common.length)
-            return [common.substr(text.length).replace(/ /g, "\\ "), completions];
+            return [common.substr(text.length), completions];
         return [common, completions];
     }
 };
@@ -186,9 +194,14 @@ __proto__: ModalDialog.ModalDialog.prototype,
         }));
         this._enableInternalCommands = global.settings.get_boolean('development-tools');
 
-        this._internalCommands = { 'lg':
+        this._internalCommands = { 'lg-old':
                                    Lang.bind(this, function() {
                                        Main.createLookingGlass().open();
+                                   }),
+
+                                   'lg':
+                                   Lang.bind(this, function() {
+                                        Util.trySpawnCommandLine("/usr/lib/cinnamon-looking-glass/cinnamon-looking-glass.py");
                                    }),
 
                                    'r': Lang.bind(this, function() {
@@ -210,17 +223,22 @@ __proto__: ModalDialog.ModalDialog.prototype,
                                    })
                                  };
 
+        global.settings.connect('changed::' + PANEL_LAUNCHERS_KEY, Lang.bind(this, this._setupLaunchers));
+        global.settings.connect('changed::' + FAVORITE_APPS_KEY, Lang.bind(this, this._setupLaunchers));
+        this._setupLaunchers();
 
+        let entryLayout = this._entryLayout = new St.BoxLayout({ vertical:    false });
+        this.contentLayout.add(entryLayout, { y_align: St.Align.START });
         let label = new St.Label({ style_class: 'run-dialog-label',
-                                   text: _("Please enter a command:") });
+                                   text: _("Please enter a command: ") });
 
-        this.contentLayout.add(label, { y_align: St.Align.START });
+        entryLayout.add(label, { y_align: St.Align.START });
 
         let entry = new St.Entry({ style_class: 'run-dialog-entry' });
         CinnamonEntry.addContextMenu(entry);
 
         this._entryText = entry.clutter_text;
-        this.contentLayout.add(entry, { y_align: St.Align.START });
+        entryLayout.add(entry, { y_align: St.Align.START });
         this.setInitialKeyFocus(this._entryText);
 
         this._completionBox = new St.Label({style_class: 'run-dialog-completion-box'});
@@ -253,14 +271,24 @@ __proto__: ModalDialog.ModalDialog.prototype,
         this._history = new History.HistoryManager({ gsettingsKey: HISTORY_KEY,
                                                      entry: this._entryText,
                                                      deduplicate: true });
+        this._history.connect('changed', Lang.bind(this, function() {
+            this._completionBox.hide();
+            this._exitLauncher();
+        }));
         this._entryText.connect('key-press-event', Lang.bind(this, function(o, e) {
             let symbol = e.get_key_symbol();
             if (symbol == Clutter.Return || symbol == Clutter.KP_Enter) {
                 this.popModal();
-                if (Cinnamon.get_event_state(e) & Clutter.ModifierType.CONTROL_MASK)
-                    this._run(o.get_text(), true);
-                else
-                    this._run(o.get_text(), false);
+                let command = o.get_text().trim();
+                if (command.length) {
+                    if (Cinnamon.get_event_state(e) & Clutter.ModifierType.CONTROL_MASK)
+                        this._run(command, true);
+                    else
+                        this._run(command, false);
+                }
+                else if (this.inLaunchers) {
+                    this._launchers[this.iconIndex].launch();
+                }
                 if (!this._commandError)
                     this.close();
                 else {
@@ -270,7 +298,15 @@ __proto__: ModalDialog.ModalDialog.prototype,
                 return true;
             }
             if (symbol == Clutter.Escape) {
-                this.close();
+                if (o.get_text().length) {
+                    o.set_text('');
+                }
+                else if (this.inLaunchers) {
+                    this._exitLauncher();
+                }
+                else {
+                    this.close();
+                }
                 return true;
             }
             if (symbol == Clutter.slash) {
@@ -286,36 +322,72 @@ __proto__: ModalDialog.ModalDialog.prototype,
                 return false;
             }
             if (symbol == Clutter.Tab) {
-                let text = o.get_text();
-                text = text.slice(0, text.lastIndexOf(o.get_selection()));
-                let prefix;
-                if (text.lastIndexOf(' ') == -1)
-                    prefix = text;
-                else
-                    prefix = text.substr(text.lastIndexOf(' ') + 1);
-                let [postfix, completions] = this._getCompletion(prefix);
-                if (postfix != null && postfix.length > 0) {
-                    o.insert_text(postfix, -1);
-                    o.set_cursor_position(text.length + postfix.length);
-                    if (postfix[postfix.length - 1] == '/')
-                        this._getCompletion(text + postfix + 'a');
-                }
-                if (!postfix && completions.length > 0 && prefix.length > 2 &&
-                    global.settings.get_boolean(SHOW_COMPLETIONS_KEY)) {
-                    if (this._completionBox.visible) {
-                        this._completionSelected ++;
-                        this._completionSelected %= completions.length;
+                if (!this.inLaunchers) {
+                    let text = o.get_text().trim();
+                    if (text.length) {
+                        text = text.slice(0, text.lastIndexOf(o.get_selection()));
+                        let prefix;
+                        if (text.lastIndexOf(' ') == -1)
+                            prefix = text;
+                        else
+                            prefix = text.substr(text.lastIndexOf(' ') + 1);
+                        let [postfix, completions] = this._getCompletion(prefix);
+                        if (postfix != null && postfix.length > 0) {
+                            o.insert_text(postfix, -1);
+                            o.set_cursor_position(text.length + postfix.length);
+                            if (postfix[postfix.length - 1] == '/')
+                                this._getCompletion(text + postfix + 'a');
+                        }
+                        if (!postfix && completions.length > 1 && prefix.length > 2) {
+                            if (this._completionBox.visible) {
+                                this._completionSelected ++;
+                                this._completionSelected %= completions.length;
+                            }
+                            this._showCompletions(completions, prefix.length);
+                            this._completionBox.show();
+                        }
                     }
-                    this._showCompletions(completions, prefix.length);
-                    this._completionBox.show();
+                    else {
+                        this._enterLauncher();
+                    }
+                }
+                else {
+                    this._exitLauncher();
                 }
                 return true;
+            }
+            if (symbol === Clutter.ISO_Left_Tab) {
+                // If we don't handle this in some way, key focus strays into nowhere
+                return true;
+            }
+            if (symbol == Clutter.Left || symbol == Clutter.Right || symbol == Clutter.Home || symbol == Clutter.End) {
+                let entering = !this.inLaunchers;
+                if (this.inLaunchers || !o.get_text().length) {
+                    this._exitLauncher(); // temporarily
+                    if (!entering && (symbol == Clutter.Left || symbol == Clutter.Right)) {
+                        let increment = symbol == Clutter.Right ? 1 : - 1;
+                        this.iconIndex = Math.max(0, Math.min(this._launchers.length - 1, (this.iconIndex + increment + this._launchers.length) % this._launchers.length));
+                    }
+                    if (symbol == Clutter.Home) {
+                        this.iconIndex = 0;
+                    }
+                    if (symbol == Clutter.End) {
+                        this.iconIndex = this._launchers.length - 1;
+                    }
+                    this._enterLauncher();
+                    return true;
+                }
+                return false;
+            }
+            if (symbol == Clutter.Up || symbol == Clutter.Down) {
+                this._exitLauncher();
+                return false;
             }
             if (symbol == Clutter.BackSpace) {
                 this._completionSelected = 0;
                 this._completionBox.hide();
             }
-            if (this._completionBox.get_text() != "" &&
+            if (this._completionBox.get_text().trim().length > 0 &&
                 this._completionBox.visible) {
                 Mainloop.timeout_add(500, Lang.bind(this, function() { // Don't do it instantly to avoid "flashing"
                     let text = this._entryText.get_text();
@@ -326,15 +398,134 @@ __proto__: ModalDialog.ModalDialog.prototype,
                     else
                         prefix = text.substr(text.lastIndexOf(' ') + 1);
                     let [postfix, completions] = this._getCompletion(prefix);
-                    if (completions.length > 0) {
+                    if (completions.length > 1) {
                         this._completionSelected = 0;
                         this._showCompletions(completions, prefix.length);
                     }
                 }));
                 return false;
             }
+            this._exitLauncher();
             return false;
         }));
+    },
+
+    _setupLaunchers : function() {
+        this._launchers = [];
+        if (this._launcherLayout) {
+            this._launcherLayout.destroy_children();
+        }
+        else {
+            this._launcherLayoutBox = new St.BoxLayout({ vertical: true, x_align: St.Align.END });
+            this.contentLayout.add(this._launcherLayoutBox, { y_align: St.Align.START });
+            this._launcherLayout = new St.BoxLayout({ vertical:    false, x_align: St.Align.END });
+            this._launcherLayoutBox.add(this._launcherLayout, { y_align: St.Align.START });
+            global.focus_manager.add_group(this._launcherLayout);
+            this._launcherMessage = new St.Label({ style_class: 'run-dialog-error-label' });
+            this._launcherLayoutBox.add(this._launcherMessage, { y_align: St.Align.START, x_align: St.Align.END });
+        }
+
+        let addSeparator = Lang.bind(this, function() {
+            let box = new St.Bin({ style_class: 'separator'});
+            this._launcherLayout.add(box, St.Align.MIDDLE);
+        });
+
+        let registry = {};
+        let createLauncher = Lang.bind(this, function(icon, launcher) {
+            if (registry[launcher.title]) {return;}
+            registry[launcher.title] = 1;
+            let actor = new St.Bin({ style_class: 'panel-launcher',
+                style: 'padding: 5px',
+                can_focus: true,
+                reactive: true,
+                x_fill: true,
+                y_fill: false
+            });
+            actor.add_actor(icon);
+            actor.connect('button-release-event', Lang.bind(this, function(actor, event) {
+                if (Cinnamon.get_event_state(event) & Clutter.ModifierType.BUTTON1_MASK) {
+                    this.close();
+                    launcher.launch();
+                }
+            }));
+            let tooltip = new Tooltips.Tooltip(actor, launcher.title);
+            this._launcherLayout.add(actor, St.Align.MIDDLE);
+            this._launchers.push(launcher);
+            launcher.actor = actor;
+        });
+
+        let apps = this.loadApps();
+        for (var i in apps){
+            let app = apps[i];
+            let icon = app.create_icon_texture(ICONSIZE);
+            let launcher = {
+                title: app.get_name(),
+                launch: function() {
+                    app.open_new_window(-1);
+                }
+            };
+            createLauncher(icon, launcher);
+        }
+
+        addSeparator();
+
+        apps = this.loadLaunchers();
+        for (var i in apps){
+            let appe = apps[i];
+            let app = appe[0];
+            let appinfo = appe[1];
+
+            let icon = app ? app.create_icon_texture(ICONSIZE) : null;
+            if (!icon) {
+                icon = St.TextureCache.get_default().load_gicon(null, appinfo.get_icon(), ICONSIZE);
+            }
+            let launcher = {
+                title: (app ? app : appinfo).get_name(),
+                launch: function() { app ?
+                    app.open_new_window(-1) :
+                    appinfo.launch([], null);
+                }
+            };
+            createLauncher(icon, launcher);
+        }
+        addSeparator();
+
+        let session = new GnomeSession.SessionManager();
+        [{title: _("Logout dialog"), name: 'gnome-logout', action: function() {session.LogoutRemote(0);}},
+            {title: _("Shutdown dialog"), name: 'gnome-shutdown', action: function() {session.ShutdownRemote();}}
+        ].forEach(function(action) {
+            let icon = new St.Icon({icon_name: action.name, icon_size: ICONSIZE, icon_type: St.IconType.FULLCOLOR});
+            let launcher = {
+                title: action.title,
+                launch: function() {
+                    action.action();
+                }
+            };
+            createLauncher(icon, launcher);
+        }, this);
+
+        this.iconIndex = 0;
+        this.inLaunchers = false;
+    },
+
+    _exitLauncher : function() {
+        this._entryLayout.opacity = 255;
+        this.inLaunchers = false;
+        if (this.iconIndex >= 0) {
+            this._launchers[this.iconIndex].actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+            this._launcherMessage.set_text('');
+        }
+    },
+
+    _enterLauncher : function() {
+        if (this._launchers.length) {
+            this._entryLayout.opacity = 64;
+            this.inLaunchers = true;
+            if (this.iconIndex >= 0) {
+                this._launchers[this.iconIndex].actor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+                this._launcherMessage.set_text(this._launchers[this.iconIndex].title);
+            }
+        }
     },
 
     _showCompletions: function(completions, startpos) {
@@ -432,16 +623,45 @@ __proto__: ModalDialog.ModalDialog.prototype,
         }
     },
 
+    loadApps: function() {
+        let apps = [];
+        let launchers = global.settings.get_strv(FAVORITE_APPS_KEY);
+        let appSys = Cinnamon.AppSystem.get_default();
+        for ( let i = 0; i < launchers.length; ++i ) {
+            let app = appSys.lookup_app(launchers[i]);
+            if (app) {
+                apps.push(app);
+            }
+        }
+        return apps;
+    },
+
+    loadLaunchers: function() {
+        let apps = [];
+        let desktopFiles = global.settings.get_strv(PANEL_LAUNCHERS_KEY);
+        let appSys = Cinnamon.AppSystem.get_default();
+        for (var i in desktopFiles){
+            let app = appSys.lookup_app(desktopFiles[i]);
+            let appinfo;
+            if (!app) appinfo = Gio.DesktopAppInfo.new_from_filename(CUSTOM_LAUNCHERS_PATH+"/"+desktopFiles[i]);
+            if (app || appinfo) apps.push([app, appinfo]);
+        }
+        return apps;
+    },
+
     open: function() {
         this._history.lastItem();
         this._errorBox.hide();
         this._entryText.set_text('');
         this._completionBox.hide();
         this._commandError = false;
+        this.inLaunchers = false;
+        this._exitLauncher();
 
         if (this._lockdownSettings.get_boolean(DISABLE_COMMAND_LINE_KEY))
             return;
 
+        this._exitLauncher();
         ModalDialog.ModalDialog.prototype.open.call(this);
     },
 
