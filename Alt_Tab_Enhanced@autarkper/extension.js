@@ -25,6 +25,15 @@ const AppletManager = imports.ui.appletManager;
 const MessageTray = imports.ui.messageTray;
 
 var Connector;
+var RunDialog;
+
+var runDialog;
+function getRunDialog() {
+    if (runDialog == null) {
+        runDialog = new RunDialog.RunDialog();
+    }
+    return runDialog;
+}
 
 var Settings = null;
 try {
@@ -1357,7 +1366,7 @@ AltTabPopup.prototype = {
                     this._activateWindow(window);
                 }
                 Mainloop.idle_add(function() {
-                    Main.getRunDialog().open();
+                    getRunDialog().open();
                 });
             } else if (action == Meta.KeyBindingAction.WORKSPACE_DOWN || action == Meta.KeyBindingAction.WORKSPACE_UP) {
                 if (this._currentApp >= 0) {
@@ -2719,6 +2728,7 @@ var g_instanceId;
 function init(metadata, instanceId) {
     imports.searchPath.push(metadata.path);
     Connector = imports.connector;
+    RunDialog = imports.runDialog;
     g_attentionConnector = new Connector.Connector();
 
     g_uuid = metadata['uuid'];
