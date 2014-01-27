@@ -1,7 +1,7 @@
 // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 
 // Alt-Tab Enhanced, the advanced window-switcher applet for Cinnamon, version 1.8 or later.
-// Copyright (C) 2013 Per Ångström, see LICENSE file.
+// Copyright (C) Per Ångström, see LICENSE file.
 
 const Clutter = imports.gi.Clutter;
 const Lang = imports.lang;
