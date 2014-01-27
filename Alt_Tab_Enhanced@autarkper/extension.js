@@ -2818,6 +2818,11 @@ function initSettings() {
             "hide-icon",
             handleHideIcon,
             null);
+        settings.bindProperty(Settings.BindingDirection.IN,
+            "handle-run-dialog",
+            "handle-run-dialog",
+            function() {},
+            null);
     }
     else {
         // if we don't have local settings support, we must hard-code our preferences
@@ -2834,6 +2839,7 @@ function initSettings() {
         g_settings["background-dim-factor"] = 0.7;
         g_settings["urgent-notifications"] = true;
         g_settings["force-open-on-preferred-monitor"] = false;
+        g_settings["handle-run-dialog"] = false;
     }
 
     processSwitcherStyle();
@@ -2891,6 +2897,10 @@ function enable() {
     Meta.keybindings_set_custom_handler('switch-group', handler);
     Meta.keybindings_set_custom_handler('switch-panels', handler);
 
+    Meta.keybindings_set_custom_handler('panel-run-dialog', function() {
+        (g_settings["handle-run-dialog"] ? getRunDialog() : Main.getRunDialog()).open();
+    });
+
     g_attentionConnector.addConnection(global.display, 'window-demands-attention', Lang.bind(null, _onWindowDemandsAttention, false));
     g_attentionConnector.addConnection(global.display, 'window-marked-urgent', Lang.bind(null, _onWindowDemandsAttention, true));
     g_attentionConnector.addConnection(global.window_manager, 'map', function(cinnamonwm, actor) {
@@ -2943,6 +2953,9 @@ function disable() {
     Meta.keybindings_set_custom_handler('switch-windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
     Meta.keybindings_set_custom_handler('switch-panels', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Meta.keybindings_set_custom_handler('panel-run-dialog', function() {
+        Main.getRunDialog().open();
+    });
     g_attentionConnector.destroy();
     g_settings_obj.finalize();
 }

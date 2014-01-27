@@ -108,5 +108,10 @@
     "type": "checkbox",
     "default": false,
     "description": "Hide the panel icon"
+ },
+ "handle-run-dialog": {
+    "type": "checkbox",
+    "default": false,
+    "description": "Take over global ALT+F2 handling, showing an enhanced Run Dialog"
  }
 }
