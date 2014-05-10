@@ -1,7 +1,7 @@
 {
 "uuid": "Alt_Tab_Enhanced@autarkper",
 "name": "Alt-Tab Enhanced",
-"cinnamon-version": ["1.7.4","1.7.5","1.7.6","1.7.7","1.7.8","1.7.9","1.8","1.9","2.0"],
+"cinnamon-version": ["1.8","1.9","2.0","2.2"],
 "description": "An enhanced Alt-Tab, with multi-workspace support and many other features. Press F1 for a help screen.",
 "url": "https://github.com/autarkper/Cinnamon-Alt-Tab-Enhanced",
 "version": "dev",
