@@ -2628,11 +2628,15 @@ ThumbnailHolder.prototype = {
                 this.container.add_actor(clone.actor);
 
                 let childBox = new Clutter.ActorBox();
-                childBox.x1 = Math.floor((hPadding + binWidth-clone.actor.width*scale)/2);
-                childBox.y1 = Math.floor((vPadding + binHeight-clone.actor.height*scale)/2);
+                childBox.x1 = 0;
+                let posX = Math.floor((hPadding + binWidth-clone.actor.width*scale)/2);
+                childBox.y1 = 0;
+                let posY = Math.floor((vPadding + binHeight-clone.actor.height*scale)/2);
                 childBox.x2 = childBox.x1 + clone.actor.width;
                 childBox.y2 = childBox.y1 + clone.actor.height;
                 clone.actor.allocate(childBox, 0);
+                clone.actor.x = posX;
+                clone.actor.y = posY;
                 clone.actor.set_scale(scale, scale);
             }
             if (doScale) {
